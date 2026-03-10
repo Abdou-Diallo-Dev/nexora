@@ -1,0 +1,127 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { ArrowLeft, Truck, Edit2, Printer } from 'lucide-react';
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
+import { useAuthStore } from '@/lib/store';
+import { formatDate, printDocument, generatePDFContent } from '@/lib/utils';
+import { Badge, LoadingSpinner } from '@/components/ui';
+
+type Vehicle = {
+  id: string; license_plate: string; brand: string; model: string; vehicle_type: string;
+  status: string; year: number; capacity: number; last_maintenance: string | null;
+  next_maintenance: string | null; notes: string; created_at: string;
+};
+
+export default function VehicleDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const { company } = useAuthStore();
+  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id || !company?.id) return;
+    const supabase = createClient();
+    supabase.from('vehicles').select('*').eq('id', id).eq('company_id', company.id).single()
+      .then(({ data }) => {
+        if (!data) { router.push('/logistics/fleet'); return; }
+        setVehicle(data as Vehicle);
+        setLoading(false);
+      });
+  }, [id, company?.id]);
+
+  const handlePrint = () => {
+    if (!vehicle) return;
+    const html = generatePDFContent(`Fiche véhicule — ${vehicle.license_plate}`, [
+      { label: 'Immatriculation', value: vehicle.license_plate },
+      { label: 'Marque / Modèle', value: `${vehicle.brand} ${vehicle.model}` },
+      { label: 'Année', value: String(vehicle.year || '—') },
+      { label: 'Type', value: vehicle.vehicle_type || '—' },
+      { label: 'Capacité', value: vehicle.capacity ? `${vehicle.capacity} kg` : '—' },
+      { label: 'Statut', value: vehicle.status === 'available' ? 'Disponible' : vehicle.status === 'in_use' ? 'En service' : 'En maintenance' },
+      { label: 'Dernière maintenance', value: vehicle.last_maintenance ? formatDate(vehicle.last_maintenance) : '—' },
+      { label: 'Prochaine maintenance', value: vehicle.next_maintenance ? formatDate(vehicle.next_maintenance) : '—' },
+      { label: 'Notes', value: vehicle.notes || '—' },
+    ]);
+    printDocument(html);
+  };
+
+  if (loading) return <div className="flex items-center justify-center h-64"><LoadingSpinner size={36} /></div>;
+  if (!vehicle) return null;
+
+  const maintenanceDue = vehicle.next_maintenance &&
+    Math.ceil((new Date(vehicle.next_maintenance).getTime() - Date.now()) / 86400000) <= 14;
+
+  return (
+    <div className="max-w-2xl space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.back()} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
+            <ArrowLeft size={18} />
+          </button>
+          <div>
+            <h1 className="text-xl font-bold text-foreground">{vehicle.license_plate}</h1>
+            <p className="text-sm text-muted-foreground">{vehicle.brand} {vehicle.model} {vehicle.year ? `(${vehicle.year})` : ''}</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={handlePrint} className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 rounded-xl text-sm hover:bg-slate-200 transition-colors">
+            <Printer size={15} /> Imprimer
+          </button>
+          <Link href={`/logistics/fleet/${id}/edit`} className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm hover:bg-primary/90 transition-colors">
+            <Edit2 size={15} /> Modifier
+          </Link>
+        </div>
+      </div>
+
+      {maintenanceDue && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 text-sm text-amber-700 dark:text-amber-300">
+          ⚠️ Maintenance prévue le {formatDate(vehicle.next_maintenance!)} — planifiez l&apos;entretien.
+        </div>
+      )}
+
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-border p-6">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-purple-50 dark:bg-purple-900/20 rounded-xl flex items-center justify-center">
+              <Truck size={20} className="text-purple-600" />
+            </div>
+            <div>
+              <p className="font-bold text-foreground font-mono">{vehicle.license_plate}</p>
+              <p className="text-xs text-muted-foreground">{vehicle.vehicle_type || 'Véhicule'}</p>
+            </div>
+          </div>
+          <Badge variant={vehicle.status === 'available' ? 'success' : vehicle.status === 'in_use' ? 'info' : 'warning'} dot>
+            {vehicle.status === 'available' ? 'Disponible' : vehicle.status === 'in_use' ? 'En service' : 'Maintenance'}
+          </Badge>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          {[
+            { label: 'Marque', value: vehicle.brand || '—' },
+            { label: 'Modèle', value: vehicle.model || '—' },
+            { label: 'Année', value: String(vehicle.year || '—') },
+            { label: 'Capacité', value: vehicle.capacity ? `${vehicle.capacity} kg` : '—' },
+            { label: 'Dernière maintenance', value: vehicle.last_maintenance ? formatDate(vehicle.last_maintenance) : '—' },
+            { label: 'Prochaine maintenance', value: vehicle.next_maintenance ? formatDate(vehicle.next_maintenance) : '—' },
+          ].map(item => (
+            <div key={item.label}>
+              <p className="text-xs text-muted-foreground mb-0.5">{item.label}</p>
+              <p className="text-sm font-medium text-foreground">{item.value}</p>
+            </div>
+          ))}
+        </div>
+
+        {vehicle.notes && (
+          <div className="mt-5 pt-4 border-t border-border">
+            <p className="text-xs text-muted-foreground mb-1">Notes</p>
+            <p className="text-sm text-foreground">{vehicle.notes}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
