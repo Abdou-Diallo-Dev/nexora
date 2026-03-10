@@ -8,13 +8,13 @@ import { PageHeader, Badge, LoadingSpinner, EmptyState, Pagination, inputCls, bt
 import { formatCurrency, getPropertyTypeLabel } from '@/lib/utils';
 import { useSearch, usePagination } from '@/lib/hooks';
 
-type Property = { id: string; name: string; address: string; city: string; type: string; status: string; rent_amount: number; rooms_count: number | null };
+type Property = { id: string; name: string; address: string; city: string; type: string; status: string; rent_amount: number; rooms_count: number | null; image_urls: string[] | null };
 
 const STATUS: Record<string, { label: string; variant: BadgeVariant }> = {
-  available: { label: 'Disponible', variant: 'success' },
-  rented:    { label: 'Loué', variant: 'info' },
-  maintenance:{ label: 'Maintenance', variant: 'warning' },
-  inactive:  { label: 'Inactif', variant: 'default' },
+  available:   { label: 'Disponible',  variant: 'success' },
+  rented:      { label: 'Loué',        variant: 'info'    },
+  maintenance: { label: 'Maintenance', variant: 'warning' },
+  inactive:    { label: 'Inactif',     variant: 'default' },
 };
 
 export default function PropertiesPage() {
@@ -30,7 +30,7 @@ export default function PropertiesPage() {
     setLoading(true);
     let q = createClient()
       .from('properties')
-      .select('id,name,address,city,type,status,rent_amount,rooms_count', { count: 'exact' })
+      .select('id,name,address,city,type,status,rent_amount,rooms_count,image_urls', { count: 'exact' })
       .eq('company_id', company.id)
       .order('created_at', { ascending: false })
       .range(offset, offset + pageSize - 1);
@@ -56,23 +56,39 @@ export default function PropertiesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
             {items.map((p, idx) => {
               const st = STATUS[p.status] || { label: p.status, variant: 'default' as BadgeVariant };
+              const firstImage = p.image_urls && p.image_urls.length > 0 ? p.image_urls[0] : null;
               return (
                 <Link key={p.id} href={'/real-estate/properties/' + p.id}
-                  className={'flex flex-col gap-3 p-5 border-b border-border hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors' +
+                  className={'flex flex-col border-b border-border hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors overflow-hidden' +
                     (idx % 3 !== 2 ? ' md:border-r' : '')}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
-                      <Home size={18} className="text-blue-600" />
+                  
+                  {/* Image ou placeholder */}
+                  <div className="relative w-full h-44 bg-slate-100 dark:bg-slate-700 flex-shrink-0">
+                    {firstImage ? (
+                      <img src={firstImage} alt={p.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Home size={32} className="text-slate-300 dark:text-slate-500" />
+                      </div>
+                    )}
+                    <div className="absolute top-3 right-3">
+                      <Badge variant={st.variant}>{st.label}</Badge>
                     </div>
-                    <Badge variant={st.variant}>{st.label}</Badge>
+                    {p.image_urls && p.image_urls.length > 1 && (
+                      <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded-full">
+                        +{p.image_urls.length - 1} photos
+                      </div>
+                    )}
                   </div>
-                  <div>
+
+                  {/* Infos */}
+                  <div className="p-4 flex flex-col gap-2">
                     <p className="font-semibold text-foreground text-sm">{p.name}</p>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><MapPin size={11} />{p.address}, {p.city}</p>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">{getPropertyTypeLabel(p.type)}{p.rooms_count ? ' · ' + p.rooms_count + ' pièces' : ''}</span>
-                    <span className="font-semibold text-foreground">{formatCurrency(p.rent_amount)}/mois</span>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin size={11} />{p.address}, {p.city}</p>
+                    <div className="flex items-center justify-between text-xs mt-1">
+                      <span className="text-muted-foreground">{getPropertyTypeLabel(p.type)}{p.rooms_count ? ' · ' + p.rooms_count + ' pièces' : ''}</span>
+                      <span className="font-semibold text-foreground">{formatCurrency(p.rent_amount)}/mois</span>
+                    </div>
                   </div>
                 </Link>
               );
