@@ -14,19 +14,52 @@ export async function middleware(request: NextRequest) {
       },
     }
   );
+
   const { data: { session } } = await sb.auth.getSession();
   const { pathname } = request.nextUrl;
 
   const isPublic = pathname.startsWith('/auth') || pathname.startsWith('/api');
 
-  // Not logged in and trying to access protected page → login
+  // Pas connecté → login
   if (!session && !isPublic) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  // Logged in and on root or dashboard → redirect to login to let app handle routing
+  // Connecté sur root ou dashboard → vérifier is_active
   if (session && (pathname === '/' || pathname === '/dashboard')) {
+    // Vérifier si le compte est actif
+    const { data: userData } = await sb
+      .from('users')
+      .select('is_active, role')
+      .eq('id', session.user.id)
+      .maybeSingle();
+
+    // Compte inactif → déconnecter et rediriger vers login
+    if (userData && !userData.is_active && userData.role !== 'super_admin') {
+      const response = NextResponse.redirect(new URL('/auth/login', request.url));
+      // Supprimer les cookies de session
+      response.cookies.delete('sb-access-token');
+      response.cookies.delete('sb-refresh-token');
+      return response;
+    }
+
     return NextResponse.redirect(new URL('/auth/login', request.url));
+  }
+
+  // Connecté sur une page protégée → vérifier is_active
+  if (session && !isPublic) {
+    const { data: userData } = await sb
+      .from('users')
+      .select('is_active, role')
+      .eq('id', session.user.id)
+      .maybeSingle();
+
+    if (userData && !userData.is_active && userData.role !== 'super_admin') {
+      const response = NextResponse.redirect(new URL('/auth/login', request.url));
+      response.cookies.delete('sb-access-token');
+      response.cookies.delete('sb-refresh-token');
+      return response;
+    }
   }
 
   return res;
