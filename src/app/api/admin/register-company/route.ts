@@ -1,12 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    + '-' + Math.random().toString(36).substring(2, 7);
+}
+
 export async function POST(request: Request) {
   try {
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-    // Debug - à supprimer après
     if (!serviceKey) return NextResponse.json({ error: 'SERVICE_ROLE_KEY manquant' }, { status: 500 });
     if (!supabaseUrl) return NextResponse.json({ error: 'SUPABASE_URL manquant' }, { status: 500 });
 
@@ -16,6 +25,7 @@ export async function POST(request: Request) {
       auth: { autoRefreshToken: false, persistSession: false }
     });
 
+    // 1. Créer l'utilisateur auth
     const { data: authData, error: authError } = await admin.auth.admin.createUser({
       email,
       password,
@@ -26,6 +36,8 @@ export async function POST(request: Request) {
     if (authError) return NextResponse.json({ error: authError.message }, { status: 400 });
     const uid = authData.user.id;
 
+    // 2. Créer l'entreprise avec slug unique garanti
+    const slug = generateSlug(company_name);
     const { data: company, error: compError } = await admin.from('companies').insert({
       name: company_name,
       email: company_email || email,
@@ -33,6 +45,7 @@ export async function POST(request: Request) {
       modules,
       plan: 'free',
       is_active: false,
+      slug,
     }).select().single();
 
     if (compError) {
@@ -40,6 +53,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Erreur company: ' + compError.message }, { status: 400 });
     }
 
+    // 3. Créer l'utilisateur dans public.users
     const { error: userError } = await admin.from('users').upsert({
       id: uid,
       email,
