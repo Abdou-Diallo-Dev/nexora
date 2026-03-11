@@ -200,18 +200,10 @@ export async function generateReceipt(data: {
   doc.text(lines, 10, y);
   y += lines.length * 4.5 + 6;
 
-  // Signature avec logo si disponible
-  if (data.companyLogoUrl) {
-    const img = await loadImageAsBase64(data.companyLogoUrl);
-    doc.setDrawColor(...LIGHT); doc.setLineWidth(0.5); doc.rect(120, y, 74, 28);
-    doc.setTextColor(...GRAY); doc.setFontSize(8);
-    doc.text('Signature du bailleur', 157, y + 5, { align: 'center' });
-    if (img) { try { doc.addImage(img.data, img.format, 147, y + 8, 20, 14); } catch {} }
-  } else {
-    doc.setDrawColor(...LIGHT); doc.setLineWidth(0.5); doc.rect(120, y, 74, 24);
-    doc.setTextColor(...GRAY); doc.setFontSize(8);
-    doc.text('Signature du bailleur', 157, y + 5, { align: 'center' });
-  }
+  // Signature bailleur — case vide pour tampon/timbre
+  doc.setDrawColor(...LIGHT); doc.setLineWidth(0.5); doc.rect(120, y, 74, 28);
+  doc.setTextColor(...GRAY); doc.setFontSize(8);
+  doc.text('Signature / Cachet du bailleur', 157, y + 5, { align: 'center' });
 
   footer(doc, data.companyName);
   doc.save(`quittance-${data.periodYear}-${String(data.periodMonth).padStart(2,'0')}-${data.tenantName.replace(/\s+/g,'-')}.pdf`);
@@ -332,20 +324,11 @@ export async function generateLeaseContract(data: {
   doc.text("Les soussignés reconnaissent avoir lu et accepté l'intégralité des clauses du présent contrat.", 12, y);
   y += 8;
 
-  // Bailleur avec logo
-  if (data.companyLogoUrl) {
-    const img = await loadImageAsBase64(data.companyLogoUrl);
-    doc.setDrawColor(...LIGHT); doc.setLineWidth(0.5); doc.rect(8, y, 88, 34);
-    doc.setTextColor(...GRAY); doc.setFontSize(8);
-    doc.text('Signature du bailleur', 52, y + 5, { align: 'center' });
-    doc.text(data.companyName, 52, y + 10, { align: 'center' });
-    if (img) { try { doc.addImage(img.data, img.format, 42, y + 14, 20, 14); } catch {} }
-  } else {
-    doc.setDrawColor(...LIGHT); doc.setLineWidth(0.5); doc.rect(8, y, 88, 28);
-    doc.setTextColor(...GRAY); doc.setFontSize(8);
-    doc.text('Signature du bailleur', 52, y + 5, { align: 'center' });
-    doc.text(data.companyName, 52, y + 10, { align: 'center' });
-  }
+  // Bailleur — case vide pour tampon/timbre
+  doc.setDrawColor(...LIGHT); doc.setLineWidth(0.5); doc.rect(8, y, 88, 28);
+  doc.setTextColor(...GRAY); doc.setFontSize(8);
+  doc.text('Signature / Cachet du bailleur', 52, y + 5, { align: 'center' });
+  doc.text(data.companyName, 52, y + 10, { align: 'center' });
 
   doc.setDrawColor(...LIGHT); doc.setLineWidth(0.5); doc.rect(108, y, 88, 28);
   doc.setTextColor(...GRAY); doc.setFontSize(8);

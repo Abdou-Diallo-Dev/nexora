@@ -82,10 +82,16 @@ export default function SuperAdminCompanies() {
     if (!deletingCompany) return;
     setDeleting(true);
     try {
-      await createClient().from('companies').delete().eq('id', deletingCompany.id);
+      const res = await fetch('/api/admin/delete-company', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyId: deletingCompany.id }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Erreur suppression');
       setItems(prev => prev.filter(c => c.id !== deletingCompany.id));
       setTotal(t => t - 1);
-      toast.success('Entreprise supprimee');
+      toast.success('Entreprise supprimée définitivement');
     } catch (e: any) {
       toast.error('Erreur: ' + e.message);
     }

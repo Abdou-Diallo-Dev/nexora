@@ -16,7 +16,7 @@ export default function NewMaintenancePage() {
   const { company } = useAuthStore();
   const router = useRouter();
   const [properties, setProperties] = useState<Property[]>([]);
-  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [tenants, setTenants]       = useState<Tenant[]>([]);
   const [form, setForm] = useState({
     property_id: '', tenant_id: '', title: '', description: '',
     category: 'other', priority: 'medium', status: 'open',
@@ -29,30 +29,31 @@ export default function NewMaintenancePage() {
     if (!company?.id) return;
     const sb = createClient();
     sb.from('properties').select('id,name').eq('company_id', company.id).then(({ data }) => setProperties(data || []));
-    sb.from('tenants').select('id,first_name,last_name').eq('company_id', company.id).eq('status','active').then(({ data }) => setTenants(data || []));
+    sb.from('tenants').select('id,first_name,last_name').eq('company_id', company.id).then(({ data }) => setTenants(data || []));
   }, [company?.id]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!company?.id) return;
+    if (!form.title.trim()) { toast.error('Le titre est obligatoire'); return; }
     setLoading(true);
     const { error } = await createClient().from('maintenance_tickets').insert({
       company_id:     company.id,
-      property_id:    form.property_id   || null,
-      tenant_id:      form.tenant_id     || null,
-      title:          form.title,
-      description:    form.description   || null,
+      property_id:    form.property_id    || null,
+      tenant_id:      form.tenant_id      || null,
+      title:          form.title.trim(),
+      description:    form.description.trim() || 'Aucune description fournie',
       category:       form.category,
       priority:       form.priority,
       status:         form.status,
       scheduled_date: form.scheduled_date || null,
       estimated_cost: form.estimated_cost ? Number(form.estimated_cost) : null,
-      notes:          form.notes          || null,
+      notes:          form.notes.trim()   || null,
     } as never);
     setLoading(false);
     if (error) { toast.error(error.message); return; }
     qc.bust('re-');
-    toast.success('Ticket créé');
+    toast.success('Ticket créé avec succès');
     router.push('/real-estate/maintenance');
   };
 
@@ -67,7 +68,8 @@ export default function NewMaintenancePage() {
 
           <div className="md:col-span-2">
             <label className={labelCls}>Titre *</label>
-            <input value={form.title} onChange={e => set('title', e.target.value)} required placeholder="Ex: Fuite robinet salle de bain" className={inputCls} />
+            <input value={form.title} onChange={e => set('title', e.target.value)} required
+              placeholder="Ex: Fuite robinet salle de bain" className={inputCls} />
           </div>
 
           <div>
@@ -111,11 +113,12 @@ export default function NewMaintenancePage() {
 
           <div>
             <label className={labelCls}>Coût estimé (FCFA)</label>
-            <input type="number" value={form.estimated_cost} onChange={e => set('estimated_cost', e.target.value)} placeholder="0" className={inputCls} />
+            <input type="number" value={form.estimated_cost} onChange={e => set('estimated_cost', e.target.value)}
+              placeholder="0" className={inputCls} />
           </div>
 
           <div className="md:col-span-2">
-            <label className={labelCls}>Description</label>
+            <label className={labelCls}>Description <span className="text-muted-foreground text-xs">(facultatif)</span></label>
             <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={3}
               placeholder="Décrivez le problème en détail..." className={inputCls} />
           </div>
@@ -128,7 +131,7 @@ export default function NewMaintenancePage() {
 
         <div className="flex gap-3 justify-end mt-6">
           <Link href="/real-estate/maintenance" className={btnSecondary}>Annuler</Link>
-          <button type="submit" disabled={loading} className={btnPrimary}>
+          <button type="submit" disabled={loading} className={btnPrimary + ' gap-2'}>
             {loading ? <LoadingSpinner size={16} /> : <Save size={16} />}Créer le ticket
           </button>
         </div>
