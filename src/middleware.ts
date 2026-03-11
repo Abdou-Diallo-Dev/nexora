@@ -1,70 +1,65 @@
-import { createServerClient } from '@supabase/ssr';
-import { NextResponse, type NextRequest } from 'next/server';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  const res = NextResponse.next();
+  const { pathname } = request.nextUrl;
+
+  const publicPaths = ['/auth/', '/api/admin/register-company', '/_next/', '/favicon'];
+  if (publicPaths.some(p => pathname.startsWith(p))) {
+    return NextResponse.next();
+  }
+
+  const response = NextResponse.next();
+
   const sb = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(n: string) { return request.cookies.get(n)?.value; },
-        set() {},
-        remove() {},
+        get(name: string) {
+          return request.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          response.cookies.set({ name, value, ...options });
+        },
+        remove(name: string, options: CookieOptions) {
+          response.cookies.set({ name, value: '', ...options });
+        },
       },
     }
   );
 
   const { data: { session } } = await sb.auth.getSession();
-  const { pathname } = request.nextUrl;
 
-  const isPublic = pathname.startsWith('/auth') || pathname.startsWith('/api');
-
-  // Pas connecté → login
-  if (!session && !isPublic) {
+  if (!session) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  // Connecté sur root ou dashboard → vérifier is_active
-  if (session && (pathname === '/' || pathname === '/dashboard')) {
-    // Vérifier si le compte est actif
-    const { data: userData } = await sb
-      .from('users')
-      .select('is_active, role')
-      .eq('id', session.user.id)
-      .maybeSingle();
+  const { data: userRow } = await sb
+    .from('users')
+    .select('is_active, role')
+    .eq('id', session.user.id)
+    .maybeSingle();
 
-    // Compte inactif → déconnecter et rediriger vers login
-    if (userData && !userData.is_active && userData.role !== 'super_admin') {
-      const response = NextResponse.redirect(new URL('/auth/login', request.url));
-      // Supprimer les cookies de session
-      response.cookies.delete('sb-access-token');
-      response.cookies.delete('sb-refresh-token');
-      return response;
-    }
-
-    return NextResponse.redirect(new URL('/auth/login', request.url));
+  if (userRow && !userRow.is_active) {
+    const redirectUrl = new URL('/auth/login', request.url);
+    redirectUrl.searchParams.set('reason', 'inactive');
+    const res = NextResponse.redirect(redirectUrl);
+    res.cookies.delete('sb-access-token');
+    res.cookies.delete('sb-refresh-token');
+    return res;
   }
 
-  // Connecté sur une page protégée → vérifier is_active
-  if (session && !isPublic) {
-    const { data: userData } = await sb
-      .from('users')
-      .select('is_active, role')
-      .eq('id', session.user.id)
-      .maybeSingle();
-
-    if (userData && !userData.is_active && userData.role !== 'super_admin') {
-      const response = NextResponse.redirect(new URL('/auth/login', request.url));
-      response.cookies.delete('sb-access-token');
-      response.cookies.delete('sb-refresh-token');
-      return response;
-    }
-  }
-
-  return res;
+  return response;
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    '/real-estate/:path*',
+    '/logistics/:path*',
+    '/super-admin/:path*',
+    '/admin/:path*',
+    '/tenant-portal/:path*',
+  ],
 };
