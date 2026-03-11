@@ -65,7 +65,7 @@ export default function DocumentsPage() {
     try {
       const now = new Date();
       await generateReceiptPDF({
-        ref: `QUITT-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`,
+      reference: `QUITT-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`,
         tenantName:    `${l.tenants.first_name} ${l.tenants.last_name}`,
         tenantPhone:   l.tenants.phone   || undefined,
         tenantEmail:   l.tenants.email,

@@ -130,8 +130,11 @@ function pb(doc: any, y: number, needed: number): number {
 export async function generateReceipt(data: {
   tenantName: string;
   tenantEmail?: string;
+  tenantPhone?: string;
   propertyName: string;
   propertyAddress: string;
+  propertyCity?: string;
+  propertyType?: string;
   periodMonth: number;
   periodYear: number;
   amount: number;
@@ -139,8 +142,11 @@ export async function generateReceipt(data: {
   paidDate?: string;
   paymentMethod: string;
   reference?: string;
+  status?: string;
   companyName: string;
   companyAddress?: string;
+  companyPhone?: string;
+  companyEmail?: string;
   companyLogoUrl?: string | null;
 }) {
   const JsPDF = await loadJsPDF();
