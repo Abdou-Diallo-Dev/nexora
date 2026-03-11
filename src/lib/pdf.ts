@@ -389,6 +389,9 @@ export async function generateContractPDF(data: {
   });
 }
 
+// Alias pour compatibilité avec documents/page.tsx et payments/page.tsx
+export const generateReceiptPDF = generateReceipt;
+
 // ─── PAIEMENT (alias quittance) ───────────────────────────────
 export async function generatePaymentPDF(data: {
   tenantName: string;
