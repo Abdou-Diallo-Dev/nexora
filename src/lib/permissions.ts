@@ -127,7 +127,7 @@ export const getNavItems = (role: UserRole): string[] => {
   if (role === 'admin' || role === 'super_admin') {
     return ['properties','tenants','leases','payments','onlinePayment','expenses',
       'invoices','documents','contracts','maintenance','notifications',
-      'analytics','stats','messages','reports','contractTemplate','settings'];
+      'analytics','stats','messages','reports','inspections','terminations','contractTemplate','settings'];
   }
   const p = getPerms(role);
   const map: Record<string, boolean> = {
@@ -145,6 +145,8 @@ export const getNavItems = (role: UserRole): string[] => {
     stats:         !!p.viewStats,
     messages:      !!p.viewMessages,
     reports:       !!p.viewReports,
+    inspections:   true,
+    terminations:  (role as string) === 'manager',
   };
   return Object.entries(map).filter(([,v]) => v).map(([k]) => k);
 };

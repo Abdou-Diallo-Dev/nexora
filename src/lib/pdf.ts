@@ -871,3 +871,328 @@ export async function generateMaintenancePDF(data: {
   drawFooter(doc, 1, 1, data.companyName);
   doc.save('ticket-maintenance-' + data.ticketRef + '.pdf');
 }
+
+// ─────────────────────────────────────────────────────────────
+// ÉTAT DES LIEUX
+// ─────────────────────────────────────────────────────────────
+export type InspectionRoom = {
+  name: string;
+  condition: string;
+  observations: string;
+};
+
+export type InspectionPhoto = {
+  data: string;
+  format: string;
+  caption: string;
+};
+
+export async function generateInspectionPDF(params: {
+  type: 'entree' | 'sortie';
+  tenantName: string;
+  propertyName: string;
+  propertyAddress: string;
+  date: string;
+  rooms: InspectionRoom[];
+  observations?: string;
+  photos?: InspectionPhoto[];
+  companyName: string;
+  companyLogoUrl?: string | null;
+  companyAddress?: string | null;
+  companyEmail?: string | null;
+  companyPhone?: string | null;
+}) {
+  const JsPDF = await getJsPDF();
+  if (!JsPDF) return;
+  const doc = new (JsPDF as any)({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const PW = 210;
+  const PM = 14;
+
+  const typeLabel = params.type === 'entree' ? "ÉTAT DES LIEUX D'ENTRÉE" : "ÉTAT DES LIEUX DE SORTIE";
+  const logoBase64 = params.companyLogoUrl ? await loadLogoBase64(params.companyLogoUrl) : null;
+
+  // Header
+  doc.setFillColor(...C.headerBg);
+  doc.rect(0, 0, PW, 32, 'F');
+  drawLogoOrInitials(doc, logoBase64, params.companyName, 20, 16, 8);
+  doc.setTextColor(...C.white);
+  doc.setFontSize(15); doc.setFont('helvetica', 'bold');
+  doc.text(typeLabel, 34, 14);
+  doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+  doc.text(params.date + '  ·  ' + params.companyName, 34, 22);
+  let y = 40;
+
+  // Infos principales
+  doc.setFillColor(...C.light);
+  doc.roundedRect(PM, y, PW - PM * 2, 26, 3, 3, 'F');
+  doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.gray);
+  doc.text('LOCATAIRE', PM + 4, y + 7);
+  doc.text('BIEN IMMOBILIER', PW / 2 + 4, y + 7);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(...C.dark);
+  doc.text(params.tenantName, PM + 4, y + 15);
+  doc.text(params.propertyName, PW / 2 + 4, y + 15);
+  doc.setFontSize(8); doc.setTextColor(...C.gray);
+  doc.text(params.propertyAddress, PW / 2 + 4, y + 21);
+  y += 32;
+
+  // Tableau des pièces
+  doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.dark);
+  doc.text('Détail par pièce', PM, y); y += 7;
+
+  const condColor: Record<string, [number,number,number]> = {
+    'Bon état': [22, 163, 74],
+    'Moyen':    [234, 179, 8],
+    'Mauvais':  [220, 38, 38],
+  };
+
+  for (const room of params.rooms) {
+    if (y > 255) { doc.addPage(); y = 20; }
+    doc.setFillColor(...C.light);
+    doc.roundedRect(PM, y, PW - PM * 2, 20, 2, 2, 'F');
+    doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.dark);
+    doc.text(room.name, PM + 4, y + 8);
+    const col = condColor[room.condition] || C.gray;
+    doc.setFillColor(...col);
+    doc.roundedRect(PW - 56, y + 3, 40, 7, 2, 2, 'F');
+    doc.setTextColor(...C.white); doc.setFontSize(7.5); doc.setFont('helvetica', 'bold');
+    doc.text(room.condition, PW - 36, y + 7.5, { align: 'center' });
+    doc.setTextColor(...C.gray); doc.setFontSize(7.5); doc.setFont('helvetica', 'normal');
+    const obs = (room.observations || 'Aucune observation').substring(0, 90);
+    doc.text(obs, PM + 4, y + 16);
+    y += 24;
+  }
+
+  // Observations générales
+  if (params.observations) {
+    if (y > 245) { doc.addPage(); y = 20; }
+    y += 3;
+    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.dark);
+    doc.text('Observations générales', PM, y); y += 6;
+    doc.setFillColor(...C.light);
+    const obsLines = doc.splitTextToSize(params.observations, PW - PM * 2 - 10);
+    const obsH = obsLines.length * 5 + 10;
+    doc.roundedRect(PM, y, PW - PM * 2, obsH, 2, 2, 'F');
+    doc.setFontSize(8.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(...C.dark);
+    doc.text(obsLines, PM + 4, y + 7);
+    y += obsH + 6;
+  }
+
+  // Photos
+  if (params.photos && params.photos.length > 0) {
+    if (y > 200) { doc.addPage(); y = 20; }
+    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.dark);
+    doc.text('Photos', PM, y); y += 7;
+    let px = PM;
+    for (const photo of params.photos.slice(0, 6)) {
+      try {
+        doc.addImage(photo.data, photo.format, px, y, 54, 38);
+        doc.setFontSize(6.5); doc.setTextColor(...C.gray);
+        doc.text(photo.caption.substring(0, 22), px + 27, y + 41, { align: 'center' });
+      } catch {}
+      px += 60;
+      if (px > PW - 60) { px = PM; y += 48; }
+    }
+    y += 48;
+  }
+
+  // Signatures
+  if (y > 245) { doc.addPage(); y = 20; }
+  y += 8;
+  doc.setDrawColor(...C.gray); doc.setLineWidth(0.3);
+  doc.line(PM, y + 15, PM + 70, y + 15);
+  doc.line(PW - PM - 70, y + 15, PW - PM, y + 15);
+  doc.setFontSize(7.5); doc.setTextColor(...C.gray);
+  doc.text('Signature du bailleur', PM + 35, y + 20, { align: 'center' });
+  doc.text('Signature du locataire', PW - PM - 35, y + 20, { align: 'center' });
+
+  // Footer
+  const H2 = doc.internal.pageSize.getHeight();
+  doc.setFillColor(...C.light);
+  doc.rect(0, H2 - 12, PW, 12, 'F');
+  doc.setFontSize(7); doc.setTextColor(...C.gray);
+  doc.text(params.companyName + ' — Document généré electroniquement', PW / 2, H2 - 5, { align: 'center' });
+
+  doc.save(`etat-des-lieux-${params.type}-${params.tenantName.replace(/\s+/g, '-')}.pdf`);
+}
+
+// ─────────────────────────────────────────────────────────────
+// RÉSILIATION / DOCUMENTS ADMINISTRATIFS
+// ─────────────────────────────────────────────────────────────
+export type TerminationDocType = 'resiliation_contrat' | 'resiliation_convention' | 'decharge' | 'attestation_fin';
+
+const TERMINATION_LABELS: Record<TerminationDocType, { title: string; subtitle: string }> = {
+  resiliation_contrat:    { title: 'RÉSILIATION DE CONTRAT DE LOCATION', subtitle: 'Document officiel de résiliation' },
+  resiliation_convention: { title: 'RÉSILIATION DE CONVENTION',          subtitle: 'Document officiel' },
+  decharge:               { title: 'DÉCHARGE',                           subtitle: 'Document de décharge entre les parties' },
+  attestation_fin:        { title: 'ATTESTATION DE FIN DE LOCATION',     subtitle: 'Attestation certifiant la fin du bail' },
+};
+
+export async function generateTerminationPDF(params: {
+  docType: TerminationDocType;
+  tenantName: string;
+  tenantEmail?: string;
+  tenantPhone?: string;
+  propertyName: string;
+  propertyAddress: string;
+  startDate: string;
+  endDate: string;
+  terminationDate: string;
+  rentAmount: number;
+  depositReturned?: number;
+  reason?: string;
+  customText?: string;
+  companyName: string;
+  companyAddress?: string | null;
+  companyEmail?: string | null;
+  companyPhone?: string | null;
+  companyLogoUrl?: string | null;
+}) {
+  const JsPDF = await getJsPDF();
+  if (!JsPDF) return;
+  const doc = new (JsPDF as any)({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const PW = 210;
+  const PM = 14;
+  const PTW = PW - PM * 2;
+
+  const { title, subtitle } = TERMINATION_LABELS[params.docType];
+  const logoBase64 = params.companyLogoUrl ? await loadLogoBase64(params.companyLogoUrl) : null;
+
+  // Header
+  doc.setFillColor(...C.headerBg);
+  doc.rect(0, 0, PW, 32, 'F');
+  drawLogoOrInitials(doc, logoBase64, params.companyName, 20, 16, 8);
+  doc.setTextColor(...C.white);
+  doc.setFontSize(13); doc.setFont('helvetica', 'bold');
+  doc.text(title, 34, 14);
+  doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+  doc.text(subtitle + '  ·  ' + params.companyName, 34, 22);
+  let y = 40;
+
+  // Parties
+  doc.setFillColor(...C.light);
+  doc.roundedRect(PM, y, PTW, 34, 3, 3, 'F');
+  doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.gray);
+  doc.text('BAILLEUR', PM + 4, y + 7);
+  doc.text('LOCATAIRE', PW / 2 + 4, y + 7);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(...C.dark);
+  doc.text(params.companyName, PM + 4, y + 14);
+  doc.text(params.tenantName, PW / 2 + 4, y + 14);
+  doc.setFontSize(8); doc.setTextColor(...C.gray);
+  if (params.companyAddress) doc.text(params.companyAddress, PM + 4, y + 21);
+  if (params.companyEmail)   doc.text(params.companyEmail,   PM + 4, y + 27);
+  if (params.tenantEmail)    doc.text(params.tenantEmail,    PW / 2 + 4, y + 21);
+  if (params.tenantPhone)    doc.text(params.tenantPhone,    PW / 2 + 4, y + 27);
+  y += 40;
+
+  // Bien concerné
+  doc.setFillColor(239, 246, 255);
+  doc.roundedRect(PM, y, PTW, 26, 3, 3, 'F');
+  doc.setDrawColor(...C.primary); doc.setLineWidth(0.5);
+  doc.line(PM, y, PM, y + 26);
+  doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.primary);
+  doc.text('BIEN CONCERNÉ', PM + 5, y + 7);
+  doc.setFont('helvetica', 'normal'); doc.setTextColor(...C.dark); doc.setFontSize(10);
+  doc.text(params.propertyName, PM + 5, y + 15);
+  doc.setFontSize(8); doc.setTextColor(...C.gray);
+  doc.text(params.propertyAddress, PM + 5, y + 21);
+  doc.text(`Bail du ${params.startDate} au ${params.endDate}`, PW / 2 + 4, y + 21);
+  y += 32;
+
+  // Corps
+  y += 4;
+  const bodyText = params.customText || getTerminationBody(params.docType, params);
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(...C.dark);
+  const bodyLines = doc.splitTextToSize(bodyText, PTW);
+  doc.text(bodyLines, PM, y);
+  y += bodyLines.length * 5 + 10;
+
+  // Récap financier
+  if (params.docType === 'decharge' || params.docType === 'attestation_fin') {
+    if (y > 235) { doc.addPage(); y = 20; }
+    doc.setFillColor(...C.light);
+    doc.roundedRect(PM, y, PTW, params.depositReturned !== undefined ? 22 : 14, 3, 3, 'F');
+    doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.dark);
+    doc.text('Récapitulatif financier', PM + 4, y + 8);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...C.gray);
+    doc.text(`Loyer mensuel : ${params.rentAmount.toLocaleString('fr-FR')} FCFA`, PM + 4, y + 15);
+    if (params.depositReturned !== undefined) {
+      doc.text(`Dépôt de garantie restitué : ${params.depositReturned.toLocaleString('fr-FR')} FCFA`, PW / 2 + 4, y + 15);
+    }
+    y += params.depositReturned !== undefined ? 28 : 20;
+  }
+
+  // Signatures
+  if (y > 240) { doc.addPage(); y = 20; }
+  y += 8;
+  doc.setFontSize(8.5); doc.setTextColor(...C.gray);
+  doc.text(`Fait à ____________, le ${params.terminationDate}`, PM, y); y += 14;
+  doc.setDrawColor(...C.gray); doc.setLineWidth(0.3);
+  doc.line(PM, y + 15, PM + 70, y + 15);
+  doc.line(PW - PM - 70, y + 15, PW - PM, y + 15);
+  doc.setFontSize(7.5);
+  doc.text('Signature du bailleur', PM + 35, y + 20, { align: 'center' });
+  doc.text('Signature du locataire', PW - PM - 35, y + 20, { align: 'center' });
+
+  // Footer
+  const PH = doc.internal.pageSize.getHeight();
+  doc.setFillColor(...C.light);
+  doc.rect(0, PH - 12, PW, 12, 'F');
+  doc.setFontSize(7); doc.setTextColor(...C.gray);
+  doc.text(params.companyName + ' — Document généré electroniquement', PW / 2, PH - 5, { align: 'center' });
+
+  const filename = `${params.docType}-${params.tenantName.replace(/\s+/g, '-')}-${params.terminationDate}.pdf`;
+  doc.save(filename);
+}
+
+function getTerminationBody(type: TerminationDocType, p: any): string {
+  const rent = p.rentAmount?.toLocaleString('fr-FR') || '0';
+  switch (type) {
+    case 'resiliation_contrat':
+      return `Entre les soussignés,\n\n${p.companyName} (ci-après "le Bailleur") et ${p.tenantName} (ci-après "le Locataire"),\n\nIl a été convenu ce qui suit :\n\nLes parties conviennent de mettre fin au contrat de location portant sur le bien "${p.propertyName}", sis ${p.propertyAddress}, à compter du ${p.terminationDate}.\n\nLe contrat initial prenait effet le ${p.startDate} et devait s'achever le ${p.endDate}.\n\nLe Locataire s'engage à remettre les clés du logement au Bailleur au plus tard à la date de résiliation susmentionnée, et à laisser les lieux en bon état de propreté et d'entretien.\n\n${p.reason ? `Motif de résiliation : ${p.reason}` : ''}`;
+    case 'resiliation_convention':
+      return `Entre les soussignés,\n\n${p.companyName} et ${p.tenantName},\n\nLes parties conviennent de mettre fin à la convention relative au bien "${p.propertyName}" à compter du ${p.terminationDate}.\n\nTous les engagements découlant de cette convention sont réputés éteints à la date de résiliation, sous réserve du règlement de toutes sommes dues.\n\n${p.reason ? `Motif : ${p.reason}` : ''}`;
+    case 'decharge':
+      return `Je soussigné(e), ${p.tenantName}, déclare avoir reçu de ${p.companyName} l'ensemble des documents et clés relatifs au bien "${p.propertyName}", sis ${p.propertyAddress}.\n\nJe reconnais avoir pris connaissance des termes du contrat de location et m'engage à respecter toutes les obligations qui en découlent.\n\nJe décharge par la présente ${p.companyName} de toute responsabilité concernant l'état du bien à la date du ${p.terminationDate}.\n\nLoyer convenu : ${rent} FCFA/mois.`;
+    case 'attestation_fin':
+      return `Je soussigné(e), représentant de ${p.companyName}, atteste par la présente que :\n\n${p.tenantName} a occupé le bien immobilier "${p.propertyName}", sis ${p.propertyAddress}, du ${p.startDate} au ${p.endDate}.\n\nLe bail de location a pris fin le ${p.terminationDate}. Le Locataire a restitué les clés et libéré les lieux conformément aux dispositions contractuelles.\n\nLe loyer mensuel était de ${rent} FCFA. À ce jour, toutes les obligations financières ont été honorées.\n\nCette attestation est délivrée à ${p.tenantName} pour servir et valoir ce que de droit.`;
+    default:
+      return '';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// CALCUL PRORATA LOYER
+// ─────────────────────────────────────────────────────────────
+export function calculateProrata(params: {
+  rentAmount: number;
+  startDay: number;
+  month: number;
+  year: number;
+}): { amount: number; isProrata: boolean; daysOccupied: number; totalDays: number; dailyRate: number } {
+  const { rentAmount, startDay, month, year } = params;
+  const totalDays = new Date(year, month, 0).getDate();
+
+  // Règle : du 1 au 5 → loyer complet
+  if (startDay <= 5) {
+    return {
+      amount: rentAmount,
+      isProrata: false,
+      daysOccupied: totalDays,
+      totalDays,
+      dailyRate: Math.round(rentAmount / totalDays),
+    };
+  }
+
+  // À partir du 6 → prorata
+  const daysOccupied = totalDays - startDay + 1;
+  const dailyRate = rentAmount / totalDays;
+  const amount = Math.round(dailyRate * daysOccupied);
+
+  return {
+    amount,
+    isProrata: true,
+    daysOccupied,
+    totalDays,
+    dailyRate: Math.round(dailyRate),
+  };
+}

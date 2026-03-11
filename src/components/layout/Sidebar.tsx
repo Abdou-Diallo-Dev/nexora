@@ -8,7 +8,7 @@ import {
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, X,
   Truck, MapPin, ShoppingCart, Box, Car, Building2, Receipt, MessageSquare,
   FileCheck, Bell, TrendingUp, Globe, Package,
-  Shield, Crown, Lock, LayoutDashboard, Zap, Settings, ScrollText,
+  Shield, Crown, Lock, LayoutDashboard, Zap, Settings, ScrollText, ClipboardCheck,
 } from 'lucide-react';
 import { useAuthStore, UserRole } from '@/lib/store';
 import { getNavItems } from '@/lib/permissions';
@@ -32,6 +32,8 @@ const ALL_RE_ITEMS: NavItem[] = [
   { key:'invoices',        href:'/real-estate/invoices',       label:'Factures',           icon:<FileText size={15}/> },
   { key:'reports',         href:'/real-estate/reports',        label:'Rapports financiers',icon:<BarChart3 size={15}/> },
   { key:'messages',        href:'/real-estate/messages',       label:'Messagerie',         icon:<MessageSquare size={15}/> },
+  { key:'inspections',     href:'/real-estate/inspections',    label:'États des lieux',    icon:<ClipboardCheck size={15}/> },
+  { key:'terminations',    href:'/real-estate/terminations',   label:'Résiliations',       icon:<ScrollText size={15}/> },
   { key:'contractTemplate',href:'/admin/contract-template',    label:'Modele de contrat',  icon:<ScrollText size={15}/> },
   { key:'settings',        href:'/admin/settings',             label:'Parametres',         icon:<Settings size={15}/> },
 ];
@@ -42,6 +44,7 @@ const RE_GROUP_MAP: { label: string; keys: string[]; adminOnly?: boolean }[] = [
   { label:'Suivi',         keys:['maintenance','notifications','analytics','stats'] },
   { label:'Comptabilite',  keys:['invoices','reports'] },
   { label:'Communication', keys:['messages'] },
+  { label:'Documents',     keys:['inspections','terminations'] },
   { label:'Parametres',    keys:['contractTemplate','settings'], adminOnly: true },
 ];
 
