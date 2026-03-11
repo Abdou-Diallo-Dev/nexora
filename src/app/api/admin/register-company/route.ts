@@ -40,14 +40,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Erreur company: ' + compError.message }, { status: 400 });
     }
 
-    const { error: userError } = await admin.from('users').insert({
+    const { error: userError } = await admin.from('users').upsert({
       id: uid,
       email,
       full_name,
       role: 'admin',
       company_id: (company as any).id,
       is_active: false,
-    });
+    }).eq('id', uid);
 
     if (userError) {
       await admin.auth.admin.deleteUser(uid);
