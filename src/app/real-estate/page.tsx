@@ -1,12 +1,12 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Home, Users, CreditCard, Wrench, AlertTriangle, Clock, FileText } from 'lucide-react';
+import { Home, Users, CreditCard, Wrench, AlertTriangle, Clock, FileText, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore, UserRole } from '@/lib/store';
-import { StatCard, LoadingSpinner, cardCls, btnPrimary } from '@/components/ui';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { StatCard, LoadingSpinner, Badge, cardCls, btnPrimary } from '@/components/ui';
+import { formatCurrency, formatDate, getPropertyTypeLabel } from '@/lib/utils';
 import { qc } from '@/lib/cache';
 import { getDashboardSections, can } from '@/lib/permissions';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -22,6 +22,18 @@ type KPIs = {
   chart: { month:string; revenue:number }[];
 };
 
+type PropertySlide = {
+  id: string; name: string; address: string; city: string; type: string;
+  status: string; rent_amount: number; rooms_count: number|null; image_urls: string[]|null;
+};
+
+const STATUS: Record<string, any> = {
+  available:   { label: 'Disponible',  variant: 'success' },
+  rented:      { label: 'Loué',        variant: 'info'    },
+  maintenance: { label: 'Maintenance', variant: 'warning' },
+  inactive:    { label: 'Inactif',     variant: 'default' },
+};
+
 const ROLE_WELCOME: Record<string, string> = {
   admin:   'Acces complet — toutes les fonctionnalites disponibles',
   manager: 'Gestion operationnelle — biens, locataires, paiements, maintenance',
@@ -32,19 +44,41 @@ const ROLE_WELCOME: Record<string, string> = {
 export default function REDashboard() {
   const { company, user } = useAuthStore();
   const [data, setData] = useState<KPIs | null>(null);
+  const [properties, setProperties] = useState<PropertySlide[]>([]);
   const [loading, setLoading] = useState(true);
+  const [slideIndex, setSlideIndex] = useState(0);
+  const [imgIndexes, setImgIndexes] = useState<Record<string, number>>({});
+  const autoRef = useRef<NodeJS.Timeout | null>(null);
 
   const role = (user?.role || 'viewer') as UserRole;
   const sections = getDashboardSections(role);
+
+  // Auto-slide properties
+  useEffect(() => {
+    if (properties.length <= 1) return;
+    autoRef.current = setInterval(() => {
+      setSlideIndex(i => (i + 1) % properties.length);
+    }, 4000);
+    return () => { if (autoRef.current) clearInterval(autoRef.current); };
+  }, [properties.length]);
 
   useEffect(() => {
     if (!company?.id) return;
     const cacheKey = 're-dash-' + company.id;
     const cached = qc.get<KPIs>(cacheKey);
-    if (cached) { setData(cached); setLoading(false); return; }
+    if (cached) { setData(cached); setLoading(false); }
 
     const sb = createClient();
     const cid = company.id;
+
+    // Fetch properties with images
+    sb.from('properties')
+      .select('id,name,address,city,type,status,rent_amount,rooms_count,image_urls')
+      .eq('company_id', cid)
+      .order('created_at', { ascending: false })
+      .limit(10)
+      .then(({ data: props }) => setProperties((props || []) as PropertySlide[]));
+
     Promise.all([
       sb.from('properties').select('id,status').eq('company_id', cid),
       sb.from('leases').select('id,status,end_date,rent_amount,tenants(first_name,last_name),properties(address)').eq('company_id', cid),
@@ -98,6 +132,11 @@ export default function REDashboard() {
     { name:'Autres',     value:Math.max(0,data.totalProps-data.rentedProps-data.availableProps), color:'#94a3b8' },
   ].filter(d=>d.value>0);
 
+  const prevSlide = () => { if (autoRef.current) clearInterval(autoRef.current); setSlideIndex(i => (i - 1 + properties.length) % properties.length); };
+  const nextSlide = () => { if (autoRef.current) clearInterval(autoRef.current); setSlideIndex(i => (i + 1) % properties.length); };
+
+  const setImgIdx = (propId: string, idx: number) => setImgIndexes(prev => ({ ...prev, [propId]: idx }));
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -117,7 +156,7 @@ export default function REDashboard() {
         )}
       </div>
 
-      {/* Role info banner for limited roles */}
+      {/* Role info banner */}
       {(role === 'agent' || role === 'viewer') && (
         <div className={'px-4 py-3 rounded-2xl border text-sm flex items-center gap-2 '+(
           role==='viewer'
@@ -129,7 +168,7 @@ export default function REDashboard() {
         </div>
       )}
 
-      {/* KPI Cards — filtered by role */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { show:true, title:'Biens immobiliers', value:data.totalProps, subtitle:data.rentedProps+' loues · '+data.availableProps+' disponibles', icon:<Home size={20}/>, color:'blue' as const, href:'/real-estate/properties' },
@@ -155,7 +194,108 @@ export default function REDashboard() {
         </div>
       )}
 
-      {/* Charts — admin & manager only */}
+      {/* ── SLIDER BIENS ── */}
+      {properties.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-foreground">Biens récents</h2>
+            <Link href="/real-estate/properties" className="text-xs text-primary hover:underline">Voir tous →</Link>
+          </div>
+          <div className="relative">
+            {/* Slide principal */}
+            <div className="overflow-hidden rounded-2xl">
+              {properties.map((p, pi) => {
+                const imgs = p.image_urls && p.image_urls.length > 0 ? p.image_urls : [];
+                const imgIdx = imgIndexes[p.id] || 0;
+                const st = STATUS[p.status] || { label: p.status, variant: 'default' };
+                return (
+                  <motion.div key={p.id}
+                    initial={{ opacity: 0 }} animate={{ opacity: pi === slideIndex ? 1 : 0 }}
+                    style={{ display: pi === slideIndex ? 'block' : 'none' }}
+                    className="relative">
+                    <Link href={'/real-estate/properties/' + p.id}>
+                      {/* Image principale */}
+                      <div className="relative w-full h-64 md:h-80 bg-slate-100 dark:bg-slate-700">
+                        {imgs.length > 0 ? (
+                          <img src={imgs[imgIdx]} alt={p.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Home size={48} className="text-slate-300" />
+                          </div>
+                        )}
+                        {/* Gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                        
+                        {/* Badge statut */}
+                        <div className="absolute top-4 left-4">
+                          <Badge variant={st.variant}>{st.label}</Badge>
+                        </div>
+
+                        {/* Compteur photos du bien */}
+                        {imgs.length > 1 && (
+                          <div className="absolute top-4 right-4 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+                            {imgIdx + 1}/{imgs.length} 📷
+                          </div>
+                        )}
+
+                        {/* Infos en bas */}
+                        <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                          <p className="font-bold text-lg">{p.name}</p>
+                          <p className="text-sm opacity-80 flex items-center gap-1"><MapPin size={12}/>{p.address}, {p.city}</p>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-xs opacity-70">{getPropertyTypeLabel(p.type)}{p.rooms_count ? ' · ' + p.rooms_count + ' pièces' : ''}</span>
+                            <span className="font-bold text-lg">{formatCurrency(p.rent_amount)}/mois</span>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+
+                    {/* Flèches navigation photos du bien */}
+                    {imgs.length > 1 && (
+                      <>
+                        <button onClick={e => { e.preventDefault(); setImgIdx(p.id, (imgIdx - 1 + imgs.length) % imgs.length); }}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center z-10">
+                          <ChevronLeft size={16}/>
+                        </button>
+                        <button onClick={e => { e.preventDefault(); setImgIdx(p.id, (imgIdx + 1) % imgs.length); }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center z-10">
+                          <ChevronRight size={16}/>
+                        </button>
+                      </>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Flèches navigation entre biens */}
+            {properties.length > 1 && (
+              <>
+                <button onClick={prevSlide}
+                  className="absolute -left-4 top-1/2 -translate-y-1/2 w-9 h-9 bg-white dark:bg-slate-800 shadow-lg border border-border text-foreground rounded-full flex items-center justify-center z-20 hover:bg-slate-50 transition-colors">
+                  <ChevronLeft size={18}/>
+                </button>
+                <button onClick={nextSlide}
+                  className="absolute -right-4 top-1/2 -translate-y-1/2 w-9 h-9 bg-white dark:bg-slate-800 shadow-lg border border-border text-foreground rounded-full flex items-center justify-center z-20 hover:bg-slate-50 transition-colors">
+                  <ChevronRight size={18}/>
+                </button>
+              </>
+            )}
+
+            {/* Dots navigation entre biens */}
+            {properties.length > 1 && (
+              <div className="flex justify-center gap-1.5 mt-3">
+                {properties.map((_, i) => (
+                  <button key={i} onClick={() => setSlideIndex(i)}
+                    className={'h-1.5 rounded-full transition-all ' + (i === slideIndex ? 'w-6 bg-primary' : 'w-1.5 bg-slate-300')} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Charts */}
       {sections.showCharts && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className={cardCls+' lg:col-span-2 p-5'}>
@@ -239,28 +379,20 @@ export default function REDashboard() {
         </div>
       )}
 
-      {/* Maintenance rapide pour agent */}
+      {/* Agent actions */}
       {role === 'agent' && (
         <div className={cardCls+' p-5'}>
           <h3 className="font-semibold text-foreground mb-3">Vos actions disponibles</h3>
           <div className="grid grid-cols-2 gap-3">
-            <Link href="/real-estate/payments/new" className="flex items-center gap-2.5 p-4 rounded-2xl border border-blue-100 bg-blue-50 hover:bg-blue-100 transition-colors text-blue-700">
-              <CreditCard size={16}/><span className="text-sm font-medium">Enregistrer paiement</span>
-            </Link>
-            <Link href="/real-estate/maintenance/new" className="flex items-center gap-2.5 p-4 rounded-2xl border border-orange-100 bg-orange-50 hover:bg-orange-100 transition-colors text-orange-700">
-              <Wrench size={16}/><span className="text-sm font-medium">Nouveau ticket</span>
-            </Link>
-            <Link href="/real-estate/payments" className="flex items-center gap-2.5 p-4 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100 transition-colors text-slate-700">
-              <CreditCard size={16}/><span className="text-sm font-medium">Voir paiements</span>
-            </Link>
-            <Link href="/real-estate/maintenance" className="flex items-center gap-2.5 p-4 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100 transition-colors text-slate-700">
-              <Wrench size={16}/><span className="text-sm font-medium">Voir maintenance</span>
-            </Link>
+            <Link href="/real-estate/payments/new" className="flex items-center gap-2.5 p-4 rounded-2xl border border-blue-100 bg-blue-50 hover:bg-blue-100 transition-colors text-blue-700"><CreditCard size={16}/><span className="text-sm font-medium">Enregistrer paiement</span></Link>
+            <Link href="/real-estate/maintenance/new" className="flex items-center gap-2.5 p-4 rounded-2xl border border-orange-100 bg-orange-50 hover:bg-orange-100 transition-colors text-orange-700"><Wrench size={16}/><span className="text-sm font-medium">Nouveau ticket</span></Link>
+            <Link href="/real-estate/payments" className="flex items-center gap-2.5 p-4 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100 transition-colors text-slate-700"><CreditCard size={16}/><span className="text-sm font-medium">Voir paiements</span></Link>
+            <Link href="/real-estate/maintenance" className="flex items-center gap-2.5 p-4 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100 transition-colors text-slate-700"><Wrench size={16}/><span className="text-sm font-medium">Voir maintenance</span></Link>
           </div>
         </div>
       )}
 
-      {/* Viewer: lecture seule notice */}
+      {/* Viewer */}
       {role === 'viewer' && (
         <div className={cardCls+' p-5'}>
           <h3 className="font-semibold text-foreground mb-3">Acces en lecture seule</h3>
@@ -279,7 +411,7 @@ export default function REDashboard() {
         </div>
       )}
 
-      {/* Quick actions — admin & manager */}
+      {/* Quick actions */}
       {sections.showQuickActions && role !== 'agent' && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
