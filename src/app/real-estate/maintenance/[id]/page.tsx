@@ -96,22 +96,22 @@ export default function TicketDetailPage() {
     try {
       const ref = `TKT-${t.created_at.slice(0,10).replace(/-/g,'')}-${id.slice(0,6).toUpperCase()}`;
       await generateMaintenancePDF({
-        ticketRef: ref,
+        ticketNumber: ref,
         title: t.title,
-        description: t.description,
+        description: t.description ?? undefined,
         category: t.category,
         priority: t.priority,
         status: t.status,
         propertyName: t.properties?.name || '—',
-        propertyAddress: t.properties?.address,
-        tenantName: t.tenants ? `${t.tenants.first_name} ${t.tenants.last_name}` : null,
-        scheduledDate: t.scheduled_date,
-        completedDate: t.completed_date,
+        propertyAddress: t.properties?.address ?? undefined,
+        tenantName: t.tenants ? `${t.tenants.first_name} ${t.tenants.last_name}` : undefined,
+        scheduledDate: t.scheduled_date ?? undefined,
+        completedDate: t.completed_date ?? undefined,
         estimatedCost: t.estimated_cost ?? undefined,
         actualCost: t.actual_cost ?? undefined,
-        notes: t.notes,
+        notes: t.notes ?? undefined,
         createdAt: t.created_at,
-        companyName: company?.name || 'ImmoGest Pro',
+        companyName: company?.name || 'Nexora',
       });
       toast.success('Ticket PDF téléchargé');
     } catch { toast.error('Erreur génération PDF'); }
