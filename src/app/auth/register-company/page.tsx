@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Zap, Eye, EyeOff, Building2, Truck, Check } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { LoadingSpinner, inputCls, labelCls, btnPrimary } from '@/components/ui';
 
@@ -47,49 +46,23 @@ export default function RegisterCompanyPage() {
     if (!form.email.trim()) { toast.error('Email requis'); return; }
 
     setLoading(true);
-    const supabase = createClient();
-
     try {
-      // 1. Créer le compte auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-        options: {
-          data: { full_name: form.full_name },
-          emailRedirectTo: window.location.origin + '/auth/login',
-        },
+      // Tout se passe côté serveur avec le service role — pas de signUp client
+      const res = await fetch('/api/admin/register-company', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+          full_name: form.full_name,
+          company_name: form.company_name,
+          company_email: form.company_email,
+          company_phone: form.company_phone,
+          modules: form.modules,
+        }),
       });
-      if (authError) { toast.error(authError.message); return; }
-      const uid = authData.user?.id;
-      if (!uid) { toast.error('Erreur creation compte'); return; }
-
-      // 2. Créer la company PENDANT que l'utilisateur est connecté
-      const { data: company, error: compError } = await supabase.from('companies').insert({
-        name: form.company_name,
-        email: form.company_email || form.email,
-        phone: form.company_phone || null,
-        modules: form.modules,
-        plan: 'free',
-        is_active: false,
-      } as never).select().single();
-
-      if (compError) { toast.error('Erreur creation entreprise: ' + compError.message); return; }
-
-      // 3. Upsert user profile
-      await supabase.from('users').upsert({
-        id: uid, email: form.email, full_name: form.full_name,
-        role: 'admin', company_id: (company as any).id, is_active: false,
-      } as never);
-
-      // 4. Force update role
-      await supabase.from('users').update({
-        role: 'admin', company_id: (company as any).id,
-        is_active: false, full_name: form.full_name,
-      } as never).eq('id', uid);
-
-      // 5. Déconnecter APRÈS toutes les opérations
-      await supabase.auth.signOut();
-
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error || 'Erreur inscription'); return; }
       setDone(true);
     } catch (err: any) {
       toast.error(err.message || 'Erreur inattendue');
