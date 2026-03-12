@@ -30,6 +30,10 @@ async function sendOTPEmail(email: string, code: string, companyName: string): P
         `,
       }),
     });
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.error(`[RESEND ERROR] status=${res.status} body=${errBody}`);
+    }
     return res.ok;
   }
   // Pas de RESEND_API_KEY → retourner false pour que le front affiche le code
