@@ -33,11 +33,10 @@ export default function DischargePage() {
     if (!company?.id) return;
     const sb = createClient();
     Promise.all([
-      sb.from('leases').select('id,start_date,end_date,rent_amount,deposit_amount,tenants(first_name,last_name,email,phone),properties(name,address,city)')
-        .eq('company_id', company.id).order('created_at', { ascending: false }),
+      fetch(`/api/real-estate/leases-active?company_id=${company.id}`).then(r => r.json()),
       sb.from('companies').select('name,logo_url,address,email,phone,primary_color').eq('id', company.id).maybeSingle(),
-    ]).then(([{ data: l }, { data: c }]) => {
-      setLeases((l || []) as unknown as Lease[]);
+    ]).then(([leasesRes, { data: c }]) => {
+      setLeases((leasesRes.data || []) as unknown as Lease[]);
       setCompanySettings(c);
       setLoading(false);
     });
