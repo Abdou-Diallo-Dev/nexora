@@ -26,6 +26,7 @@ export interface AppCompany {
   plan: string;
   is_active: boolean;
   logo_url?: string | null;
+  primary_color?: string | null;
   created_at: string;
 }
 
