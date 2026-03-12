@@ -9,7 +9,7 @@ import {
   Truck, MapPin, ShoppingCart, Box, Car, Building2, Receipt, MessageSquare,
   FileCheck, Bell, TrendingUp, Globe, Package,
   Shield, Crown, Lock, LayoutDashboard, Zap, Settings, ScrollText, ClipboardCheck,
-  PieChart, DollarSign, FileMinus, FileSignature,
+  PieChart, DollarSign, FileSignature,
 } from 'lucide-react';
 import { useAuthStore, UserRole } from '@/lib/store';
 import { getNavItems } from '@/lib/permissions';
@@ -26,7 +26,6 @@ const ALL_RE_ITEMS: NavItem[] = [
   { key:'leases',           href:'/real-estate/leases',            label:'Contrats de bail',    icon:<FileText size={15}/> },
   { key:'inspections',      href:'/real-estate/inspections',       label:'États des lieux',     icon:<ClipboardCheck size={15}/> },
   { key:'terminations',     href:'/real-estate/terminations',      label:'Résiliations',        icon:<ScrollText size={15}/> },
-  { key:'discharge',        href:'/real-estate/discharge',         label:'Décharges',           icon:<FileMinus size={15}/> },
   { key:'convention',       href:'/real-estate/convention',        label:'Conventions',         icon:<FileSignature size={15}/> },
   // Paiements
   { key:'payments',         href:'/real-estate/payments',          label:'Loyers',              icon:<CreditCard size={15}/> },
@@ -51,7 +50,7 @@ const ALL_RE_ITEMS: NavItem[] = [
 
 const RE_GROUP_MAP: { label: string; keys: string[]; adminOnly?: boolean }[] = [
   { label:'Dashboard',     keys:['dashboard'] },
-  { label:'Biens',         keys:['properties','tenants','leases','inspections','terminations','discharge','convention'] },
+  { label:'Biens',         keys:['properties','tenants','leases','inspections','terminations','convention'] },
   { label:'Paiements',     keys:['payments','onlinePayment','invoices','expenses'] },
   { label:'Maintenance',   keys:['maintenance','notifications'] },
   { label:'Analyse',       keys:['analytics','stats','reports'] },

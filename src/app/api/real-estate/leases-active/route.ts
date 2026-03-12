@@ -14,9 +14,8 @@ export async function GET(request: Request) {
 
   const { data, error } = await adminClient
     .from('leases')
-    .select('id,start_date,end_date,rent_amount,deposit_amount,tenants(first_name,last_name,email,phone),properties(name,address,city)')
+    .select('id,status,start_date,end_date,rent_amount,deposit_amount,tenants(first_name,last_name,email,phone),properties(name,address,city)')
     .eq('company_id', companyId)
-    .in('status', ['active', 'suspended'])
     .order('start_date', { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
