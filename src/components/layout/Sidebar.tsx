@@ -125,9 +125,9 @@ function SidebarContent({ collapsed, onNav }: { collapsed: boolean; onNav?: () =
   const isSA  = pathname.startsWith('/super-admin');
   const allowedKeys = ['dashboard', ...getNavItems(role)];
   const isAdmin = role === 'admin' || role === 'manager';
-  const hasRE  = company?.modules?.includes('real_estate') ?? true;
-  const hasLog = company?.modules?.includes('logistics')   ?? true;
-
+  const isSuperAdmin = role === 'super_admin';
+  const hasRE  = isSuperAdmin ? true : (company?.modules?.includes('real_estate') ?? false);
+  const hasLog = isSuperAdmin ? true : (company?.modules?.includes('logistics')   ?? false);
   const reNav: NavGroup[] = RE_GROUP_MAP.map(g => ({
     label: g.label,
     items: g.keys

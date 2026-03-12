@@ -92,7 +92,7 @@ export default function LoginPage() {
       router.push('/real-estate/reports');
     } else {
       const modules = company?.modules || [];
-      if (modules.includes('real_estate') || modules.length === 0) {
+      if (modules.includes('real_estate')) {
         router.push('/real-estate');
       } else if (modules.includes('logistics')) {
         router.push('/logistics');
