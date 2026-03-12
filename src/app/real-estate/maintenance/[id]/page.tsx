@@ -112,6 +112,7 @@ export default function TicketDetailPage() {
         notes: t.notes ?? undefined,
         createdAt: t.created_at,
         companyName: company?.name || 'Nexora',
+        companyLogoUrl: company?.logo_url || null,
       });
       toast.success('Ticket PDF téléchargé');
     } catch { toast.error('Erreur génération PDF'); }

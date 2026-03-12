@@ -82,6 +82,7 @@ export default function PaymentsPage() {
         companyAddress:  (company as any)?.address || undefined,
         companyPhone:    (company as any)?.phone   || undefined,
         companyEmail:    (company as any)?.email   || undefined,
+        companyLogoUrl:  company?.logo_url || null,
       });
       toast.success('Quittance téléchargée');
     } catch { toast.error('Erreur génération PDF'); }

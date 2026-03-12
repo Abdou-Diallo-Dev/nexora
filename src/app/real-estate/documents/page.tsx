@@ -66,6 +66,7 @@ export default function DocumentsPage() {
         companyAddress:  (company as any)?.address || undefined,
         companyPhone:    (company as any)?.phone   || undefined,
         companyEmail:    (company as any)?.email   || undefined,
+        companyLogoUrl:  company?.logo_url || null,
       });
       toast.success('Quittance PDF téléchargée');
     } catch { toast.error('Erreur génération'); }
@@ -94,6 +95,9 @@ export default function DocumentsPage() {
         companyAddress:  (company as any)?.address || undefined,
         companyEmail:    (company as any)?.email   || undefined,
         companyPhone:    (company as any)?.phone   || undefined,
+        companyLogoUrl:  company?.logo_url || null,
+        customArticles:  (company as any)?.contract_template?.articles || null,
+        specialConditions: (company as any)?.contract_template?.special_conditions || null,
       });
       toast.success('Contrat PDF téléchargé');
     } catch { toast.error('Erreur génération'); }
