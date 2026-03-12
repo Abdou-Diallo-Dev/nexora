@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Users, Search, Filter, Edit, ToggleLeft, ToggleRight, UserPlus, Trash2, X, AlertTriangle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore, AppUser, UserRole } from '@/lib/store';
-import { PageHeader, Badge, LoadingSpinner, EmptyState, Pagination, inputCls, selectCls, labelCls, btnPrimary, btnSecondary, cardCls, BadgeVariant, ConfirmDialog } from '@/components/ui';
+import { PageHeader, Badge, LoadingSpinner, EmptyState, Pagination, inputCls, selectCls, labelCls, btnPrimary, btnSecondary, cardCls, BadgeVariant } from '@/components/ui';
 import { formatDate, getInitials } from '@/lib/utils';
 import { usePagination, useSearch } from '@/lib/hooks';
 import { toast } from 'sonner';
@@ -48,7 +48,6 @@ export default function SuperAdminUsersPage() {
   const { query, setQuery, debounced } = useSearch();
   const { page, pageSize, offset, setPage } = usePagination(20);
 
-  // Create user modal
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newUser, setNewUser] = useState({ full_name:'', email:'', password:'', role:'agent' as UserRole, company_id:'' });
@@ -62,8 +61,8 @@ export default function SuperAdminUsersPage() {
       .select('*,companies(name)', { count:'exact' })
       .order('created_at', { ascending:false })
       .range(offset, offset+pageSize-1);
-    if (filterRole)              q = q.eq('role', filterRole);
-    if (filterStatus==='active') q = q.eq('is_active', true);
+    if (filterRole)                q = q.eq('role', filterRole);
+    if (filterStatus==='active')   q = q.eq('is_active', true);
     if (filterStatus==='inactive') q = q.eq('is_active', false);
     if (debounced) q = q.or(`full_name.ilike.%${debounced}%,email.ilike.%${debounced}%`);
     q.then(({ data, count }) => { setItems((data||[]) as FullUser[]); setTotal(count||0); setLoading(false); });
@@ -77,7 +76,6 @@ export default function SuperAdminUsersPage() {
       .then(({ data }) => setCompanies((data||[]) as Company[]));
   }, [user?.role]);
 
-  // Approve tenant
   const approveTenant = async (u: FullUser) => {
     await createClient().from('users').update({ is_active:true } as never).eq('id', u.id);
     setItems(prev => prev.map(x => x.id===u.id ? {...x, is_active:true} : x));
@@ -102,17 +100,23 @@ export default function SuperAdminUsersPage() {
     setEditingUser(null);
   };
 
+  // Supprime dans public.users ET auth.users via API route
   const confirmDelete = async () => {
     if (!deletingUser) return;
     setDeleting(true);
     try {
-      // Delete from public.users first (RLS)
-      await createClient().from('users').delete().eq('id', deletingUser.id);
+      const res = await fetch('/api/admin/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: deletingUser.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur suppression');
       setItems(prev => prev.filter(x => x.id !== deletingUser.id));
       setTotal(t => t - 1);
-      toast.success('Utilisateur supprime');
+      toast.success('Utilisateur supprime definitivement');
     } catch (e: any) {
-      toast.error('Erreur suppression: ' + e.message);
+      toast.error('Erreur: ' + e.message);
     }
     setDeleting(false);
     setDeletingUser(null);
@@ -123,27 +127,21 @@ export default function SuperAdminUsersPage() {
     if (newUser.password.length < 6) { toast.error('Mot de passe minimum 6 caracteres'); return; }
     setCreating(true);
     try {
-      const { data: signUpData, error: signUpError } = await createClient().auth.signUp({
-        email: newUser.email,
-        password: newUser.password,
-        options: { data: { full_name: newUser.full_name }, emailRedirectTo: window.location.origin + '/auth/login' },
+      const res = await fetch('/api/admin/create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email:      newUser.email,
+          password:   newUser.password,
+          full_name:  newUser.full_name,
+          role:       newUser.role,
+          company_id: newUser.company_id || null,
+          is_active:  true,
+        }),
       });
-      if (signUpError) { toast.error(signUpError.message); setCreating(false); return; }
-      const uid = signUpData.user?.id;
-      if (!uid) { toast.error('Erreur creation compte'); setCreating(false); return; }
-
-      // Upsert profile first
-      await createClient().from('users').upsert({
-        id: uid, email: newUser.email, full_name: newUser.full_name,
-        role: newUser.role, company_id: newUser.company_id || null, is_active: true,
-      } as never);
-
-      // Force update role & company (trigger may have overwritten with defaults)
-      await createClient().from('users')
-        .update({ role: newUser.role, company_id: newUser.company_id || null, full_name: newUser.full_name, is_active: true } as never)
-        .eq('id', uid);
-
-      toast.success('Compte cree ! Email de confirmation envoye a ' + newUser.email);
+      const json = await res.json();
+      if (!res.ok) { toast.error(json.error || 'Erreur création'); setCreating(false); return; }
+      toast.success('Compte créé avec succès !');
       setShowCreate(false);
       setNewUser({ full_name:'', email:'', password:'', role:'agent', company_id:'' });
       load();
@@ -243,21 +241,18 @@ export default function SuperAdminUsersPage() {
                       <Badge variant={rm.v}>{rm.l}</Badge>
                       <Badge variant={u.is_active?'success':'default'}>{u.is_active?'Actif':'Inactif'}</Badge>
                       <div className="flex items-center gap-1 md:justify-end">
-                        {/* Edit role */}
                         <button onClick={()=>{ setEditingUser(u); setEditRole(u.role); }}
                           className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" title="Modifier role">
                           <Edit size={15}/>
                         </button>
-                        {/* Toggle active */}
                         <button onClick={()=>toggleActive(u)} disabled={togglingId===u.id || isSelf}
                           className={'p-1.5 rounded-lg transition-colors '+(isSelf?'opacity-30 cursor-not-allowed':u.is_active?'text-amber-500 hover:bg-amber-50':'text-green-600 hover:bg-green-50')}
-                          title={isSelf?'Impossible de vous desactiver':u.is_active?'Desactiver':'Activer'}>
+                          title={isSelf?'Impossible':u.is_active?'Desactiver':'Activer'}>
                           {togglingId===u.id ? <LoadingSpinner size={14}/> : u.is_active ? <ToggleRight size={15}/> : <ToggleLeft size={15}/>}
                         </button>
-                        {/* Delete */}
                         <button onClick={()=>!isSelf && setDeletingUser(u)} disabled={isSelf}
                           className={'p-1.5 rounded-lg transition-colors '+(isSelf?'opacity-30 cursor-not-allowed':'text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20')}
-                          title={isSelf?'Impossible de vous supprimer':'Supprimer'}>
+                          title={isSelf?'Impossible':'Supprimer'}>
                           <Trash2 size={15}/>
                         </button>
                       </div>
@@ -269,7 +264,7 @@ export default function SuperAdminUsersPage() {
             </div>
           )}
 
-      {/* ── MODAL CREER ─────────────────────────────────────── */}
+      {/* MODAL CREER */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className={cardCls+' w-full max-w-md'}>
@@ -327,7 +322,7 @@ export default function SuperAdminUsersPage() {
         </div>
       )}
 
-      {/* ── MODAL MODIFIER ROLE ─────────────────────────────── */}
+      {/* MODAL MODIFIER ROLE */}
       {editingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className={cardCls+' p-6 w-full max-w-sm'}>
@@ -355,7 +350,7 @@ export default function SuperAdminUsersPage() {
         </div>
       )}
 
-      {/* ── CONFIRM DELETE ──────────────────────────────────── */}
+      {/* CONFIRM DELETE */}
       {deletingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className={cardCls+' p-6 w-full max-w-sm'}>
@@ -364,8 +359,8 @@ export default function SuperAdminUsersPage() {
                 <AlertTriangle size={18} className="text-red-600"/>
               </div>
               <div>
-                <h3 className="font-semibold text-foreground">Supprimer l'utilisateur ?</h3>
-                <p className="text-sm text-muted-foreground">Cette action est irreversible</p>
+                <h3 className="font-semibold text-foreground">Supprimer l&apos;utilisateur ?</h3>
+                <p className="text-sm text-muted-foreground">Suppression definitive de la base de donnees</p>
               </div>
             </div>
             <div className="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3 mb-5">
