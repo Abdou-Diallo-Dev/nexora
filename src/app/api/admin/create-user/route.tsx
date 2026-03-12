@@ -2,12 +2,6 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
-  const admin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-
   try {
     const { email, password, full_name, role, company_id, is_active } = await request.json();
 
@@ -15,27 +9,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Nom, email et mot de passe requis' }, { status: 400 });
     }
 
-    // 1. Créer dans auth.users avec service role (pas d'email de confirmation)
-    const { data: authData, error: authError } = await admin.auth.admin.createUser({
+    const admin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
+    // Créer dans auth.users directement avec service role
+    const { data, error } = await admin.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // confirmé directement, pas d'email envoyé
-      user_metadata: {
-        full_name,
-        role:       role       || 'agent',
-        company_id: company_id || null,
-        is_active:  is_active  ?? true,
-      },
+      email_confirm: true,
+      user_metadata: { full_name },
     });
 
-    if (authError || !authData?.user) {
-      return NextResponse.json({ error: authError?.message || 'Erreur création compte' }, { status: 400 });
-    }
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-    const uid = authData.user.id;
+    const uid = data.user.id;
 
-    // 2. Upsert dans public.users (au cas où le trigger aurait des valeurs par défaut)
-    const { error: dbError } = await admin.from('users').upsert({
+    // Upsert dans public.users
+    await admin.from('users').upsert({
       id:         uid,
       email,
       full_name,
@@ -44,13 +37,14 @@ export async function POST(request: Request) {
       is_active:  is_active  ?? true,
     });
 
-    if (dbError) {
-      // Rollback auth user
-      await admin.auth.admin.deleteUser(uid);
-      return NextResponse.json({ error: 'Erreur DB: ' + dbError.message }, { status: 400 });
-    }
+    // Force update au cas où le trigger aurait écrasé
+    await admin.from('users').update({
+      role:       role       || 'agent',
+      company_id: company_id || null,
+      is_active:  is_active  ?? true,
+    }).eq('id', uid);
 
-    return NextResponse.json({ success: true, userId: uid });
+    return NextResponse.json({ success: true });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
