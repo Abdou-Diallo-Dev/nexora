@@ -30,12 +30,30 @@ async function loadImageAsBase64(url: string): Promise<{ data: string; format: s
 }
 
 // ─── Color palette ────────────────────────────────────────────
-const PRIMARY = [37, 99, 235]   as [number,number,number];
+const DEFAULT_PRIMARY: [number,number,number] = [37, 99, 235];
+let   PRIMARY: [number,number,number] = [...DEFAULT_PRIMARY];
 const DARK    = [15, 23, 42]    as [number,number,number];
 const GRAY    = [100, 116, 139] as [number,number,number];
 const LIGHT   = [241, 245, 249] as [number,number,number];
 const WHITE   = [255, 255, 255] as [number,number,number];
 const GREEN   = [22, 163, 74]   as [number,number,number];
+
+function hexToRgb(hex: string): [number,number,number] {
+  try {
+    const clean = hex.replace(/^#/,'').trim();
+    if (clean.length !== 6) return [...DEFAULT_PRIMARY] as [number,number,number];
+    const r = parseInt(clean.substring(0,2),16);
+    const g = parseInt(clean.substring(2,4),16);
+    const b = parseInt(clean.substring(4,6),16);
+    if (isNaN(r)||isNaN(g)||isNaN(b)) return [...DEFAULT_PRIMARY] as [number,number,number];
+    return [r,g,b];
+  } catch { return [...DEFAULT_PRIMARY] as [number,number,number]; }
+}
+
+function setThemeColor(primaryColor?: string | null) {
+  const rgb = primaryColor ? hexToRgb(primaryColor) : DEFAULT_PRIMARY;
+  PRIMARY = [...rgb] as [number,number,number];
+}
 
 async function headerWithLogo(
   doc: any,
@@ -43,9 +61,11 @@ async function headerWithLogo(
   subtitle: string,
   companyName: string,
   logoUrl?: string | null,
+  primaryColor?: string | null,
 ) {
+  setThemeColor(primaryColor);
   const W = doc.internal.pageSize.getWidth();
-  doc.setFillColor(...PRIMARY);
+  doc.setFillColor(...(PRIMARY as [number,number,number]));
   doc.rect(0, 0, W, 32, 'F');
 
   if (logoUrl) {
@@ -69,7 +89,7 @@ async function headerWithLogo(
 function drawInitialsCircle(doc: any, companyName: string) {
   doc.setFillColor(...WHITE);
   doc.circle(18, 16, 8, 'F');
-  doc.setTextColor(...PRIMARY);
+  doc.setTextColor(...(PRIMARY as [number,number,number]));
   doc.setFontSize(10); doc.setFont('helvetica', 'bold');
   const initials = companyName.split(' ').map((w: string) => w[0]).join('').substring(0,2).toUpperCase() || 'IG';
   doc.text(initials, 18, 19.5, { align: 'center' });
@@ -97,15 +117,15 @@ function row(doc: any, y: number, label: string, value: string, highlighted = fa
 }
 
 function sectionTitle(doc: any, y: number, title: string) {
-  doc.setFillColor(...PRIMARY); doc.rect(8, y, 3, 6, 'F');
-  doc.setTextColor(...PRIMARY); doc.setFontSize(10); doc.setFont('helvetica', 'bold');
+  doc.setFillColor(...(PRIMARY as [number,number,number])); doc.rect(8, y, 3, 6, 'F');
+  doc.setTextColor(...(PRIMARY as [number,number,number])); doc.setFontSize(10); doc.setFont('helvetica', 'bold');
   doc.text(title, 15, y + 5);
   return y + 12;
 }
 
 function bullet(doc: any, y: number, text: string) {
   const W = doc.internal.pageSize.getWidth();
-  doc.setFillColor(...PRIMARY); doc.circle(14, y - 1, 1.2, 'F');
+  doc.setFillColor(...(PRIMARY as [number,number,number])); doc.circle(14, y - 1, 1.2, 'F');
   doc.setTextColor(...DARK); doc.setFontSize(8.5); doc.setFont('helvetica', 'normal');
   const lines = doc.splitTextToSize(text, W - 30);
   doc.text(lines, 18, y);
@@ -148,21 +168,23 @@ export async function generateReceipt(data: {
   companyPhone?: string;
   companyEmail?: string;
   companyLogoUrl?: string | null;
+  primaryColor?: string | null;
 }) {
   const JsPDF = await loadJsPDF();
   if (!JsPDF) return;
+  setThemeColor(data.primaryColor);
   const doc = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
   const period = `${MONTHS[data.periodMonth - 1]} ${data.periodYear}`;
   const ref = data.reference || `QUITT-${data.periodYear}${String(data.periodMonth).padStart(2,'0')}-${Math.floor(Math.random()*9000+1000)}`;
   const W = doc.internal.pageSize.getWidth();
 
-  let y = await headerWithLogo(doc, 'QUITTANCE DE LOYER', `Période : ${period}`, data.companyName, data.companyLogoUrl);
+  let y = await headerWithLogo(doc, 'QUITTANCE DE LOYER', `Période : ${period}`, data.companyName, data.companyLogoUrl, data.primaryColor);
 
   doc.setFillColor(...LIGHT); doc.roundedRect(8, y, 194, 12, 2, 2, 'F');
   doc.setTextColor(...GRAY); doc.setFontSize(8); doc.setFont('helvetica', 'normal');
   doc.text('Référence', 14, y + 5);
-  doc.setTextColor(...PRIMARY); doc.setFontSize(10); doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...(PRIMARY as [number,number,number])); doc.setFontSize(10); doc.setFont('helvetica', 'bold');
   doc.text(ref, 14, y + 11);
   if (data.paidDate) {
     doc.setTextColor(...GREEN); doc.setFontSize(12);
@@ -186,7 +208,7 @@ export async function generateReceipt(data: {
   y = row(doc, y, 'Méthode', data.paymentMethod, data.paidDate ? false : true);
   y += 4;
 
-  doc.setFillColor(...PRIMARY); doc.roundedRect(8, y, 194, 36, 3, 3, 'F');
+  doc.setFillColor(...(PRIMARY as [number,number,number])); doc.roundedRect(8, y, 194, 36, 3, 3, 'F');
   doc.setTextColor(...WHITE); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
   doc.text('Loyer', 20, y + 10);
   doc.text('Charges', 20, y + 20);
@@ -246,11 +268,13 @@ export async function generateLeaseContract(data: {
   companyEmail?: string;
   // ── Automatiques depuis la DB ──
   companyLogoUrl?: string | null;
+  primaryColor?: string | null;
   customArticles?: ContractArticle[] | null;
   specialConditions?: string | null;
 }) {
   const JsPDF = await loadJsPDF();
   if (!JsPDF) return;
+  setThemeColor(data.primaryColor);
   const doc = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = doc.internal.pageSize.getWidth();
   const fmt = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' });
@@ -267,7 +291,7 @@ export async function generateLeaseContract(data: {
     return y;
   }
 
-  let y = await headerWithLogo(doc, 'CONTRAT DE BAIL', `Du ${fmt(data.startDate)} au ${fmt(data.endDate)}`, data.companyName, data.companyLogoUrl);
+  let y = await headerWithLogo(doc, 'CONTRAT DE BAIL', `Du ${fmt(data.startDate)} au ${fmt(data.endDate)}`, data.companyName, data.companyLogoUrl, data.primaryColor);
 
   // Art. 1 — Parties (toujours fixe)
   y = sectionTitle(doc, y, 'Article 1 — Parties');
@@ -291,7 +315,7 @@ export async function generateLeaseContract(data: {
   // Tableau financier (toujours fixe)
   y = pb(doc, y, 55);
   y = sectionTitle(doc, y, 'Article F — Loyer et charges');
-  doc.setFillColor(...PRIMARY);
+  doc.setFillColor(...(PRIMARY as [number,number,number]));
   doc.roundedRect(8, y, 194, data.depositAmount ? 36 : 26, 3, 3, 'F');
   doc.setTextColor(...WHITE); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
   doc.text('Loyer mensuel', 20, y + 9);
@@ -369,6 +393,7 @@ export async function generateContractPDF(data: {
   companyEmail?: string;
   companyPhone?: string;
   companyLogoUrl?: string | null;
+  primaryColor?: string | null;
   customArticles?: ContractArticle[] | null;
   specialConditions?: string | null;
 }) {
@@ -423,9 +448,11 @@ export async function generateMaintenancePDF(data: {
   createdAt: string;
   companyName: string;
   companyLogoUrl?: string | null;
+  primaryColor?: string | null;
 }) {
   const JsPDF = await loadJsPDF();
   if (!JsPDF) return;
+  setThemeColor(data.primaryColor);
   const doc = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = doc.internal.pageSize.getWidth();
   const fmt = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' });
@@ -443,7 +470,7 @@ export async function generateMaintenancePDF(data: {
     structural:'Structure', appliance:'Électroménager', pest_control:'Nuisibles', other:'Autre',
   };
 
-  let y = await headerWithLogo(doc, 'TICKET DE MAINTENANCE', `N° ${data.ticketNumber}`, data.companyName, data.companyLogoUrl);
+  let y = await headerWithLogo(doc, 'TICKET DE MAINTENANCE', `N° ${data.ticketNumber}`, data.companyName, data.companyLogoUrl, data.primaryColor);
 
   const pColor = PRIORITY_COLORS[data.priority] || PRIORITY_COLORS.medium;
   const sColor = STATUS_COLORS[data.status] || STATUS_COLORS.open;
@@ -550,14 +577,16 @@ export async function generateInspectionPDF(params: {
   companyAddress?: string | null;
   companyEmail?: string | null;
   companyPhone?: string | null;
+  primaryColor?: string | null;
 }) {
   const JsPDF = await loadJsPDF();
   if (!JsPDF) return;
+  setThemeColor(params.primaryColor);
   const doc = new (JsPDF as any)({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = doc.internal.pageSize.getWidth();
 
   const typeLabel = params.type === 'entree' ? "ÉTAT DES LIEUX D'ENTRÉE" : "ÉTAT DES LIEUX DE SORTIE";
-  let y = await headerWithLogo(doc, typeLabel, params.date, params.companyName, params.companyLogoUrl);
+  let y = await headerWithLogo(doc, typeLabel, params.date, params.companyName, params.companyLogoUrl, params.primaryColor);
 
   // Infos principales
   doc.setFillColor(...LIGHT);
@@ -684,14 +713,16 @@ export async function generateTerminationPDF(params: {
   companyEmail?: string | null;
   companyPhone?: string | null;
   companyLogoUrl?: string | null;
+  primaryColor?: string | null;
 }) {
   const JsPDF = await loadJsPDF();
   if (!JsPDF) return;
+  setThemeColor(params.primaryColor);
   const doc = new (JsPDF as any)({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = doc.internal.pageSize.getWidth();
 
   const { title, subtitle } = TERMINATION_LABELS[params.docType];
-  let y = await headerWithLogo(doc, title, subtitle, params.companyName, params.companyLogoUrl);
+  let y = await headerWithLogo(doc, title, subtitle, params.companyName, params.companyLogoUrl, params.primaryColor);
 
   // Infos parties
   doc.setFillColor(...LIGHT);
@@ -712,10 +743,10 @@ export async function generateTerminationPDF(params: {
   // Infos bail
   doc.setFillColor(239, 246, 255);
   doc.roundedRect(10, y, W - 20, 28, 3, 3, 'F');
-  doc.setDrawColor(...PRIMARY);
+  doc.setDrawColor(...(PRIMARY as [number,number,number]));
   doc.setLineWidth(0.5);
   doc.line(10, y, 10, y + 28);
-  doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(...PRIMARY);
+  doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(...(PRIMARY as [number,number,number]));
   doc.text('BIEN CONCERNÉ', 16, y + 7);
   doc.setFont('helvetica', 'normal'); doc.setTextColor(...DARK); doc.setFontSize(10);
   doc.text(params.propertyName, 16, y + 14);

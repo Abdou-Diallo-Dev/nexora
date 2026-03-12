@@ -19,12 +19,21 @@ const CONDITION_COLORS: Record<string, string> = {
 };
 const DEFAULT_ROOMS = ['Entrée', 'Salon', 'Cuisine', 'Chambre 1', 'Salle de bain', 'WC'];
 
+type CompanySettings = {
+  name: string;
+  logo_url?: string | null;
+  address?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  primary_color?: string | null;
+};
+
 export default function InspectionsPage() {
   const { company } = useAuthStore();
   const [type, setType]               = useState<'entree' | 'sortie'>('entree');
   const [tenants, setTenants]         = useState<Tenant[]>([]);
   const [properties, setProperties]   = useState<Property[]>([]);
-  const [companySettings, setCompanySettings] = useState<any>(null);
+  const [companySettings, setCompanySettings] = useState<CompanySettings | null>(null);
   const [loading, setLoading]         = useState(true);
   const [generating, setGenerating]   = useState(false);
   const [form, setForm]               = useState({
@@ -42,7 +51,7 @@ export default function InspectionsPage() {
     Promise.all([
       sb.from('tenants').select('id,first_name,last_name').eq('company_id', company.id).order('first_name'),
       sb.from('properties').select('id,name,address,city').eq('company_id', company.id).order('name'),
-      sb.from('companies').select('name,logo_url,address,email,phone').eq('id', company.id).maybeSingle(),
+      sb.from('companies').select('name,logo_url,address,email,phone,primary_color').eq('id', company.id).maybeSingle(),
     ]).then(([{ data: t }, { data: p }, { data: c }]) => {
       setTenants(t || []);
       setProperties(p || []);
@@ -86,6 +95,7 @@ export default function InspectionsPage() {
         photos:          photos.length > 0 ? photos : undefined,
         companyName:     companySettings?.name || company?.name || '',
         companyLogoUrl:  companySettings?.logo_url,
+        primaryColor:    companySettings?.primary_color || null,
         companyAddress:  companySettings?.address,
         companyEmail:    companySettings?.email,
         companyPhone:    companySettings?.phone,

@@ -25,10 +25,19 @@ const DOC_TYPES: { id: TerminationDocType; label: string; icon: string; desc: st
   { id: 'attestation_fin',        label: 'Attestation de fin',        icon: '🏅', desc: 'Atteste la fin de la location' },
 ];
 
+type CompanySettings = {
+  name: string;
+  logo_url?: string | null;
+  address?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  primary_color?: string | null;
+};
+
 export default function TerminationsPage() {
   const { company } = useAuthStore();
   const [leases, setLeases] = useState<Lease[]>([]);
-  const [companySettings, setCompanySettings] = useState<any>(null);
+  const [companySettings, setCompanySettings] = useState<CompanySettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
@@ -46,7 +55,7 @@ export default function TerminationsPage() {
     const sb = createClient();
     Promise.all([
       fetch(`/api/real-estate/leases-active?company_id=${company.id}`).then(r => r.json()),
-      sb.from('companies').select('name,logo_url,address,email,phone').eq('id', company.id).maybeSingle(),
+      sb.from('companies').select('name,logo_url,address,email,phone,primary_color').eq('id', company.id).maybeSingle(),
     ]).then(([leasesRes, { data: c }]) => {
       setLeases((leasesRes.data || []) as Lease[]);
       setCompanySettings(c);
@@ -79,6 +88,7 @@ export default function TerminationsPage() {
         customText: form.customText || undefined,
         companyName: companySettings?.name || company?.name || '',
         companyLogoUrl: companySettings?.logo_url,
+        primaryColor:   companySettings?.primary_color || null,
         companyAddress: companySettings?.address,
         companyEmail: companySettings?.email,
         companyPhone: companySettings?.phone,

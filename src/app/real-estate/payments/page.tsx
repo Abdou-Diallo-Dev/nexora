@@ -83,6 +83,7 @@ export default function PaymentsPage() {
         companyPhone:    (company as any)?.phone   || undefined,
         companyEmail:    (company as any)?.email   || undefined,
         companyLogoUrl:  company?.logo_url || null,
+        primaryColor:    (company as any)?.primary_color || null,
       });
       toast.success('Quittance téléchargée');
     } catch { toast.error('Erreur génération PDF'); }
