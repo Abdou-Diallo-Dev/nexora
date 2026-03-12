@@ -56,19 +56,12 @@ function setThemeColor(primaryColor?: string | null) {
 }
 
 // Format number with space as thousands separator (120 000 FCFA)
-function fmtAmount(amount: number): string {
-  return new Intl.NumberFormat('fr-SN', {
-    style: 'decimal',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(Math.round(amount)) + ' FCFA';
-}
+// Using manual formatting to avoid jsPDF rendering issues with Intl separators
 function fmtNum(amount: number): string {
-  return new Intl.NumberFormat('fr-SN', {
-    style: 'decimal',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(Math.round(amount));
+  return String(Math.round(amount)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+function fmtAmount(amount: number): string {
+  return fmtNum(amount) + ' F CFA';
 }
 
 async function headerWithLogo(
@@ -207,16 +200,20 @@ export async function generateReceipt(data: {
 
   let y = await headerWithLogo(doc, 'QUITTANCE DE LOYER', `Période : ${period}`, data.companyName, data.companyLogoUrl, data.primaryColor);
 
-  doc.setFillColor(...LIGHT); doc.roundedRect(8, y, 194, 12, 2, 2, 'F');
-  doc.setTextColor(...GRAY); doc.setFontSize(8); doc.setFont('helvetica', 'normal');
-  doc.text('Référence', 14, y + 5);
+  // Ref + statut sur même bande
+  doc.setFillColor(...LIGHT); doc.roundedRect(8, y, 194, 14, 2, 2, 'F');
+  doc.setTextColor(...GRAY); doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+  doc.text('REFERENCE', 14, y + 5);
   doc.setTextColor(...(PRIMARY as [number,number,number])); doc.setFontSize(10); doc.setFont('helvetica', 'bold');
-  doc.text(ref, 14, y + 11);
+  doc.text(ref, 14, y + 12);
   if (data.paidDate) {
-    doc.setTextColor(...GREEN); doc.setFontSize(12);
-    doc.text('✓ PAYÉ', 190, y + 9, { align: 'right' });
+    // Badge PAYE vert à droite
+    doc.setFillColor(22, 163, 74);
+    doc.roundedRect(160, y + 3, 36, 8, 2, 2, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFontSize(8); doc.setFont('helvetica', 'bold');
+    doc.text('PAYE', 178, y + 8.5, { align: 'center' });
   }
-  y += 20;
+  y += 22;
 
   y = sectionTitle(doc, y, 'Locataire');
   y = row(doc, y, 'Nom complet', data.tenantName, false);
@@ -236,29 +233,35 @@ export async function generateReceipt(data: {
 
   doc.setFillColor(...(PRIMARY as [number,number,number])); doc.roundedRect(8, y, 194, 36, 3, 3, 'F');
   doc.setTextColor(...WHITE); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
-  doc.text('Loyer', 20, y + 10);
+  doc.text('Loyer mensuel', 20, y + 10);
   doc.text('Charges', 20, y + 20);
-  doc.setDrawColor(...WHITE); doc.setLineWidth(0.3); doc.line(8, y + 24, 202, y + 24);
+  doc.setDrawColor(255,255,255,0.3); doc.setLineWidth(0.2); doc.line(8, y + 24, 202, y + 24);
   doc.setFontSize(11); doc.setFont('helvetica', 'bold');
   doc.text('TOTAL', 20, y + 32);
-  doc.text(fmtAmount(displayAmount), 190, y + 10, { align: 'right' });
-  doc.text(fmtAmount(data.chargesAmount), 190, y + 20, { align: 'right' });
+  // Amounts - use fmtNum + ' F CFA' to force space rendering
+  const amtLoyer = fmtNum(displayAmount) + ' F CFA';
+  const amtCharges = fmtNum(data.chargesAmount) + ' F CFA';
+  const amtTotal = fmtNum(displayAmount + data.chargesAmount) + ' F CFA';
+  doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+  doc.text(amtLoyer, 190, y + 10, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.text(amtCharges, 190, y + 20, { align: 'right' });
   doc.setFontSize(13); doc.setFont('helvetica', 'bold');
-  doc.text(fmtAmount(displayAmount + data.chargesAmount), 190, y + 32, { align: 'right' });
+  doc.text(amtTotal, 190, y + 32, { align: 'right' });
   y += 44;
 
   if (prorataInfo) {
     doc.setFillColor(...LIGHT); doc.roundedRect(8, y, 194, 12, 2, 2, 'F');
     doc.setTextColor(...(PRIMARY as [number,number,number])); doc.setFontSize(8); doc.setFont('helvetica', 'italic');
-    doc.text(`Prorata : ${prorataInfo.daysOccupied} jours / ${prorataInfo.totalDays} jours · Taux journalier : ${fmtAmount(prorataInfo.dailyRate)}`, 14, y + 7);
+    doc.text(`Prorata : ${prorataInfo.daysOccupied} jours / ${prorataInfo.totalDays} jours · Taux journalier : ${fmtNum(prorataInfo.dailyRate)} F CFA`, 14, y + 7);
     y += 16;
   }
 
   doc.setTextColor(...GRAY); doc.setFontSize(7.5); doc.setFont('helvetica', 'italic');
-  const mention = `Je soussigné(e), représentant ${data.companyName}, certifie avoir reçu de ${data.tenantName} la somme de ${fmtAmount(displayAmount + data.chargesAmount)} au titre du loyer et des charges pour le mois de ${period}.`;
-  const lines = doc.splitTextToSize(mention, 190);
-  doc.text(lines, 10, y);
-  y += lines.length * 4.5 + 6;
+  const mention = `Je soussigné(e), représentant ${data.companyName}, certifie avoir reçu de ${data.tenantName} la somme de ${fmtNum(displayAmount + data.chargesAmount)} F CFA au titre du loyer et des charges pour le mois de ${period}.`;
+  const mentionLines = doc.splitTextToSize(mention, 182);
+  doc.text(mentionLines, 14, y);
+  y += mentionLines.length * 5 + 8;
 
   // Signature bailleur — case vide pour tampon/timbre
   doc.setDrawColor(...LIGHT); doc.setLineWidth(0.5); doc.rect(120, y, 74, 28);
@@ -274,7 +277,7 @@ const DEFAULT_ARTICLES: ContractArticle[] = [
   { num:'2', title:'Objet du contrat',           content:"Le bailleur donne a loyer au locataire pour usage d'habitation uniquement le logement designe." },
   { num:'3', title:'Durée du bail',              content:"A l'echeance, le bail est tacitement reconduit par periodes d'un (1) an, sauf denonciation un mois avant." },
   { num:'5', title:'Etat des lieux',             content:"Un etat des lieux contradictoire sera etabli a l'entree et a la sortie du locataire." },
-  { num:'6', title:'Obligations du locataire',   content:"- Payer le loyer et charges a la date convenue.\n- User paisiblement du logement.\n- Entretenir le logement.\n- Ne pas sous-louer sans autorisation.\n- Souscrire une assurance habitation." },
+  { num:'6', title:'Obligations du locataire',   content:"- Payer le loyer et charges a la date convenue chaque mois.\n- User paisiblement du logement.\n- Entretenir le logement.\n- Ne pas sous-louer sans autorisation.\n- Souscrire une assurance habitation." },
   { num:'7', title:'Obligations du bailleur',    content:"- Delivrer un logement en bon etat.\n- Garantir la jouissance paisible.\n- Effectuer les grosses reparations." },
   { num:'8', title:'Résiliation du bail',        content:"- Locataire : preavis d'un (1) mois.\n- Bailleur : preavis de trois (3) mois.\n- Depot de garantie restitue sous un (1) mois." },
   { num:'9', title:'Pénalités de retard',        content:"Tout retard au-dela de dix (10) jours entraine une penalite de 5% du loyer mensuel." },
@@ -346,17 +349,17 @@ export async function generateLeaseContract(data: {
 
   // Tableau financier (toujours fixe)
   y = pb(doc, y, 55);
-  y = sectionTitle(doc, y, 'Article F — Loyer et charges');
+  y = sectionTitle(doc, y, 'Article 3 — Loyer et charges');
   doc.setFillColor(...(PRIMARY as [number,number,number]));
   doc.roundedRect(8, y, 194, data.depositAmount ? 36 : 26, 3, 3, 'F');
   doc.setTextColor(...WHITE); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
   doc.text('Loyer mensuel', 20, y + 9);
   doc.text('Charges', 20, y + 19);
-  doc.text(`${fmtNum(data.rentAmount)} FCFA`, 190, y + 9, { align: 'right' });
-  doc.text(`${fmtNum(data.chargesAmount)} FCFA`, 190, y + 19, { align: 'right' });
+  doc.text(fmtNum(data.rentAmount) + ' F CFA', 190, y + 9, { align: 'right' });
+  doc.text(fmtNum(data.chargesAmount) + ' F CFA', 190, y + 19, { align: 'right' });
   if (data.depositAmount) {
     doc.text('Dépôt de garantie', 20, y + 29);
-    doc.text(`${fmtNum(data.depositAmount)} FCFA`, 190, y + 29, { align: 'right' });
+    doc.text(fmtNum(data.depositAmount) + ' F CFA', 190, y + 29, { align: 'right' });
   }
   y += data.depositAmount ? 44 : 34;
   y = row(doc, y, 'Jour de paiement', `Le ${data.paymentDay} de chaque mois`, false);
@@ -364,7 +367,7 @@ export async function generateLeaseContract(data: {
 
   // Articles personnalisés ou défaut
   for (const art of articles) {
-    if (art.num === '1' || art.num === '2' || art.num === 'F') continue; // déjà rendus
+    if (art.num === '1' || art.num === '2' || art.num === '3' || art.num === 'F') continue; // déjà rendus
     y = pb(doc, y, 30);
     y = sectionTitle(doc, y, `Article ${art.num} — ${art.title}`);
     if (art.content) y = renderArticleContent(y, art.content);
@@ -528,8 +531,8 @@ export async function generateMaintenancePDF(data: {
   y = row(doc, y, 'Catégorie', CATEGORY_LABELS[data.category] || data.category, !!data.tenantName);
   if (data.scheduledDate)   y = row(doc, y, 'Date planifiée', fmt(data.scheduledDate), true);
   if (data.completedDate)   y = row(doc, y, 'Date résolution', fmt(data.completedDate), false);
-  if (data.estimatedCost !== undefined) y = row(doc, y, 'Coût estimé', `${fmtNum(data.estimatedCost)} FCFA`, true);
-  if (data.actualCost !== undefined)    y = row(doc, y, 'Coût réel', `${fmtNum(data.actualCost)} FCFA`, false);
+  if (data.estimatedCost !== undefined) y = row(doc, y, 'Coût estimé', fmtNum(data.estimatedCost) + ' F CFA', true);
+  if (data.actualCost !== undefined)    y = row(doc, y, 'Coût réel', fmtNum(data.actualCost) + ' F CFA', false);
   y += 4;
 
   if (data.description) {
@@ -803,9 +806,9 @@ export async function generateTerminationPDF(params: {
     doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(...DARK);
     doc.text('Récapitulatif financier', 16, y + 7);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...GRAY);
-    doc.text(`Loyer mensuel : ${fmtNum(params.rentAmount)} FCFA`, 16, y + 14);
+    doc.text(('Loyer mensuel : ' + fmtNum(params.rentAmount) + ' F CFA'), 16, y + 14);
     if (params.depositReturned !== undefined) {
-      doc.text(`Dépôt de garantie restitué : ${fmtNum(params.depositReturned)} FCFA`, 16, y + 20);
+      doc.text(('Depot de garantie restitue : ' + fmtNum(params.depositReturned) + ' F CFA'), 16, y + 20);
     }
     y += 30;
   }
@@ -835,9 +838,9 @@ function getDefaultBody(type: TerminationDocType, p: any): string {
     case 'resiliation_convention':
       return `Entre les soussignés,\n\n${p.companyName} et ${p.tenantName},\n\nLes parties conviennent de mettre fin à la convention relative au bien "${p.propertyName}" à compter du ${p.terminationDate}.\n\nTous les engagements découlant de cette convention sont réputés éteints à la date de résiliation, sous réserve du règlement de toutes sommes dues.\n\n${p.reason ? `Motif : ${p.reason}` : ''}`;
     case 'decharge':
-      return `Je soussigné(e), ${p.tenantName}, déclare avoir reçu de ${p.companyName} l'ensemble des documents et clés relatifs au bien "${p.propertyName}", sis ${p.propertyAddress}.\n\nJe reconnais avoir pris connaissance des termes du contrat de location et m'engage à respecter toutes les obligations qui en découlent.\n\nJe décharge par la présente ${p.companyName} de toute responsabilité concernant l'état du bien à la date du ${p.terminationDate}.\n\nLoyer convenu : ${rent} FCFA/mois.`;
+      return `Je soussigné(e), ${p.tenantName}, déclare avoir reçu de ${p.companyName} l'ensemble des documents et clés relatifs au bien "${p.propertyName}", sis ${p.propertyAddress}.\n\nJe reconnais avoir pris connaissance des termes du contrat de location et m'engage à respecter toutes les obligations qui en découlent.\n\nJe décharge par la présente ${p.companyName} de toute responsabilité concernant l'état du bien à la date du ${p.terminationDate}.\n\nLoyer convenu : ${rent} F CFA/mois.`;
     case 'attestation_fin':
-      return `Je soussigné(e), représentant de ${p.companyName}, atteste par la présente que :\n\n${p.tenantName} a occupé le bien immobilier "${p.propertyName}", sis ${p.propertyAddress}, du ${p.startDate} au ${p.endDate}.\n\nLe bail de location a pris fin le ${p.terminationDate}. Le Locataire a restitué les clés et libéré les lieux conformément aux dispositions contractuelles.\n\nLe loyer mensuel était de ${rent} FCFA. À ce jour, toutes les obligations financières ont été honorées.\n\nCette attestation est délivrée à ${p.tenantName} pour servir et valoir ce que de droit.`;
+      return `Je soussigné(e), représentant de ${p.companyName}, atteste par la présente que :\n\n${p.tenantName} a occupé le bien immobilier "${p.propertyName}", sis ${p.propertyAddress}, du ${p.startDate} au ${p.endDate}.\n\nLe bail de location a pris fin le ${p.terminationDate}. Le Locataire a restitué les clés et libéré les lieux conformément aux dispositions contractuelles.\n\nLe loyer mensuel était de ${rent} F CFA. À ce jour, toutes les obligations financières ont été honorées.\n\nCette attestation est délivrée à ${p.tenantName} pour servir et valoir ce que de droit.`;
   }
 }
 
