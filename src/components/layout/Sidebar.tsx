@@ -207,23 +207,11 @@ function SidebarContent({ collapsed, onNav }: { collapsed: boolean; onNav?: () =
           </div>
         )}
       </nav>
-      {!collapsed && nav && (
-        <div className="px-3 py-3 border-t border-border space-y-1">
-          {!isRE && hasRE && (
-            <Link href="/real-estate" onClick={onNav} className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-muted-foreground hover:text-blue-600 hover:bg-blue-50 transition-colors">
-              <Building2 size={13}/> Nexora Immo
-            </Link>
-          )}
-          {!isLog && hasLog && (
-            <Link href="/logistics" onClick={onNav} className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-muted-foreground hover:text-green-600 hover:bg-green-50 transition-colors">
-              <Truck size={13}/> Nexora Logistique
-            </Link>
-          )}
-          {role === 'super_admin' && !isSA && (
-            <Link href="/super-admin/dashboard" onClick={onNav} className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-red-600 hover:bg-red-50 transition-colors font-medium">
-              <Crown size={13}/> Super Admin
-            </Link>
-          )}
+      {!collapsed && nav && role === 'super_admin' && !isSA && (
+        <div className="px-3 py-3 border-t border-border">
+          <Link href="/super-admin/dashboard" onClick={onNav} className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-red-600 hover:bg-red-50 transition-colors font-medium">
+            <Crown size={13}/> Super Admin
+          </Link>
         </div>
       )}
     </>
