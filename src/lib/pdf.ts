@@ -55,6 +55,22 @@ function setThemeColor(primaryColor?: string | null) {
   PRIMARY = [...rgb] as [number,number,number];
 }
 
+// Format number with space as thousands separator (120 000 FCFA)
+function fmtAmount(amount: number): string {
+  return new Intl.NumberFormat('fr-SN', {
+    style: 'decimal',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(Math.round(amount)) + ' FCFA';
+}
+function fmtNum(amount: number): string {
+  return new Intl.NumberFormat('fr-SN', {
+    style: 'decimal',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(Math.round(amount));
+}
+
 async function headerWithLogo(
   doc: any,
   title: string,
@@ -169,10 +185,20 @@ export async function generateReceipt(data: {
   companyEmail?: string;
   companyLogoUrl?: string | null;
   primaryColor?: string | null;
+  prorataStartDay?: number; // si défini, calcule le prorata
 }) {
   const JsPDF = await loadJsPDF();
   if (!JsPDF) return;
   setThemeColor(data.primaryColor);
+
+  // Calcul prorata si applicable
+  let displayAmount = data.amount;
+  let prorataInfo: { daysOccupied: number; totalDays: number; dailyRate: number } | null = null;
+  if (data.prorataStartDay && data.prorataStartDay > 5) {
+    const p = calculateProrata({ rentAmount: data.amount, startDay: data.prorataStartDay, month: data.periodMonth, year: data.periodYear });
+    if (p.isProrata) { displayAmount = p.amount; prorataInfo = p; }
+  }
+
   const doc = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
   const period = `${MONTHS[data.periodMonth - 1]} ${data.periodYear}`;
@@ -215,15 +241,21 @@ export async function generateReceipt(data: {
   doc.setDrawColor(...WHITE); doc.setLineWidth(0.3); doc.line(8, y + 24, 202, y + 24);
   doc.setFontSize(11); doc.setFont('helvetica', 'bold');
   doc.text('TOTAL', 20, y + 32);
-  doc.setFontSize(9); doc.setFont('helvetica', 'normal');
-  doc.text(`${data.amount.toLocaleString('fr-FR')} FCFA`, 190, y + 10, { align: 'right' });
-  doc.text(`${data.chargesAmount.toLocaleString('fr-FR')} FCFA`, 190, y + 20, { align: 'right' });
+  doc.text(fmtAmount(displayAmount), 190, y + 10, { align: 'right' });
+  doc.text(fmtAmount(data.chargesAmount), 190, y + 20, { align: 'right' });
   doc.setFontSize(13); doc.setFont('helvetica', 'bold');
-  doc.text(`${(data.amount + data.chargesAmount).toLocaleString('fr-FR')} FCFA`, 190, y + 32, { align: 'right' });
+  doc.text(fmtAmount(displayAmount + data.chargesAmount), 190, y + 32, { align: 'right' });
   y += 44;
 
+  if (prorataInfo) {
+    doc.setFillColor(...LIGHT); doc.roundedRect(8, y, 194, 12, 2, 2, 'F');
+    doc.setTextColor(...(PRIMARY as [number,number,number])); doc.setFontSize(8); doc.setFont('helvetica', 'italic');
+    doc.text(`Prorata : ${prorataInfo.daysOccupied} jours / ${prorataInfo.totalDays} jours · Taux journalier : ${fmtAmount(prorataInfo.dailyRate)}`, 14, y + 7);
+    y += 16;
+  }
+
   doc.setTextColor(...GRAY); doc.setFontSize(7.5); doc.setFont('helvetica', 'italic');
-  const mention = `Je soussigné(e), représentant ${data.companyName}, certifie avoir reçu de ${data.tenantName} la somme de ${(data.amount + data.chargesAmount).toLocaleString('fr-FR')} FCFA au titre du loyer et des charges pour le mois de ${period}.`;
+  const mention = `Je soussigné(e), représentant ${data.companyName}, certifie avoir reçu de ${data.tenantName} la somme de ${fmtAmount(displayAmount + data.chargesAmount)} au titre du loyer et des charges pour le mois de ${period}.`;
   const lines = doc.splitTextToSize(mention, 190);
   doc.text(lines, 10, y);
   y += lines.length * 4.5 + 6;
@@ -320,11 +352,11 @@ export async function generateLeaseContract(data: {
   doc.setTextColor(...WHITE); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
   doc.text('Loyer mensuel', 20, y + 9);
   doc.text('Charges', 20, y + 19);
-  doc.text(`${data.rentAmount.toLocaleString('fr-FR')} FCFA`, 190, y + 9, { align: 'right' });
-  doc.text(`${data.chargesAmount.toLocaleString('fr-FR')} FCFA`, 190, y + 19, { align: 'right' });
+  doc.text(`${fmtNum(data.rentAmount)} FCFA`, 190, y + 9, { align: 'right' });
+  doc.text(`${fmtNum(data.chargesAmount)} FCFA`, 190, y + 19, { align: 'right' });
   if (data.depositAmount) {
     doc.text('Dépôt de garantie', 20, y + 29);
-    doc.text(`${data.depositAmount.toLocaleString('fr-FR')} FCFA`, 190, y + 29, { align: 'right' });
+    doc.text(`${fmtNum(data.depositAmount)} FCFA`, 190, y + 29, { align: 'right' });
   }
   y += data.depositAmount ? 44 : 34;
   y = row(doc, y, 'Jour de paiement', `Le ${data.paymentDay} de chaque mois`, false);
@@ -496,8 +528,8 @@ export async function generateMaintenancePDF(data: {
   y = row(doc, y, 'Catégorie', CATEGORY_LABELS[data.category] || data.category, !!data.tenantName);
   if (data.scheduledDate)   y = row(doc, y, 'Date planifiée', fmt(data.scheduledDate), true);
   if (data.completedDate)   y = row(doc, y, 'Date résolution', fmt(data.completedDate), false);
-  if (data.estimatedCost !== undefined) y = row(doc, y, 'Coût estimé', `${data.estimatedCost.toLocaleString('fr-FR')} FCFA`, true);
-  if (data.actualCost !== undefined)    y = row(doc, y, 'Coût réel', `${data.actualCost.toLocaleString('fr-FR')} FCFA`, false);
+  if (data.estimatedCost !== undefined) y = row(doc, y, 'Coût estimé', `${fmtNum(data.estimatedCost)} FCFA`, true);
+  if (data.actualCost !== undefined)    y = row(doc, y, 'Coût réel', `${fmtNum(data.actualCost)} FCFA`, false);
   y += 4;
 
   if (data.description) {
@@ -771,9 +803,9 @@ export async function generateTerminationPDF(params: {
     doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(...DARK);
     doc.text('Récapitulatif financier', 16, y + 7);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...GRAY);
-    doc.text(`Loyer mensuel : ${params.rentAmount.toLocaleString('fr-FR')} FCFA`, 16, y + 14);
+    doc.text(`Loyer mensuel : ${fmtNum(params.rentAmount)} FCFA`, 16, y + 14);
     if (params.depositReturned !== undefined) {
-      doc.text(`Dépôt de garantie restitué : ${params.depositReturned.toLocaleString('fr-FR')} FCFA`, 16, y + 20);
+      doc.text(`Dépôt de garantie restitué : ${fmtNum(params.depositReturned)} FCFA`, 16, y + 20);
     }
     y += 30;
   }
@@ -796,7 +828,7 @@ export async function generateTerminationPDF(params: {
 }
 
 function getDefaultBody(type: TerminationDocType, p: any): string {
-  const rent = p.rentAmount?.toLocaleString('fr-FR') || '0';
+  const rent = p.rentAmount ? fmtNum(p.rentAmount) : '0';
   switch (type) {
     case 'resiliation_contrat':
       return `Entre les soussignés,\n\n${p.companyName} (ci-après "le Bailleur") et ${p.tenantName} (ci-après "le Locataire"),\n\nIl a été convenu ce qui suit :\n\nLes parties conviennent de mettre fin au contrat de location portant sur le bien "${p.propertyName}", sis ${p.propertyAddress}, à compter du ${p.terminationDate}.\n\nLe contrat initial prenait effet le ${p.startDate} et devait s'achever le ${p.endDate}.\n\nLe Locataire s'engage à remettre les clés du logement au Bailleur au plus tard à la date de résiliation susmentionnée, et à laisser les lieux en bon état de propreté et d'entretien.\n\n${p.reason ? `Motif de résiliation : ${p.reason}` : ''}`;

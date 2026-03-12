@@ -17,7 +17,7 @@ type Payment = {
   id: string; amount: number; charges_amount: number; period_month: number; period_year: number;
   paid_date: string | null; due_date: string | null; status: string; payment_method: string;
   reference: string | null;
-  leases: { tenants: { first_name: string; last_name: string; email: string; phone: string | null } | null; properties: { name: string; address: string; city: string; type: string } | null } | null;
+  leases: { start_date: string; tenants: { first_name: string; last_name: string; email: string; phone: string | null } | null; properties: { name: string; address: string; city: string; type: string } | null } | null;
 };
 
 const STATUS: Record<string,{l:string;v:BadgeVariant}> = {
@@ -47,7 +47,7 @@ export default function PaymentsPage() {
     setLoading(true);
     let q = createClient()
       .from('rent_payments')
-      .select('*,leases(tenants(first_name,last_name,email,phone),properties(name,address,city,type))', { count: 'exact' })
+      .select('*,leases(start_date,tenants(first_name,last_name,email,phone),properties(name,address,city,type))', { count: 'exact' })
       .eq('company_id', company.id)
       .order('period_year', { ascending: false })
       .order('period_month', { ascending: false })
@@ -84,6 +84,11 @@ export default function PaymentsPage() {
         companyEmail:    (company as any)?.email   || undefined,
         companyLogoUrl:  company?.logo_url || null,
         primaryColor:    (company as any)?.primary_color || null,
+        prorataStartDay: p.leases?.start_date ? (() => {
+          const startDate = new Date(p.leases!.start_date);
+          const isFirstMonth = startDate.getFullYear() === p.period_year && (startDate.getMonth() + 1) === p.period_month;
+          return isFirstMonth ? startDate.getDate() : undefined;
+        })() : undefined,
       });
       toast.success('Quittance téléchargée');
     } catch { toast.error('Erreur génération PDF'); }
