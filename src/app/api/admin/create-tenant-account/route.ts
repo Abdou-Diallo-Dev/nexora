@@ -2,9 +2,81 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
 function generatePassword(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-  return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#';
+  return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
+
+const emailHtml = (firstName: string, email: string, password: string, appUrl: string, companyName: string) => `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <div style="max-width:520px;margin:40px auto;padding:20px">
+
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#1e40af 0%,#3b82f6 100%);border-radius:16px 16px 0 0;padding:32px;text-align:center">
+      <div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="width:36px;height:36px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center">
+          <span style="color:white;font-size:18px">⚡</span>
+        </div>
+        <span style="color:white;font-size:22px;font-weight:800;letter-spacing:-0.5px">Nexora</span>
+      </div>
+      <h1 style="color:white;font-size:28px;font-weight:700;margin:16px 0 4px">Bienvenue 👋</h1>
+      <p style="color:rgba(255,255,255,0.8);font-size:15px;margin:0">Votre espace locataire est prêt</p>
+    </div>
+
+    <!-- Body -->
+    <div style="background:white;padding:32px;border-left:1px solid #e2e8f0;border-right:1px solid #e2e8f0">
+      <p style="color:#1e293b;font-size:16px;margin:0 0 8px"><strong>Bonjour ${firstName},</strong></p>
+      <p style="color:#64748b;font-size:15px;line-height:1.6;margin:0 0 24px">
+        <strong style="color:#1e293b">${companyName}</strong> vous a créé un espace personnel sécurisé sur Nexora.
+        Vous pouvez y consulter vos paiements, quittances, contrat de bail et contacter votre gestionnaire.
+      </p>
+
+      <!-- Credentials box -->
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:24px">
+        <p style="color:#64748b;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 14px">Vos identifiants de connexion</p>
+
+        <div style="margin-bottom:12px">
+          <p style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;margin:0 0 4px">Adresse email</p>
+          <p style="color:#1e293b;font-size:15px;font-weight:600;margin:0;background:#fff;padding:10px 14px;border-radius:8px;border:1px solid #e2e8f0">${email}</p>
+        </div>
+
+        <div>
+          <p style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;margin:0 0 4px">Mot de passe temporaire</p>
+          <p style="color:#1e40af;font-size:18px;font-weight:700;letter-spacing:2px;margin:0;background:#eff6ff;padding:10px 14px;border-radius:8px;border:1px solid #bfdbfe;font-family:monospace">${password}</p>
+        </div>
+      </div>
+
+      <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:24px">
+        <p style="color:#92400e;font-size:13px;margin:0">
+          🔒 <strong>Important :</strong> Changez votre mot de passe dès votre première connexion depuis la section <em>Mon profil</em>.
+        </p>
+      </div>
+
+      <!-- CTA -->
+      <a href="${appUrl}/auth/login"
+        style="display:block;background:linear-gradient(135deg,#1e40af 0%,#3b82f6 100%);color:white;padding:16px;text-align:center;border-radius:12px;text-decoration:none;font-weight:700;font-size:16px;margin-bottom:20px">
+        Accéder à mon espace locataire →
+      </a>
+
+      <p style="color:#94a3b8;font-size:13px;text-align:center;margin:0">
+        Ou copiez ce lien : <span style="color:#1e40af">${appUrl}/auth/login</span>
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:0 0 16px 16px;padding:20px;text-align:center">
+      <p style="color:#94a3b8;font-size:12px;margin:0">
+        Ce message a été envoyé par <strong>${companyName}</strong> via Nexora.<br>
+        Si vous n'attendiez pas ce message, ignorez cet email.
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>
+`;
 
 export async function POST(request: Request) {
   const admin = createClient(
@@ -14,7 +86,7 @@ export async function POST(request: Request) {
   );
 
   try {
-    const { tenant_id, email, first_name, last_name, company_id } = await request.json();
+    const { tenant_id, email, first_name, last_name, company_id, company_name } = await request.json();
     if (!tenant_id || !email || !company_id) {
       return NextResponse.json({ error: 'Données manquantes' }, { status: 400 });
     }
@@ -27,10 +99,10 @@ export async function POST(request: Request) {
       .maybeSingle();
     if (existing) return NextResponse.json({ success: true, already_exists: true });
 
-    const password = generatePassword();
-    const full_name = `${first_name} ${last_name}`;
+    const password  = generatePassword();
+    const full_name = `${first_name} ${last_name}`.trim();
 
-    // Créer compte auth
+    // Créer compte auth Supabase
     const { data: authData, error: authError } = await admin.auth.admin.createUser({
       email,
       password,
@@ -57,42 +129,37 @@ export async function POST(request: Request) {
       user_id: uid, tenant_id, company_id,
     });
 
-    // Envoyer email avec identifiants
+    // Envoyer email de bienvenue
     const RESEND_KEY = process.env.RESEND_API_KEY;
+    const appUrl     = process.env.NEXT_PUBLIC_APP_URL || 'https://nexora-sage-nine.vercel.app';
+    const displayCompany = company_name || 'Votre gestionnaire';
+
     if (RESEND_KEY) {
-      await fetch('https://api.resend.com/emails', {
+      const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${RESEND_KEY}`,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          from: process.env.FROM_EMAIL || 'onboarding@resend.dev',
-          to: email,
-          subject: '🏠 Votre espace locataire Nexora',
-          html: `
-            <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
-              <div style="background:#1e40af;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px">
-                <h1 style="color:white;font-size:24px;margin:0">⚡ Nexora</h1>
-              </div>
-              <h2 style="color:#0f172a">Bonjour ${first_name} 👋</h2>
-              <p style="color:#64748b">Votre compte locataire a été créé.</p>
-              <div style="background:#f1f5f9;border-radius:12px;padding:20px;margin:24px 0">
-                <p style="margin:0 0 8px;color:#64748b;font-size:14px">Vos identifiants :</p>
-                <p style="margin:4px 0"><strong>Email :</strong> ${email}</p>
-                <p style="margin:4px 0"><strong>Mot de passe :</strong> <code style="background:#e2e8f0;padding:2px 8px;border-radius:4px">${password}</code></p>
-              </div>
-              <a href="${process.env.NEXT_PUBLIC_APP_URL}/auth/login"
-                style="display:block;background:#1e40af;color:white;padding:14px;text-align:center;border-radius:8px;text-decoration:none;font-weight:bold;margin-top:16px">
-                Accéder à mon espace →
-              </a>
-            </div>
-          `,
+          from:    process.env.FROM_EMAIL || 'onboarding@resend.dev',
+          to:      email,
+          subject: `🏠 Bienvenue sur votre espace locataire — ${displayCompany}`,
+          html:    emailHtml(first_name, email, password, appUrl, displayCompany),
         }),
-      }).catch(() => {});
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        console.error('Resend error:', err);
+      }
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      temp_password: !RESEND_KEY ? password : undefined 
+    return NextResponse.json({
+      success:       true,
+      // Retourner le mot de passe si Resend non configuré
+      temp_password: !RESEND_KEY ? password : undefined,
     });
+
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

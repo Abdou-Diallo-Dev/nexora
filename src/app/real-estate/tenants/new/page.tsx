@@ -68,11 +68,12 @@ export default function TenantFormPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tenant_id:  tenant.id,
-          email:      form.email,
-          first_name: form.first_name,
-          last_name:  form.last_name,
-          company_id: company!.id,
+          tenant_id:    tenant.id,
+          email:        form.email,
+          first_name:   form.first_name,
+          last_name:    form.last_name,
+          company_id:   company!.id,
+          company_name: company!.name,
         }),
       });
       const json = await res.json();
