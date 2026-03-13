@@ -86,7 +86,8 @@ export default function TenantTicketsPage() {
   }, [user?.id]);
 
   const createTicket = async () => {
-    if (!form.title.trim() || !tenantId || !companyId) { toast.error('Titre requis'); return; }
+    if (!form.title.trim()) { toast.error('Titre requis'); return; }
+    if (!tenantId || !companyId) { toast.error('Compte locataire non chargé, réessayez'); return; }
     setSaving(true);
     const { data, error } = await createClient().from('tenant_tickets').insert({
       company_id: companyId, tenant_id: tenantId,
