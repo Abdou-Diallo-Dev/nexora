@@ -17,6 +17,7 @@ type KPIs = {
   totalProps: number; rentedProps: number; availableProps: number;
   activeTenants: number; monthlyRevenue: number; pendingAmount: number;
   overdueAmount: number; openTickets: number;
+  tenantTickets: { id:string; title:string; category:string; priority:string; tenant:string; created_at:string }[];
   expiringLeases: { id:string; tenant:string; property:string; end_date:string }[];
   overdueRents: { id:string; tenant:string; amount:number; period_month:number; period_year:number }[];
   chart: { month:string; revenue:number }[];
@@ -84,7 +85,8 @@ export default function REDashboard() {
       sb.from('leases').select('id,status,end_date,rent_amount,tenants(first_name,last_name),properties(address)').eq('company_id', cid),
       sb.from('rent_payments').select('id,amount,status,period_month,period_year,tenants(first_name,last_name)').eq('company_id', cid).limit(200),
       sb.from('maintenance_tickets').select('id,status').eq('company_id', cid),
-    ]).then(([{ data: props }, { data: leases }, { data: payments }, { data: tickets }]) => {
+      sb.from('tenant_tickets').select('id,title,category,priority,status,created_at,tenants(first_name,last_name)').eq('company_id', cid).eq('status','open').order('created_at',{ascending:false}).limit(5),
+    ]).then(([{ data: props }, { data: leases }, { data: payments }, { data: tickets }, { data: tenantTix }]) => {
       const P = props || [];
       type LeaseRow = { id:string; status:string; end_date:string; rent_amount:number; tenants:{first_name:string;last_name:string}|null; properties:{address:string}|null };
       type PayRow   = { id:string; amount:number; status:string; period_month:number; period_year:number; tenants:{first_name:string;last_name:string}|null };
@@ -111,6 +113,11 @@ export default function REDashboard() {
         pendingAmount: pending.reduce((s,p)=>s+p.amount,0),
         overdueAmount: overdue.reduce((s,p)=>s+p.amount,0),
         openTickets: T.filter(t=>t.status==='open'||t.status==='in_progress').length,
+        tenantTickets: ((tenantTix||[]) as any[]).map(t=>({
+          id: t.id, title: t.title, category: t.category, priority: t.priority,
+          tenant: (t.tenants?.first_name||'') + ' ' + (t.tenants?.last_name||''),
+          created_at: t.created_at,
+        })),
         expiringLeases: active.filter(l=>{ const d=new Date(l.end_date); const diff=(d.getTime()-now.getTime())/(1000*60*60*24); return diff>=0&&diff<=60; })
           .map(l=>({ id:l.id, tenant:(l.tenants?.first_name||'')+' '+(l.tenants?.last_name||''), property:l.properties?.address||'', end_date:l.end_date })),
         overdueRents: overdue.slice(0,5).map(r=>({ id:r.id, tenant:(r.tenants?.first_name||'')+' '+(r.tenants?.last_name||''), amount:r.amount, period_month:r.period_month, period_year:r.period_year })),
@@ -407,6 +414,40 @@ export default function REDashboard() {
                 {item.icon}<span className="text-sm font-medium">{item.label}</span>
               </Link>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tickets locataires */}
+      {data.tenantTickets && data.tenantTickets.length > 0 && (
+        <div className="bg-white dark:bg-slate-800 border border-border rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Wrench size={15} className="text-orange-500"/>
+              <h3 className="font-semibold text-foreground text-sm">Signalements locataires ({data.tenantTickets.length})</h3>
+            </div>
+            <Link href="/real-estate/messages" className="text-xs text-primary hover:underline">Gérer →</Link>
+          </div>
+          <div className="space-y-2">
+            {data.tenantTickets.map(t => {
+              const priorityColor: Record<string,string> = { low:'text-green-600', normal:'text-amber-600', high:'text-orange-600', urgent:'text-red-600' };
+              const priorityEmoji: Record<string,string> = { low:'🟢', normal:'🟡', high:'🟠', urgent:'🔴' };
+              return (
+                <Link key={t.id} href="/real-estate/messages"
+                  className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-700/50 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-sm">{priorityEmoji[t.priority] || '⚪'}</span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-foreground truncate">{t.title}</p>
+                      <p className="text-xs text-muted-foreground">{t.tenant} · {t.category}</p>
+                    </div>
+                  </div>
+                  <span className={`text-xs font-medium flex-shrink-0 ml-2 ${priorityColor[t.priority] || ''}`}>
+                    {t.priority === 'urgent' ? 'URGENT' : t.priority}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}
