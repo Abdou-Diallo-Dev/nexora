@@ -82,10 +82,10 @@ export default function REDashboard() {
 
     Promise.all([
       sb.from('properties').select('id,status').eq('company_id', cid),
-      sb.from('leases').select('id,status,end_date,rent_amount,tenants(first_name,last_name),properties(address)').eq('company_id', cid),
+      sb.from('leases').select('id,status,end_date,rent_amount,tenant_id,properties(address)').eq('company_id', cid),
       sb.from('rent_payments').select('id,amount,status,period_month,period_year,tenant_id').eq('company_id', cid).limit(200),
       sb.from('maintenance_tickets').select('id,status').eq('company_id', cid),
-      sb.from('tenant_tickets').select('id,title,category,priority,status,created_at,tenants(first_name,last_name)').eq('company_id', cid).eq('status','open').order('created_at',{ascending:false}).limit(5),
+     sb.from('tenant_tickets').select('id,title,category,priority,status,created_at,tenant_id').eq('company_id', cid).eq('status','open').order('created_at',{ascending:false}).limit(5),
     ]).then(([{ data: props }, { data: leases }, { data: payments }, { data: tickets }, { data: tenantTix }]) => {
       const P = props || [];
       type LeaseRow = { id:string; status:string; end_date:string; rent_amount:number; tenants:{first_name:string;last_name:string}|null; properties:{address:string}|null };
