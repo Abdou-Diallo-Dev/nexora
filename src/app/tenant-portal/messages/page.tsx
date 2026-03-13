@@ -86,7 +86,7 @@ export default function TenantMessagesPage() {
       sender_role: 'tenant',
       sender_name: user?.full_name || 'Locataire',
       content,
-      is_read: false,
+      is_read:     false,
     }).select().single();
 
     // Optimistic update (realtime will also fire, dedup handled above)

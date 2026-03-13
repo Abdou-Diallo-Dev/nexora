@@ -126,7 +126,7 @@ export default function MessagesPage() {
       sender_role: 'company',
       sender_name: user?.full_name || 'Gestionnaire',
       content,
-      is_read: false,
+      is_read:     false,
     });
     setSending(false);
   };
