@@ -87,10 +87,11 @@ export default function MessagesPage() {
       .order('created_at', { ascending: false })
       .then(({ data }) => setTickets((data || []) as Ticket[]));
 
-    // Payments
+    // Payments — filtrer par company_id pour isolation multi-tenant
     sb.from('rent_payments')
       .select('id,amount,period_month,period_year,status,due_date')
       .eq('tenant_id', selected.id)
+      .eq('company_id', company.id)
       .order('period_year', { ascending: false })
       .order('period_month', { ascending: false })
       .limit(12)
