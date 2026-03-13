@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store';
 import { formatDate } from '@/lib/utils';
 
-type Notif = { id: string; type: string; title: string; body: string | null; is_read: boolean; link: string | null; created_at: string };
+type Notif = { id: string; type: string; title: string; message: string | null; is_read: boolean; link: string | null; created_at: string };
 
 const NAV = [
   { href: '/tenant-portal/dashboard',      label: 'Accueil',    icon: <Home size={18} /> },
@@ -152,7 +152,7 @@ export default function TenantPortalLayout({ children }: { children: React.React
                             <p className="text-sm font-medium text-foreground truncate">{n.title}</p>
                             {!n.is_read && <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />}
                           </div>
-                          {n.body && <p className="text-xs text-muted-foreground truncate mt-0.5">{n.body}</p>}
+                          {n.message && <p className="text-xs text-muted-foreground truncate mt-0.5">{n.message}</p>}
                           <p className="text-[10px] text-muted-foreground mt-1">{formatDate(n.created_at)}</p>
                         </div>
                       </div>
