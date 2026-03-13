@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Zap, Home, CreditCard, Wrench, MessageSquare, LogOut, Bell, User, FileText, X } from 'lucide-react';
+import { Zap, Home, CreditCard, Wrench, MessageSquare, LogOut, Bell, User, FileText, X, KeyRound } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store';
@@ -162,6 +162,10 @@ export default function TenantPortalLayout({ children }: { children: React.React
               )}
             </div>
 
+            <a href="/tenant-portal/profile"
+              className="p-2 rounded-xl text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" title="Mon profil">
+              <User size={17} />
+            </a>
             <button onClick={logout} className="p-2 rounded-xl text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" title="Déconnexion">
               <LogOut size={17} />
             </button>
