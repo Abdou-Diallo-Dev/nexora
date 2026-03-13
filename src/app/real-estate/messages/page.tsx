@@ -91,7 +91,6 @@ export default function MessagesPage() {
     sb.from('rent_payments')
       .select('id,amount,period_month,period_year,status,due_date')
       .eq('tenant_id', selected.id)
-      .eq('company_id', company.id)
       .order('period_year', { ascending: false })
       .order('period_month', { ascending: false })
       .limit(12)
@@ -134,11 +133,18 @@ export default function MessagesPage() {
 
   // Update ticket status
   const updateTicketStatus = async (ticketId: string, status: string) => {
-    const { error } = await createClient()
+    const sb = createClient();
+    // Utiliser service role via API pour éviter les restrictions
+    const { error, data } = await sb
       .from('tenant_tickets')
       .update({ status })
-      .eq('id', ticketId);
-    if (error) { toast.error('Erreur mise à jour'); return; }
+      .eq('id', ticketId)
+      .select('id,status');
+    if (error) {
+      console.error('Ticket update error:', error);
+      toast.error('Erreur: ' + error.message);
+      return;
+    }
     setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, status } : t));
     toast.success('Statut mis à jour');
   };

@@ -83,13 +83,13 @@ export default function REDashboard() {
     Promise.all([
       sb.from('properties').select('id,status').eq('company_id', cid),
       sb.from('leases').select('id,status,end_date,rent_amount,tenants(first_name,last_name),properties(address)').eq('company_id', cid),
-      sb.from('rent_payments').select('id,amount,status,period_month,period_year,tenants(first_name,last_name)').eq('company_id', cid).limit(200),
+      sb.from('rent_payments').select('id,amount,status,period_month,period_year,tenant_id').eq('company_id', cid).limit(200),
       sb.from('maintenance_tickets').select('id,status').eq('company_id', cid),
       sb.from('tenant_tickets').select('id,title,category,priority,status,created_at,tenants(first_name,last_name)').eq('company_id', cid).eq('status','open').order('created_at',{ascending:false}).limit(5),
     ]).then(([{ data: props }, { data: leases }, { data: payments }, { data: tickets }, { data: tenantTix }]) => {
       const P = props || [];
       type LeaseRow = { id:string; status:string; end_date:string; rent_amount:number; tenants:{first_name:string;last_name:string}|null; properties:{address:string}|null };
-      type PayRow   = { id:string; amount:number; status:string; period_month:number; period_year:number; tenants:{first_name:string;last_name:string}|null };
+      type PayRow   = { id:string; amount:number; status:string; period_month:number; period_year:number; tenant_id:string|null };
       const L   = (leases   || []) as unknown as LeaseRow[];
       const PAY = (payments || []) as unknown as PayRow[];
       const T   = tickets   || [];
@@ -120,7 +120,7 @@ export default function REDashboard() {
         })),
         expiringLeases: active.filter(l=>{ const d=new Date(l.end_date); const diff=(d.getTime()-now.getTime())/(1000*60*60*24); return diff>=0&&diff<=60; })
           .map(l=>({ id:l.id, tenant:(l.tenants?.first_name||'')+' '+(l.tenants?.last_name||''), property:l.properties?.address||'', end_date:l.end_date })),
-        overdueRents: overdue.slice(0,5).map(r=>({ id:r.id, tenant:(r.tenants?.first_name||'')+' '+(r.tenants?.last_name||''), amount:r.amount, period_month:r.period_month, period_year:r.period_year })),
+        overdueRents: overdue.slice(0,5).map(r=>({ id:r.id, tenant:'Locataire', amount:r.amount, period_month:r.period_month, period_year:r.period_year })),
         chart,
       };
       qc.set(cacheKey, result);
