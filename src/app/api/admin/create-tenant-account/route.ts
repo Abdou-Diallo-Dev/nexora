@@ -99,6 +99,14 @@ export async function POST(request: Request) {
       .maybeSingle();
     if (existing) return NextResponse.json({ success: true, already_exists: true });
 
+    // Toujours utiliser le company_id du tenant (source de vérité)
+    const { data: tenantRow } = await admin
+      .from('tenants')
+      .select('company_id')
+      .eq('id', tenant_id)
+      .maybeSingle();
+    const real_company_id = tenantRow?.company_id || company_id;
+
     const password  = generatePassword();
     const full_name = `${first_name} ${last_name}`.trim();
 
@@ -119,14 +127,14 @@ export async function POST(request: Request) {
 
     const uid = authData.user.id;
 
-    // Créer dans public.users
+    // Créer dans public.users avec le vrai company_id
     await admin.from('users').upsert({
-      id: uid, email, full_name, role: 'tenant', company_id, is_active: true,
+      id: uid, email, full_name, role: 'tenant', company_id: real_company_id, is_active: true,
     });
 
-    // Lier tenant_account
+    // Lier tenant_account avec le vrai company_id
     await admin.from('tenant_accounts').insert({
-      user_id: uid, tenant_id, company_id,
+      user_id: uid, tenant_id, company_id: real_company_id,
     });
 
     // Envoyer email de bienvenue
