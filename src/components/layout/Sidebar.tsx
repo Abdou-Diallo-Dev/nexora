@@ -32,9 +32,9 @@ const ALL_RE_ITEMS: NavItem[] = [
   { key:'onlinePayment',    href:'/real-estate/online-payment',    label:'Paiement en ligne',   icon:<Globe size={15}/> },
   { key:'invoices',         href:'/real-estate/invoices',          label:'Factures',            icon:<FileText size={15}/> },
   { key:'expenses',         href:'/real-estate/expenses',          label:'Dépenses',            icon:<Receipt size={15}/> },
-  // Maintenance
-  { key:'maintenance',      href:'/real-estate/maintenance',       label:'Maintenance',         icon:<Wrench size={15}/> },
-  { key:'notifications',    href:'/real-estate/notifications',     label:'Notifications',       icon:<Bell size={15}/> },
+  // Locataires
+  { key:'maintenance',      href:'/real-estate/messages',          label:'Signalements',        icon:<Wrench size={15}/> },
+  { key:'notifications',    href:'/real-estate/messages',          label:'Messagerie locataires', icon:<MessageSquare size={15}/> },
   // Analyse
   { key:'analytics',        href:'/real-estate/analytics',         label:'Analyse financière',  icon:<TrendingUp size={15}/> },
   { key:'stats',            href:'/real-estate/stats',             label:'Statistiques',        icon:<BarChart3 size={15}/> },
@@ -52,7 +52,7 @@ const RE_GROUP_MAP: { label: string; keys: string[]; adminOnly?: boolean }[] = [
   { label:'Dashboard',     keys:['dashboard'] },
   { label:'Biens',         keys:['properties','tenants','leases','inspections','terminations','convention'] },
   { label:'Paiements',     keys:['payments','onlinePayment','invoices','expenses'] },
-  { label:'Maintenance',   keys:['maintenance','notifications'] },
+  { label:'Locataires',    keys:['maintenance','notifications'] },
   { label:'Analyse',       keys:['analytics','stats','reports'] },
   { label:'Documents',     keys:['documents','contractTemplate'], adminOnly: true },
   { label:'Communication', keys:['messages'] },

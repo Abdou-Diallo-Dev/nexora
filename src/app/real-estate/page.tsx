@@ -82,17 +82,17 @@ export default function REDashboard() {
 
     Promise.all([
       sb.from('properties').select('id,status').eq('company_id', cid),
-      sb.from('leases').select('id,status,end_date,rent_amount,tenant_id,properties(address)').eq('company_id', cid),
+      sb.from('leases').select('id,status,end_date,rent_amount,tenants(first_name,last_name),properties(address)').eq('company_id', cid),
       sb.from('rent_payments').select('id,amount,status,period_month,period_year,tenant_id').eq('company_id', cid).limit(200),
-      sb.from('maintenance_tickets').select('id,status').eq('company_id', cid),
-     sb.from('tenant_tickets').select('id,title,category,priority,status,created_at,tenant_id').eq('company_id', cid).eq('status','open').order('created_at',{ascending:false}).limit(5),
+      sb.from('tenant_tickets').select('id,status').eq('company_id', cid),
+      sb.from('tenant_tickets').select('id,title,category,priority,status,created_at,tenants(first_name,last_name)').eq('company_id', cid).eq('status','open').order('created_at',{ascending:false}).limit(5),
     ]).then(([{ data: props }, { data: leases }, { data: payments }, { data: tickets }, { data: tenantTix }]) => {
       const P = props || [];
       type LeaseRow = { id:string; status:string; end_date:string; rent_amount:number; tenants:{first_name:string;last_name:string}|null; properties:{address:string}|null };
       type PayRow   = { id:string; amount:number; status:string; period_month:number; period_year:number; tenant_id:string|null };
       const L   = (leases   || []) as unknown as LeaseRow[];
       const PAY = (payments || []) as unknown as PayRow[];
-      const T   = tickets   || [];
+      const T   = (tickets || []) as {id:string;status:string}[];
       const active  = L.filter(l => l.status === 'active');
       const paid    = PAY.filter(p => p.status === 'paid');
       const overdue = PAY.filter(p => p.status === 'late' || p.status === 'overdue');
@@ -181,7 +181,7 @@ export default function REDashboard() {
           { show:true, title:'Biens immobiliers', value:data.totalProps, subtitle:data.rentedProps+' loues · '+data.availableProps+' disponibles', icon:<Home size={20}/>, color:'blue' as const, href:'/real-estate/properties' },
           { show:true, title:'Locataires actifs', value:data.activeTenants, subtitle:'Contrats en cours', icon:<Users size={20}/>, color:'green' as const, href:'/real-estate/tenants' },
           { show:sections.showRevenue, title:'Revenus du mois', value:formatCurrency(data.monthlyRevenue), subtitle:formatCurrency(data.pendingAmount)+' en attente', icon:<CreditCard size={20}/>, color:'purple' as const, href:'/real-estate/payments' },
-          { show:true, title:'Tickets ouverts', value:data.openTickets, subtitle:'Maintenances en cours', icon:<Wrench size={20}/>, color:'orange' as const, href:'/real-estate/maintenance' },
+          { show:true, title:'Signalements', value:data.openTickets, subtitle:'Tickets locataires ouverts', icon:<Wrench size={20}/>, color:'orange' as const, href:'/real-estate/maintenance' },
         ].filter(k=>k.show).map((k,i) => (
           <motion.div key={k.title} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{delay:i*0.06}}>
             <Link href={k.href}>
