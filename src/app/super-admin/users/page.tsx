@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Users, Search, Filter, Edit, ToggleLeft, ToggleRight, UserPlus, Trash2, X, AlertTriangle } from 'lucide-react';
+import { Users, Search, Filter, Edit, ToggleLeft, ToggleRight, UserPlus, Trash2, X, AlertTriangle, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore, AppUser, UserRole } from '@/lib/store';
 import { PageHeader, Badge, LoadingSpinner, EmptyState, Pagination, inputCls, selectCls, labelCls, btnPrimary, btnSecondary, cardCls, BadgeVariant } from '@/components/ui';
@@ -22,6 +22,7 @@ const ROLE_MAP: Record<string,{l:string;v:BadgeVariant}> = {
 };
 
 const ROLES: UserRole[] = ['admin','manager','agent','viewer','comptable'];
+const ROLES_WITH_SA: UserRole[] = ['super_admin','admin','manager','agent','viewer','comptable'];
 
 const ROLE_DESC: Record<string,string> = {
   admin:     'Acces complet a son entreprise',
@@ -47,6 +48,15 @@ export default function SuperAdminUsersPage() {
   const [deleting, setDeleting] = useState(false);
   const { query, setQuery, debounced } = useSearch();
   const { page, pageSize, offset, setPage } = usePagination(20);
+
+  // Password change modal
+  const [showPwdModal, setShowPwdModal] = useState(false);
+  const [pwdForm, setPwdForm] = useState({ newPwd:'', confirm:'' });
+  const [showPwd, setShowPwd] = useState(false);
+  const [savingPwd, setSavingPwd] = useState(false);
+  // Promote to super_admin
+  const [promotingUser, setPromotingUser] = useState<FullUser|null>(null);
+  const [promoting, setPromoting] = useState(false);
 
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -112,14 +122,38 @@ export default function SuperAdminUsersPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erreur suppression');
-      setItems(prev => prev.filter(x => x.id !== deletingUser.id));
-      setTotal(t => t - 1);
-      toast.success('Utilisateur supprime definitivement');
+      toast.success('Utilisateur supprimé définitivement');
+      setDeletingUser(null);
+      setDeleting(false);
+      load();
+      return;
     } catch (e: any) {
       toast.error('Erreur: ' + e.message);
     }
     setDeleting(false);
     setDeletingUser(null);
+  };
+
+  const changePassword = async () => {
+    if (pwdForm.newPwd.length < 8) { toast.error('Minimum 8 caractères'); return; }
+    if (pwdForm.newPwd !== pwdForm.confirm) { toast.error('Les mots de passe ne correspondent pas'); return; }
+    setSavingPwd(true);
+    const { error } = await createClient().auth.updateUser({ password: pwdForm.newPwd });
+    setSavingPwd(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Mot de passe modifié !');
+    setShowPwdModal(false);
+    setPwdForm({ newPwd:'', confirm:'' });
+  };
+
+  const promoteToSuperAdmin = async () => {
+    if (!promotingUser) return;
+    setPromoting(true);
+    await createClient().from('users').update({ role: 'super_admin' } as never).eq('id', promotingUser.id);
+    setItems(prev => prev.map(x => x.id===promotingUser.id ? {...x, role:'super_admin' as UserRole} : x));
+    toast.success(promotingUser.full_name + ' est maintenant Super Admin !');
+    setPromotingUser(null);
+    setPromoting(false);
   };
 
   const handleCreateUser = async () => {
@@ -155,9 +189,14 @@ export default function SuperAdminUsersPage() {
     <div>
       <PageHeader title="Utilisateurs" subtitle={total+' utilisateur(s)'}
         actions={
-          <button onClick={() => setShowCreate(true)} className={btnPrimary}>
-            <UserPlus size={16}/> Creer un utilisateur
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => setShowPwdModal(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-white dark:bg-slate-800 text-sm font-medium hover:bg-slate-50 transition-colors">
+              <Lock size={15}/> Mon mot de passe
+            </button>
+            <button onClick={() => setShowCreate(true)} className={btnPrimary}>
+              <UserPlus size={16}/> Creer un utilisateur
+            </button>
+          </div>
         }
       />
 
@@ -245,6 +284,12 @@ export default function SuperAdminUsersPage() {
                           className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" title="Modifier role">
                           <Edit size={15}/>
                         </button>
+                        {!isSelf && u.role !== 'super_admin' && (
+                          <button onClick={()=>setPromotingUser(u)}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors" title="Nommer Super Admin">
+                            <ShieldCheck size={15}/>
+                          </button>
+                        )}
                         <button onClick={()=>toggleActive(u)} disabled={togglingId===u.id || isSelf}
                           className={'p-1.5 rounded-lg transition-colors '+(isSelf?'opacity-30 cursor-not-allowed':u.is_active?'text-amber-500 hover:bg-amber-50':'text-green-600 hover:bg-green-50')}
                           title={isSelf?'Impossible':u.is_active?'Desactiver':'Activer'}>
@@ -373,6 +418,76 @@ export default function SuperAdminUsersPage() {
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors">
                 {deleting ? <LoadingSpinner size={15}/> : <Trash2 size={15}/>}
                 {deleting ? 'Suppression...' : 'Supprimer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL MOT DE PASSE */}
+      {showPwdModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className={cardCls+' p-6 w-full max-w-sm'}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Lock size={16} className="text-primary"/>
+                <h3 className="font-semibold text-foreground">Changer mon mot de passe</h3>
+              </div>
+              <button onClick={()=>setShowPwdModal(false)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-muted-foreground"><X size={16}/></button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className={labelCls}>Nouveau mot de passe</label>
+                <div className="relative">
+                  <input type={showPwd ? 'text' : 'password'} value={pwdForm.newPwd}
+                    onChange={e=>setPwdForm(f=>({...f,newPwd:e.target.value}))}
+                    placeholder="Minimum 8 caractères" className={inputCls+' pr-9'}/>
+                  <button type="button" onClick={()=>setShowPwd(v=>!v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    {showPwd ? <EyeOff size={15}/> : <Eye size={15}/>}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>Confirmer</label>
+                <input type={showPwd ? 'text' : 'password'} value={pwdForm.confirm}
+                  onChange={e=>setPwdForm(f=>({...f,confirm:e.target.value}))}
+                  placeholder="Répétez le mot de passe" className={inputCls}/>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end mt-5">
+              <button onClick={()=>setShowPwdModal(false)} className={btnSecondary}>Annuler</button>
+              <button onClick={changePassword} disabled={savingPwd} className={btnPrimary}>
+                {savingPwd ? <LoadingSpinner size={15}/> : <Lock size={15}/>} Enregistrer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PROMOUVOIR SUPER ADMIN */}
+      {promotingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className={cardCls+' p-6 w-full max-w-sm'}>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                <ShieldCheck size={18} className="text-yellow-600"/>
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Nommer Super Admin ?</h3>
+                <p className="text-sm text-muted-foreground">Cette action donne tous les droits</p>
+              </div>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3 mb-5">
+              <p className="font-medium text-sm text-foreground">{promotingUser.full_name||'—'}</p>
+              <p className="text-xs text-muted-foreground">{promotingUser.email}</p>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button onClick={()=>setPromotingUser(null)} className={btnSecondary}>Annuler</button>
+              <button onClick={promoteToSuperAdmin} disabled={promoting}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-semibold transition-colors">
+                {promoting ? <LoadingSpinner size={15}/> : <ShieldCheck size={15}/>}
+                {promoting ? 'En cours...' : 'Confirmer'}
               </button>
             </div>
           </div>
