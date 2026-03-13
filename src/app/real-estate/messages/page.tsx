@@ -164,9 +164,9 @@ export default function MessagesPage() {
         user_id:   ta.user_id,
         tenant_id: selected.id,
         company_id: company?.id,
-        type:  'rent_reminder',
+        type:  'info',
         title: 'Rappel de loyer',
-        body:  notifText.trim(),
+        message: notifText.trim(),
         link:  '/tenant-portal/payments',
       });
     }
