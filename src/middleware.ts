@@ -5,21 +5,27 @@ import type { NextRequest } from 'next/server';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const publicPaths = ['/auth/', '/api/admin/register-company', '/_next/', '/favicon'];
+  const publicPaths = [
+    '/auth/',
+    '/api/admin/register-company',
+    '/api/payments/webhook',
+    '/billing',
+    '/_next/',
+    '/favicon',
+    '/index.html',
+  ];
+
   if (publicPaths.some(p => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
   const response = NextResponse.next();
-
   const sb = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
-        },
+        get(name: string) { return request.cookies.get(name)?.value; },
         set(name: string, value: string, options: CookieOptions) {
           response.cookies.set({ name, value, ...options });
         },
@@ -31,14 +37,13 @@ export async function middleware(request: NextRequest) {
   );
 
   const { data: { session } } = await sb.auth.getSession();
-
   if (!session) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
   const { data: userRow } = await sb
     .from('users')
-    .select('is_active, role')
+    .select('is_active, role, company_id')
     .eq('id', session.user.id)
     .maybeSingle();
 
@@ -49,6 +54,38 @@ export async function middleware(request: NextRequest) {
     res.cookies.delete('sb-access-token');
     res.cookies.delete('sb-refresh-token');
     return res;
+  }
+
+  // Super admin → pas de vérification abonnement
+  if (userRow?.role === 'super_admin') {
+    return response;
+  }
+
+  // Vérification abonnement pour les routes protégées
+  const protectedRoutes = ['/real-estate', '/logistics', '/admin'];
+  if (protectedRoutes.some(p => pathname.startsWith(p)) && userRow?.company_id) {
+    const { data: sub } = await sb
+      .from('subscriptions')
+      .select('status, trial_ends_at, current_period_end')
+      .eq('company_id', userRow.company_id)
+      .maybeSingle();
+
+    if (sub) {
+      const now = new Date();
+
+      // Vérifier si l'essai est expiré
+      if (sub.status === 'trial' && new Date(sub.trial_ends_at) < now) {
+        return NextResponse.redirect(new URL('/billing?reason=trial_expired', request.url));
+      }
+
+      // Vérifier si l'abonnement est expiré
+      if (sub.status === 'expired') {
+        return NextResponse.redirect(new URL('/billing?reason=subscription_expired', request.url));
+      }
+    } else {
+      // Pas d'abonnement trouvé → rediriger vers billing
+      return NextResponse.redirect(new URL('/billing?reason=no_subscription', request.url));
+    }
   }
 
   return response;
