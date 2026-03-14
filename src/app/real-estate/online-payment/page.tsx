@@ -28,17 +28,24 @@ type Transaction = {
 };
 
 const PROVIDERS = [
-  { id: 'wave',         label: 'Wave',         desc: 'Wave Mobile Money',    color: 'bg-teal-500',   available: true  },
-  { id: 'orange_money', label: 'Orange Money', desc: 'Orange Money SN',      color: 'bg-orange-500', available: true  },
-  { id: 'free_money',   label: 'Free Money',   desc: 'Free Money SN',        color: 'bg-red-500',    available: true  },
-  { id: 'card',         label: 'Visa/Mastercard', desc: 'Carte bancaire',    color: 'bg-blue-500',   available: true  },
+  { id: 'wave',         label: 'Wave',            desc: 'Wave Mobile Money', color: 'bg-teal-500',   available: true },
+  { id: 'orange_money', label: 'Orange Money',    desc: 'Orange Money SN',   color: 'bg-orange-500', available: true },
+  { id: 'free_money',   label: 'Free Money',      desc: 'Free Money SN',     color: 'bg-red-500',    available: true },
+  { id: 'card',         label: 'Visa/Mastercard', desc: 'Carte bancaire',    color: 'bg-blue-500',   available: true },
 ];
 
 const TX_STATUS: Record<string, { l: string; v: BadgeVariant }> = {
-  pending:  { l: 'En attente', v: 'warning' },
-  success:  { l: 'Réussi',     v: 'success' },
-  failed:   { l: 'Échoué',     v: 'error'   },
-  cancelled:{ l: 'Annulé',     v: 'error'   },
+  pending:   { l: 'En attente', v: 'warning' },
+  success:   { l: 'Réussi',     v: 'success' },
+  failed:    { l: 'Échoué',     v: 'error'   },
+  cancelled: { l: 'Annulé',     v: 'error'   },
+};
+
+const PAY_STATUS: Record<string, { l: string; color: string }> = {
+  paid:    { l: 'Payé',       color: 'text-green-600' },
+  pending: { l: 'En attente', color: 'text-amber-600' },
+  late:    { l: 'En retard',  color: 'text-red-600'   },
+  overdue: { l: 'Échu',       color: 'text-red-700'   },
 };
 
 export default function OnlinePaymentPage() {
@@ -57,7 +64,6 @@ export default function OnlinePaymentPage() {
       sb.from('rent_payments')
         .select('*,leases(tenants(first_name,last_name,email,phone),properties(name,address))')
         .eq('company_id', company.id)
-        .in('status', ['pending', 'late', 'overdue'])
         .order('period_year', { ascending: false })
         .limit(50),
       sb.from('online_transactions')
@@ -100,7 +106,6 @@ export default function OnlinePaymentPage() {
         setPaymentLink(data.redirect_url);
         toast.success('Lien de paiement généré !');
 
-        // Refresh transactions
         const sb = createClient();
         const { data: txData } = await sb.from('online_transactions')
           .select('*').eq('company_id', company.id)
@@ -175,20 +180,21 @@ export default function OnlinePaymentPage() {
                     setPaymentLink(null);
                   }}
                 >
-                  <option value="">-- Choisir un paiement en attente --</option>
+                  <option value="">-- Choisir un paiement --</option>
                   {payments.map(p => {
                     const t = p.leases?.tenants;
                     const total = (Number(p.amount) || 0) + (Number(p.charges_amount) || 0);
+                    const st = PAY_STATUS[p.status];
                     return (
                       <option key={p.id} value={p.id}>
-                        {t ? `${t.first_name} ${t.last_name}` : '?'} — {formatMonth(p.period_month, p.period_year)} — {formatCurrency(total)}
+                        {t ? `${t.first_name} ${t.last_name}` : '?'} — {formatMonth(p.period_month, p.period_year)} — {formatCurrency(total)} {st ? `(${st.l})` : ''}
                       </option>
                     );
                   })}
                 </select>
               )}
               {!loading && payments.length === 0 && (
-                <p className="text-xs text-muted-foreground mt-1">Aucun paiement en attente.</p>
+                <p className="text-xs text-muted-foreground mt-1">Aucun paiement trouvé.</p>
               )}
             </div>
 
@@ -198,6 +204,12 @@ export default function OnlinePaymentPage() {
                 <p><span className="text-muted-foreground">Locataire :</span> <strong>{selectedPayment.leases?.tenants?.first_name} {selectedPayment.leases?.tenants?.last_name}</strong></p>
                 <p><span className="text-muted-foreground">Bien :</span> {selectedPayment.leases?.properties?.name}</p>
                 <p><span className="text-muted-foreground">Période :</span> {formatMonth(selectedPayment.period_month, selectedPayment.period_year)}</p>
+                <p>
+                  <span className="text-muted-foreground">Statut :</span>{' '}
+                  <span className={PAY_STATUS[selectedPayment.status]?.color || ''}>
+                    {PAY_STATUS[selectedPayment.status]?.l || selectedPayment.status}
+                  </span>
+                </p>
                 <p><span className="text-muted-foreground">Montant :</span> <strong className="text-primary text-base">{formatCurrency((Number(selectedPayment.amount) || 0) + (Number(selectedPayment.charges_amount) || 0))}</strong></p>
                 {!selectedPayment.leases?.tenants?.phone && (
                   <p className="text-amber-600 text-xs">⚠ Téléphone non renseigné — WhatsApp indisponible</p>
@@ -205,13 +217,12 @@ export default function OnlinePaymentPage() {
               </div>
             )}
 
-            {/* Moyens de paiement disponibles */}
+            {/* Moyens de paiement */}
             <div className="mb-4">
               <label className={labelCls}>Moyens de paiement acceptés</label>
               <div className="grid grid-cols-2 gap-2 mt-1">
                 {PROVIDERS.map(p => (
-                  <div key={p.id}
-                    className="p-3 rounded-lg border border-border bg-slate-50 dark:bg-slate-700/30 flex items-center gap-2">
+                  <div key={p.id} className="p-3 rounded-lg border border-border bg-slate-50 dark:bg-slate-700/30 flex items-center gap-2">
                     <div className={`w-4 h-4 rounded-full ${p.color} flex-shrink-0`} />
                     <div>
                       <p className="text-xs font-semibold text-foreground">{p.label}</p>
