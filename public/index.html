@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexora — Gestion immobilière professionnelle</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --blue:#2563EB;--blue2:#1D4ED8;--blue3:#EFF6FF;--blue-glow:rgba(37,99,235,0.2);
+  --dark:#0A0F1E;--dark2:#111827;--dark3:#1E293B;
+  --text:#F8FAFC;--text2:#CBD5E1;--text3:#64748B;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);
+  --grad:linear-gradient(135deg,#3B82F6 0%,#2563EB 100%);
+  --card:rgba(255,255,255,0.04);
+}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--text);overflow-x:hidden;line-height:1.65}
+h1,h2,h3,.brand{font-family:'Syne',sans-serif}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:200;padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between;background:rgba(10,15,30,0.9);backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:10px;font-size:1.15rem;font-weight:700;color:#fff;text-decoration:none}
+.brand-icon{width:34px;height:34px;background:var(--grad);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.nav-links{display:flex;gap:1.75rem;list-style:none}
+.nav-links a{color:var(--text2);text-decoration:none;font-size:.88rem;font-weight:400;transition:.2s}
+.nav-links a:hover{color:#fff}
+.nav-right{display:flex;align-items:center;gap:.75rem}
+.btn-ghost{color:var(--text2);text-decoration:none;font-size:.88rem;padding:.45rem 1rem;border-radius:8px;border:1px solid var(--border2);transition:.2s}
+.btn-ghost:hover{background:var(--card);color:#fff}
+.btn-nav{background:var(--grad);color:#fff;padding:.5rem 1.25rem;border-radius:8px;text-decoration:none;font-size:.88rem;font-weight:500;transition:.2s}
+.btn-nav:hover{transform:translateY(-1px);box-shadow:0 4px 20px var(--blue-glow)}
+
+/* HERO */
+.hero{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:4rem;padding:7rem 5rem 4rem;max-width:1200px;margin:0 auto;position:relative}
+.hero-bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 70% 50% at 30% 30%,rgba(37,99,235,0.12) 0%,transparent 60%),radial-gradient(ellipse 50% 40% at 80% 70%,rgba(59,130,246,0.07) 0%,transparent 60%)}
+.hero-grid-bg{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);background-size:64px 64px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black,transparent)}
+.hero-left{position:relative;z-index:1}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.3);color:#93C5FD;padding:.35rem .9rem;border-radius:100px;font-size:.78rem;font-weight:500;margin-bottom:1.5rem}
+.hero-badge-dot{width:6px;height:6px;background:#60A5FA;border-radius:50%;animation:blink 2s ease-in-out infinite}
+.hero h1{font-size:3.2rem;font-weight:800;line-height:1.1;margin-bottom:1.25rem;letter-spacing:-.02em}
+.hero h1 em{font-style:normal;background:linear-gradient(135deg,#93C5FD,#3B82F6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-desc{font-size:1.05rem;color:var(--text2);margin-bottom:2rem;line-height:1.7;max-width:480px}
+.hero-actions{display:flex;gap:.875rem;flex-wrap:wrap;margin-bottom:2.5rem}
+.btn-primary{background:var(--grad);color:#fff;padding:.8rem 1.75rem;border-radius:10px;text-decoration:none;font-weight:500;font-size:.95rem;transition:.25s;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 24px rgba(37,99,235,.35)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(37,99,235,.45)}
+.btn-outline{color:var(--text2);padding:.8rem 1.75rem;border-radius:10px;text-decoration:none;font-weight:500;font-size:.95rem;border:1px solid var(--border2);transition:.25s;display:inline-flex;align-items:center;gap:8px}
+.btn-outline:hover{background:var(--card);color:#fff;border-color:rgba(255,255,255,.3)}
+.hero-trust{display:flex;align-items:center;gap:1.25rem;font-size:.8rem;color:var(--text3)}
+.trust-item{display:flex;align-items:center;gap:6px}
+.trust-dot{width:8px;height:8px;border-radius:50%;background:#22C55E}
+
+/* PHONE MOCKUP */
+.hero-right{position:relative;z-index:1;display:flex;justify-content:center;align-items:center}
+.phone-stack{position:relative;width:280px;height:580px}
+.phone-frame{width:260px;background:#1a1a2e;border-radius:36px;border:2px solid rgba(255,255,255,0.15);overflow:hidden;box-shadow:0 40px 80px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.05);position:relative}
+.phone-notch{height:28px;background:#111;display:flex;align-items:center;justify-content:center}
+.phone-notch-pill{width:80px;height:6px;background:#333;border-radius:3px}
+.phone-screen{background:#f8fafc;min-height:520px;overflow:hidden}
+.phone-screen img{width:100%;height:auto;display:block}
+.phone-back{position:absolute;top:40px;right:-60px;width:220px;opacity:.5;transform:rotate(6deg);z-index:-1}
+.phone-back .phone-frame{border-color:rgba(255,255,255,0.08)}
+
+/* LOGOS TRUST */
+.logos-section{padding:2rem 5rem;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:rgba(255,255,255,.01)}
+.logos-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:3rem;flex-wrap:wrap}
+.logos-label{font-size:.78rem;color:var(--text3);text-transform:uppercase;letter-spacing:.1em}
+.payment-logo{display:flex;align-items:center;gap:8px;font-size:.9rem;font-weight:500;color:var(--text2);padding:.5rem 1rem;background:var(--card);border:1px solid var(--border);border-radius:8px}
+.pay-dot{width:10px;height:10px;border-radius:50%}
+
+/* SECTIONS */
+.section{padding:6rem 5rem}
+.container{max-width:1100px;margin:0 auto}
+.section-header{max-width:580px;margin-bottom:3rem}
+.eyebrow{display:inline-flex;align-items:center;gap:6px;background:rgba(37,99,235,.1);border:1px solid rgba(37,99,235,.2);color:#93C5FD;padding:.3rem .85rem;border-radius:100px;font-size:.73rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.875rem}
+.eyebrow-dot{width:5px;height:5px;background:#60A5FA;border-radius:50%}
+.section-title{font-size:2.3rem;font-weight:700;line-height:1.2;margin-bottom:.75rem;letter-spacing:-.02em}
+.section-sub{color:var(--text2);font-size:.975rem;line-height:1.7}
+
+/* FEATURES BENTO */
+.bento{display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto;gap:1.25rem}
+.bento-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:1.75rem;transition:.3s;position:relative;overflow:hidden}
+.bento-card:hover{border-color:rgba(37,99,235,.35);background:rgba(255,255,255,.06);transform:translateY(-3px)}
+.bento-card.wide{grid-column:span 2}
+.bento-card.tall{grid-row:span 2}
+.bento-glow{position:absolute;top:-30px;left:-30px;width:120px;height:120px;background:var(--blue-glow);border-radius:50%;filter:blur(30px);opacity:0;transition:.3s}
+.bento-card:hover .bento-glow{opacity:1}
+.bento-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;margin-bottom:1rem;background:rgba(37,99,235,.15);border:1px solid rgba(37,99,235,.2)}
+.bento-card h3{font-size:.975rem;font-weight:600;margin-bottom:.4rem;color:#fff}
+.bento-card p{font-size:.845rem;color:var(--text2);line-height:1.6}
+.bento-tag{display:inline-block;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.2);color:#86EFAC;padding:.2rem .6rem;border-radius:6px;font-size:.72rem;font-weight:500;margin-top:.75rem}
+
+/* TWO SPACES */
+.spaces{display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+.space-card{border-radius:22px;padding:2.5rem;position:relative;overflow:hidden;border:1px solid var(--border)}
+.space-card.agency{background:linear-gradient(135deg,rgba(37,99,235,.12),rgba(29,78,216,.04))}
+.space-card.tenant{background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(5,150,105,.03))}
+.space-accent{position:absolute;top:-40px;right:-40px;width:200px;height:200px;border-radius:50%;filter:blur(60px);opacity:.2}
+.agency .space-accent{background:#3B82F6}
+.tenant .space-accent{background:#10B981}
+.space-header{display:flex;align-items:center;gap:12px;margin-bottom:1.5rem}
+.space-icon-wrap{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem}
+.agency .space-icon-wrap{background:rgba(37,99,235,.2)}
+.tenant .space-icon-wrap{background:rgba(16,185,129,.2)}
+.space-card h3{font-size:1.2rem;font-weight:700;color:#fff}
+.space-card .space-sub{font-size:.84rem;color:var(--text3);margin-top:2px}
+.feature-list{list-style:none;display:flex;flex-direction:column;gap:.55rem}
+.feature-list li{display:flex;align-items:center;gap:10px;font-size:.875rem;color:var(--text2)}
+.check{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;flex-shrink:0;font-weight:700}
+.agency .check{background:rgba(37,99,235,.2);color:#93C5FD}
+.tenant .check{background:rgba(16,185,129,.2);color:#6EE7B7}
+
+/* SCREEN SHOWCASE */
+.showcase{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center}
+.showcase.reverse{direction:rtl}
+.showcase.reverse > *{direction:ltr}
+.showcase-text{}
+.showcase-phones{display:flex;gap:1rem;justify-content:center;align-items:flex-end}
+.showcase-phone{width:200px;border-radius:28px;border:2px solid rgba(255,255,255,.12);overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,.5)}
+.showcase-phone img{width:100%;display:block}
+.showcase-phone.secondary{width:170px;opacity:.7;margin-bottom:1rem}
+
+/* PAYMENT */
+.payment-section{text-align:center;background:linear-gradient(180deg,transparent,rgba(37,99,235,.05),transparent)}
+.providers-grid{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;margin-top:2.5rem;margin-bottom:2rem}
+.provider-card{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border2);border-radius:12px;padding:.7rem 1.25rem;transition:.2s}
+.provider-card:hover{border-color:rgba(37,99,235,.4);background:rgba(37,99,235,.08);transform:translateY(-2px)}
+.prov-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.prov-name{font-size:.9rem;font-weight:500;color:#fff}
+.prov-sub{font-size:.75rem;color:var(--text3)}
+.commission-pill{display:inline-flex;align-items:center;gap:8px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);color:#86EFAC;padding:.5rem 1.25rem;border-radius:100px;font-size:.85rem}
+
+/* CTA */
+.cta-section{padding:6rem 5rem}
+.cta-inner{max-width:800px;margin:0 auto;text-align:center;background:linear-gradient(135deg,rgba(37,99,235,.15),rgba(29,78,216,.08));border:1px solid rgba(37,99,235,.25);border-radius:28px;padding:4.5rem 3rem;position:relative;overflow:hidden}
+.cta-glow-1{position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:500px;height:200px;background:radial-gradient(ellipse,rgba(37,99,235,.3),transparent 70%);pointer-events:none}
+.cta-inner h2{font-size:2.5rem;font-weight:800;margin-bottom:1rem;letter-spacing:-.02em}
+.cta-inner p{color:var(--text2);font-size:1rem;margin-bottom:2.5rem;max-width:480px;margin-left:auto;margin-right:auto}
+.cta-actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+
+/* FOOTER */
+footer{padding:3rem 5rem;border-top:1px solid var(--border)}
+.footer-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+.footer-copy{font-size:.8rem;color:var(--text3)}
+.footer-links{display:flex;gap:1.5rem}
+.footer-links a{font-size:.8rem;color:var(--text3);text-decoration:none;transition:.2s}
+.footer-links a:hover{color:var(--text2)}
+
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+@media(max-width:900px){
+  .hero{grid-template-columns:1fr;padding:6rem 2rem 3rem;gap:2rem}
+  .hero-right{display:none}
+  .section{padding:4rem 2rem}
+  .logos-section{padding:1.5rem 2rem}
+  .bento{grid-template-columns:1fr 1fr}
+  .bento-card.wide{grid-column:span 2}
+  .spaces{grid-template-columns:1fr}
+  .showcase{grid-template-columns:1fr}
+  .showcase-phones{display:none}
+  .cta-section{padding:4rem 2rem}
+  .cta-inner{padding:3rem 1.5rem}
+  .cta-inner h2{font-size:1.8rem}
+  footer{padding:2rem}
+  .nav-links{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="hero-bg"></div>
+<div class="hero-grid-bg"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="brand">
+    <div class="brand-icon">⚡</div>
+    Nexora
+  </a>
+  <ul class="nav-links">
+    <li><a href="#features">Fonctionnalités</a></li>
+    <li><a href="#espaces">Agences & Locataires</a></li>
+    <li><a href="#paiement">Paiement</a></li>
+  </ul>
+  <div class="nav-right">
+    <a href="https://nexora-sage-nine.vercel.app/auth/login" class="btn-ghost">Se connecter</a>
+    <a href="https://nexora-sage-nine.vercel.app/auth/login" class="btn-nav">Commencer gratuitement →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section style="position:relative;z-index:1">
+<div class="hero">
+  <div class="hero-left">
+    <div class="hero-badge">
+      <span class="hero-badge-dot"></span>
+      Fait au Sénégal · Wave & Orange Money intégrés
+    </div>
+    <h1>La gestion<br>immobilière<br><em>sans friction</em></h1>
+    <p class="hero-desc">Nexora centralise vos biens, locataires, contrats et loyers en une seule plateforme. Les locataires paient en ligne, vous gérez tout depuis votre téléphone.</p>
+    <div class="hero-actions">
+      <a href="https://nexora-sage-nine.vercel.app/auth/login" class="btn-primary">Essayer gratuitement ↗</a>
+      <a href="#features" class="btn-outline">Voir comment ça marche</a>
+    </div>
+    <div class="hero-trust">
+      <div class="trust-item"><span class="trust-dot"></span> Inscription gratuite</div>
+      <div class="trust-item"><span class="trust-dot"></span> Sans carte bancaire</div>
+      <div class="trust-item"><span class="trust-dot"></span> 100% en ligne</div>
+    </div>
+  </div>
+  <div class="hero-right">
+    <div class="phone-stack">
+      <div class="phone-frame" style="position:relative;z-index:2">
+        <div class="phone-notch"><div class="phone-notch-pill"></div></div>
+        <div class="phone-screen">
+          <img src="https://nexora-sage-nine.vercel.app/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fhero.png&w=640&q=75" 
+               onerror="this.style.display='none';this.nextElementSibling.style.display='block'"
+               alt="Dashboard Nexora" />
+          <!-- Fallback mockup si image non dispo -->
+          <div style="display:none;background:#f8fafc;padding:1rem;font-family:sans-serif">
+            <div style="background:#2563EB;color:#fff;padding:1rem;border-radius:10px;margin-bottom:1rem">
+              <div style="font-size:.7rem;opacity:.8">Bonjour 👋</div>
+              <div style="font-size:1rem;font-weight:700">Abdourakhmane</div>
+              <div style="font-size:.65rem;opacity:.7;margin-top:2px">📍 Groupe Diallo Immobilier</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1rem">
+              <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:.75rem">
+                <div style="font-size:.65rem;color:#64748b">Biens</div>
+                <div style="font-size:1.5rem;font-weight:700;color:#0f172a">1</div>
+              </div>
+              <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:.75rem">
+                <div style="font-size:.65rem;color:#64748b">Locataires</div>
+                <div style="font-size:1.5rem;font-weight:700;color:#0f172a">1</div>
+              </div>
+              <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:.75rem">
+                <div style="font-size:.65rem;color:#64748b">Revenus</div>
+                <div style="font-size:.9rem;font-weight:700;color:#0f172a">150k</div>
+                <div style="font-size:.55rem;color:#64748b">FCFA</div>
+              </div>
+              <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:.75rem">
+                <div style="font-size:.65rem;color:#64748b">Signalements</div>
+                <div style="font-size:1.5rem;font-weight:700;color:#0f172a">0</div>
+              </div>
+            </div>
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:.75rem">
+              <div style="font-size:.65rem;color:#64748b;margin-bottom:.5rem">BIENS RÉCENTS</div>
+              <div style="display:flex;align-items:center;gap:.5rem">
+                <div style="width:40px;height:40px;background:#e2e8f0;border-radius:6px"></div>
+                <div>
+                  <div style="font-size:.75rem;font-weight:600;color:#0f172a">Oncad</div>
+                  <div style="font-size:.65rem;color:#64748b">Mbour2 · Disponible</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- PAYMENT LOGOS -->
+<div class="logos-section" style="position:relative;z-index:1">
+  <div class="logos-inner">
+    <span class="logos-label">Paiements acceptés</span>
+    <div class="payment-logo"><div class="pay-dot" style="background:#00BFA5"></div>Wave</div>
+    <div class="payment-logo"><div class="pay-dot" style="background:#FF6D00"></div>Orange Money</div>
+    <div class="payment-logo"><div class="pay-dot" style="background:#E53935"></div>Free Money</div>
+    <div class="payment-logo"><div class="pay-dot" style="background:#7B1FA2"></div>Wizall</div>
+    <div class="payment-logo"><div class="pay-dot" style="background:#1565C0"></div>Visa / Mastercard</div>
+  </div>
+</div>
+
+<!-- FEATURES BENTO -->
+<section class="section" id="features" style="position:relative;z-index:1">
+  <div class="container">
+    <div class="section-header">
+      <div class="eyebrow"><span class="eyebrow-dot"></span>Plateforme complète</div>
+      <h2 class="section-title">Tout ce dont vous avez besoin, rien de superflu</h2>
+      <p class="section-sub">De la signature du bail jusqu'au paiement du loyer — Nexora couvre l'intégralité du cycle de gestion locative en temps réel.</p>
+    </div>
+    <div class="bento">
+      <div class="bento-card">
+        <div class="bento-glow"></div>
+        <div class="bento-icon">🏢</div>
+        <h3>Gestion des biens</h3>
+        <p>Centralisez tous vos biens, suivez la disponibilité et la rentabilité en temps réel depuis votre tableau de bord.</p>
+      </div>
+      <div class="bento-card">
+        <div class="bento-glow"></div>
+        <div class="bento-icon">📋</div>
+        <h3>Contrats intelligents</h3>
+        <p>Générez, gérez et résiliez vos contrats de bail en un clic. Décharge automatique incluse.</p>
+        <span class="bento-tag">✓ PDF automatique</span>
+      </div>
+      <div class="bento-card">
+        <div class="bento-glow"></div>
+        <div class="bento-icon">💳</div>
+        <h3>Paiement en ligne</h3>
+        <p>Encaissez via Wave, Orange Money, Free Money ou carte. Zéro déplacement pour votre locataire.</p>
+      </div>
+      <div class="bento-card wide">
+        <div class="bento-glow"></div>
+        <div class="bento-icon">💬</div>
+        <h3>Messagerie intégrée</h3>
+        <p>Communiquez directement avec vos locataires depuis la plateforme. Historique centralisé, notifications en temps réel. Plus besoin de jongler entre WhatsApp et vos dossiers.</p>
+        <span class="bento-tag">✓ Locataires notifiés automatiquement</span>
+      </div>
+      <div class="bento-card">
+        <div class="bento-glow"></div>
+        <div class="bento-icon">🔔</div>
+        <h3>Alertes de retard</h3>
+        <p>Relances automatiques pour les loyers en retard. Notifiez vos locataires en un clic.</p>
+      </div>
+      <div class="bento-card">
+        <div class="bento-glow"></div>
+        <div class="bento-icon">📊</div>
+        <h3>Analyse financière</h3>
+        <p>Revenus, dépenses, statistiques et rapports PDF. Pilotez votre patrimoine avec des données claires.</p>
+      </div>
+      <div class="bento-card">
+        <div class="bento-glow"></div>
+        <div class="bento-icon">🔧</div>
+        <h3>Gestion des signalements</h3>
+        <p>Les locataires signalent leurs problèmes directement. Suivez et résolvez chaque ticket en temps réel.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEUX ESPACES -->
+<section class="section" id="espaces" style="background:rgba(255,255,255,.015);border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;z-index:1">
+  <div class="container">
+    <div class="section-header">
+      <div class="eyebrow"><span class="eyebrow-dot"></span>Deux espaces dédiés</div>
+      <h2 class="section-title">Une plateforme, deux univers</h2>
+      <p class="section-sub">Agences et locataires disposent chacun d'un espace pensé pour leurs besoins spécifiques.</p>
+    </div>
+    <div class="spaces">
+      <!-- AGENCE -->
+      <div class="space-card agency">
+        <div class="space-accent"></div>
+        <div class="space-header">
+          <div class="space-icon-wrap">🏛️</div>
+          <div>
+            <h3>Espace Agence / Propriétaire</h3>
+            <div class="space-sub">Pilotez tout votre patrimoine</div>
+          </div>
+        </div>
+        <ul class="feature-list">
+          <li><span class="check agency">✓</span>Tableau de bord avec KPIs en temps réel</li>
+          <li><span class="check agency">✓</span>Gestion complète des biens immobiliers</li>
+          <li><span class="check agency">✓</span>Gestion des locataires et contrats de bail</li>
+          <li><span class="check agency">✓</span>Génération de contrats en 1 clic</li>
+          <li><span class="check agency">✓</span>Résiliation et décharge automatiques</li>
+          <li><span class="check agency">✓</span>États des lieux numériques</li>
+          <li><span class="check agency">✓</span>Suivi et encaissement des loyers</li>
+          <li><span class="check agency">✓</span>Paiement en ligne (Wave, Orange Money…)</li>
+          <li><span class="check agency">✓</span>Notification des retards de paiement</li>
+          <li><span class="check agency">✓</span>Gestion des signalements locataires</li>
+          <li><span class="check agency">✓</span>Messagerie directe avec les locataires</li>
+          <li><span class="check agency">✓</span>Rapports financiers et PDF automatiques</li>
+        </ul>
+      </div>
+      <!-- LOCATAIRE -->
+      <div class="space-card tenant">
+        <div class="space-accent"></div>
+        <div class="space-header">
+          <div class="space-icon-wrap">🏠</div>
+          <div>
+            <h3>Espace Locataire</h3>
+            <div class="space-sub">Un accès simple et transparent</div>
+          </div>
+        </div>
+        <ul class="feature-list">
+          <li><span class="check tenant">✓</span>Tableau de bord personnel</li>
+          <li><span class="check tenant">✓</span>Consultation de mon contrat de bail</li>
+          <li><span class="check tenant">✓</span>Durée, loyer mensuel et fin de bail</li>
+          <li><span class="check tenant">✓</span>Historique complet de mes paiements</li>
+          <li><span class="check tenant">✓</span>Téléchargement des quittances PDF</li>
+          <li><span class="check tenant">✓</span>Paiement du loyer en ligne (Wave, OM…)</li>
+          <li><span class="check tenant">✓</span>Signalement de problèmes en temps réel</li>
+          <li><span class="check tenant">✓</span>Suivi de mes tickets de signalement</li>
+          <li><span class="check tenant">✓</span>Messagerie directe avec l'agence</li>
+          <li><span class="check tenant">✓</span>Notifications et rappels de loyer</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SHOWCASE LOCATAIRE -->
+<section class="section" style="position:relative;z-index:1">
+  <div class="container">
+    <div class="showcase">
+      <div class="showcase-text">
+        <div class="eyebrow"><span class="eyebrow-dot"></span>Espace Locataire</div>
+        <h2 class="section-title">Vos locataires ont leur propre application</h2>
+        <p class="section-sub" style="margin-bottom:1.5rem">Un espace dédié où ils consultent leur contrat, paient leur loyer, signalent des problèmes et discutent avec vous — le tout sans vous appeler.</p>
+        <ul class="feature-list" style="max-width:400px">
+          <li><span class="check tenant">✓</span>Accueil personnalisé avec infos du bail</li>
+          <li><span class="check tenant">✓</span>Paiement Wave & Orange Money en 1 clic</li>
+          <li><span class="check tenant">✓</span>Quittances PDF téléchargeables</li>
+          <li><span class="check tenant">✓</span>Signalement avec suivi de statut</li>
+          <li><span class="check tenant">✓</span>Messagerie et notifications push</li>
+        </ul>
+      </div>
+      <div class="showcase-phones">
+        <div class="showcase-phone secondary" style="border-radius:24px;border:1.5px solid rgba(255,255,255,.1);overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,.4)">
+          <div style="height:20px;background:#111;display:flex;align-items:center;justify-content:center"><div style="width:50px;height:4px;background:#333;border-radius:2px"></div></div>
+          <div style="background:#f8fafc;padding:.5rem">
+            <div style="background:#2563EB;color:#fff;border-radius:8px;padding:.6rem .75rem;margin-bottom:.5rem">
+              <div style="font-size:.5rem;opacity:.8">Bonjour 👋</div>
+              <div style="font-size:.75rem;font-weight:700">Abdourakhmane Diallo</div>
+              <div style="font-size:.45rem;opacity:.7">📍 Mbour2</div>
+            </div>
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:.5rem;margin-bottom:.4rem">
+              <div style="font-size:.45rem;color:#94a3b8;text-transform:uppercase;margin-bottom:.3rem">Mon contrat</div>
+              <div style="display:flex;justify-content:space-between">
+                <div><div style="font-size:.45rem;color:#64748b">Loyer</div><div style="font-size:.65rem;font-weight:700;color:#0f172a">150 000 F</div></div>
+                <div><div style="font-size:.45rem;color:#64748b">Fin bail</div><div style="font-size:.65rem;font-weight:700;color:#0f172a">01/10/28</div></div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem">
+              <div style="background:#eff6ff;border-radius:7px;padding:.5rem;text-align:center"><div style="font-size:.7rem">💳</div><div style="font-size:.45rem;color:#2563EB;font-weight:600">Paiements</div></div>
+              <div style="background:#fff7ed;border-radius:7px;padding:.5rem;text-align:center"><div style="font-size:.7rem">🔧</div><div style="font-size:.45rem;color:#ea580c;font-weight:600">Signaler</div></div>
+              <div style="background:#f0fdf4;border-radius:7px;padding:.5rem;text-align:center"><div style="font-size:.7rem">💬</div><div style="font-size:.45rem;color:#16a34a;font-weight:600">Messages</div></div>
+              <div style="background:#faf5ff;border-radius:7px;padding:.5rem;text-align:center"><div style="font-size:.7rem">🎫</div><div style="font-size:.45rem;color:#7c3aed;font-weight:600">Tickets</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="showcase-phone" style="border-radius:28px;border:2px solid rgba(255,255,255,.15);overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,.5)">
+          <div style="height:24px;background:#111;display:flex;align-items:center;justify-content:center"><div style="width:70px;height:5px;background:#333;border-radius:2.5px"></div></div>
+          <div style="background:#f8fafc">
+            <div style="background:#fff;border-bottom:1px solid #e2e8f0;padding:.6rem .75rem;display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;align-items:center;gap:.4rem">
+                <div style="width:22px;height:22px;background:#2563EB;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.65rem">⚡</div>
+                <span style="font-size:.75rem;font-weight:700;color:#0f172a">Nexora</span>
+                <span style="font-size:.6rem;color:#2563EB;font-weight:600">Locataire</span>
+              </div>
+              <div style="background:#ef4444;color:#fff;border-radius:50%;width:14px;height:14px;font-size:.45rem;display:flex;align-items:center;justify-content:center;font-weight:700">3</div>
+            </div>
+            <div style="padding:.75rem">
+              <div style="font-size:.75rem;font-weight:700;color:#0f172a;margin-bottom:.6rem">Mes paiements</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.3rem;margin-bottom:.6rem">
+                <div style="background:#f0fdf4;border-radius:6px;padding:.4rem;text-align:center"><div style="font-size:.75rem;font-weight:700;color:#16a34a">1</div><div style="font-size:.45rem;color:#16a34a">Payés</div></div>
+                <div style="background:#fffbeb;border-radius:6px;padding:.4rem;text-align:center"><div style="font-size:.75rem;font-weight:700;color:#d97706">0</div><div style="font-size:.45rem;color:#d97706">Attente</div></div>
+                <div style="background:#eff6ff;border-radius:6px;padding:.4rem;text-align:center"><div style="font-size:.6rem;font-weight:700;color:#2563EB">150k</div><div style="font-size:.45rem;color:#2563EB">Total</div></div>
+              </div>
+              <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:.6rem">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
+                  <div style="display:flex;align-items:center;gap:.35rem">
+                    <div style="width:22px;height:22px;background:#dcfce7;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.6rem">✓</div>
+                    <div>
+                      <div style="font-size:.65rem;font-weight:600;color:#0f172a">Mar 2026</div>
+                      <div style="font-size:.5rem;color:#64748b">150 000 FCFA</div>
+                    </div>
+                  </div>
+                  <span style="background:#dcfce7;color:#16a34a;font-size:.45rem;padding:.15rem .4rem;border-radius:4px;font-weight:600">Payé</span>
+                </div>
+                <div style="font-size:.5rem;color:#64748b">Payé le 13/03/2026 · Espèces</div>
+                <div style="font-size:.5rem;color:#2563EB;margin-top:.2rem;font-weight:500">⬇ Quittance PDF</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PAYMENT SECTION -->
+<section class="section payment-section" id="paiement" style="position:relative;z-index:1">
+  <div class="container" style="text-align:center">
+    <div class="eyebrow" style="margin:0 auto .875rem"><span class="eyebrow-dot"></span>PayTech · Sénégal</div>
+    <h2 class="section-title">Tous les moyens de paiement<br>du Sénégal en un seul lien</h2>
+    <p class="section-sub" style="max-width:500px;margin:0 auto 2.5rem">Générez un lien de paiement, envoyez-le sur WhatsApp, votre locataire paie en 30 secondes depuis son téléphone.</p>
+    <div class="providers-grid">
+      <div class="provider-card">
+        <div class="prov-dot" style="background:#00BFA5"></div>
+        <div><div class="prov-name">Wave</div><div class="prov-sub">Mobile Money</div></div>
+      </div>
+      <div class="provider-card">
+        <div class="prov-dot" style="background:#FF6D00"></div>
+        <div><div class="prov-name">Orange Money</div><div class="prov-sub">Orange Money SN</div></div>
+      </div>
+      <div class="provider-card">
+        <div class="prov-dot" style="background:#E53935"></div>
+        <div><div class="prov-name">Free Money</div><div class="prov-sub">Free Money SN</div></div>
+      </div>
+      <div class="provider-card">
+        <div class="prov-dot" style="background:#7B1FA2"></div>
+        <div><div class="prov-name">Wizall Money</div><div class="prov-sub">Wizall SN</div></div>
+      </div>
+      <div class="provider-card">
+        <div class="prov-dot" style="background:#1565C0"></div>
+        <div><div class="prov-name">Visa / Mastercard</div><div class="prov-sub">Carte bancaire</div></div>
+      </div>
+    </div>
+    <div class="commission-pill">✓ Commission 1.5% – 2% par transaction · Intégration PayTech native</div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" style="position:relative;z-index:1">
+  <div class="cta-inner">
+    <div class="cta-glow-1"></div>
+    <div style="position:relative;z-index:1">
+      <div class="eyebrow" style="margin:0 auto .875rem"><span class="eyebrow-dot"></span>Disponible maintenant</div>
+      <h2>Prêt à moderniser votre gestion ?</h2>
+      <p>Rejoignez les agences et propriétaires qui ont adopté Nexora Immo. Inscription gratuite, configuration en 5 minutes.</p>
+      <div class="cta-actions">
+        <a href="https://nexora-sage-nine.vercel.app/auth/login" class="btn-primary" style="font-size:1rem;padding:.9rem 2rem">Créer mon compte gratuitement ↗</a>
+        <a href="https://nexora-sage-nine.vercel.app/auth/login" class="btn-outline" style="font-size:1rem;padding:.9rem 2rem">Se connecter</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="brand" style="text-decoration:none">
+      <div class="brand-icon" style="width:28px;height:28px;font-size:.85rem">⚡</div>
+      <span style="color:var(--text2)">Nexora — Plateforme de gestion immobilière</span>
+    </div>
+    <div style="font-size:.8rem;color:var(--text3)">© 2026 Nexora · Développé au Sénégal pour l'Afrique</div>
+    <div class="footer-links">
+      <a href="https://nexora-sage-nine.vercel.app/auth/login">Connexion</a>
+      <a href="https://nexora-sage-nine.vercel.app/auth/login">Inscription</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
