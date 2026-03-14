@@ -113,15 +113,33 @@ export default function MessagesPage() {
     setSending(true);
     const content = text.trim();
     setText('');
+
+    // Ajouter le message localement immédiatement (optimistic update)
+    const tempMsg: Message = {
+      id: `temp_${Date.now()}`,
+      content,
+      sender_role: 'company',
+      sender_name: user?.full_name || 'Gestionnaire',
+      created_at: new Date().toISOString(),
+      is_read: false,
+    };
+    setMessages(prev => [...prev, tempMsg]);
+
     const sb = createClient();
-    await sb.from('messages').insert({
+    const { data } = await sb.from('messages').insert({
       tenant_id:   selected.id,
       company_id:  company.id,
       sender_role: 'company',
       sender_name: user?.full_name || 'Gestionnaire',
       content,
       is_read:     false,
-    });
+    }).select().single();
+
+    // Remplacer le message temporaire par le vrai
+    if (data) {
+      setMessages(prev => prev.map(m => m.id === tempMsg.id ? data as Message : m));
+    }
+
     setSending(false);
   };
 
