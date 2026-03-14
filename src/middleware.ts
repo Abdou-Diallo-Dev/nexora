@@ -61,7 +61,9 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // Vérification abonnement pour les routes protégées
+  // 🚧 MODE TEST — Vérification abonnement désactivée temporairement
+  // À réactiver quand PayTech sera en production
+  /*
   const protectedRoutes = ['/real-estate', '/logistics', '/admin'];
   if (protectedRoutes.some(p => pathname.startsWith(p)) && userRow?.company_id) {
     const { data: sub } = await sb
@@ -72,21 +74,17 @@ export async function middleware(request: NextRequest) {
 
     if (sub) {
       const now = new Date();
-
-      // Vérifier si l'essai est expiré
       if (sub.status === 'trial' && new Date(sub.trial_ends_at) < now) {
         return NextResponse.redirect(new URL('/billing?reason=trial_expired', request.url));
       }
-
-      // Vérifier si l'abonnement est expiré
       if (sub.status === 'expired') {
         return NextResponse.redirect(new URL('/billing?reason=subscription_expired', request.url));
       }
     } else {
-      // Pas d'abonnement trouvé → rediriger vers billing
       return NextResponse.redirect(new URL('/billing?reason=no_subscription', request.url));
     }
   }
+  */
 
   return response;
 }
