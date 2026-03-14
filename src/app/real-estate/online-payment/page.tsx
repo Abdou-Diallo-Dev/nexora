@@ -89,7 +89,7 @@ export default function OnlinePaymentPage() {
     const total = (Number(selectedPayment.amount) || 0) + (Number(selectedPayment.charges_amount) || 0);
 
     try {
-      const res = await fetch('/api/payment/create', {
+      const res = await fetch('/api/payments/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
