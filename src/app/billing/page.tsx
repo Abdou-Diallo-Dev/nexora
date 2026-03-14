@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store';
@@ -25,7 +25,7 @@ const PLANS = [
   },
 ];
 
-export default function BillingPage() {
+function BillingContent() {
   const searchParams = useSearchParams();
   const reason = searchParams.get('reason');
   const { user, company } = useAuthStore();
@@ -57,9 +57,7 @@ export default function BillingPage() {
         }),
       });
       const data = await res.json();
-      if (data.redirect_url) {
-        window.location.href = data.redirect_url;
-      }
+      if (data.redirect_url) window.location.href = data.redirect_url;
     } catch {
       alert('Erreur réseau');
     }
@@ -72,8 +70,6 @@ export default function BillingPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#080C14', color: '#F8FAFC', fontFamily: 'DM Sans, sans-serif', padding: '3rem 1.5rem' }}>
-
-      {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '1.5rem' }}>
           <div style={{ width: '36px', height: '36px', background: 'linear-gradient(135deg,#3B82F6,#2563EB)', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -107,16 +103,9 @@ export default function BillingPage() {
         <p style={{ color: '#94A3B8', fontSize: '1rem' }}>Paiement sécurisé via Wave, Orange Money ou carte bancaire</p>
       </div>
 
-      {/* Plan */}
       <div style={{ maxWidth: '420px', margin: '0 auto' }}>
         {PLANS.map(plan => (
-          <div key={plan.id} style={{
-            background: 'rgba(37,99,235,.12)',
-            border: '2px solid rgba(37,99,235,.5)',
-            borderRadius: '20px',
-            padding: '2.5rem',
-            position: 'relative',
-          }}>
+          <div key={plan.id} style={{ background: 'rgba(37,99,235,.12)', border: '2px solid rgba(37,99,235,.5)', borderRadius: '20px', padding: '2.5rem', position: 'relative' }}>
             <div style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg,#3B82F6,#2563EB)', color: '#fff', padding: '.35rem 1.25rem', borderRadius: '100px', fontSize: '.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
               <Crown size={12} /> Accès complet à toutes les fonctionnalités
             </div>
@@ -135,20 +124,9 @@ export default function BillingPage() {
             <button
               onClick={() => handleSubscribe(plan)}
               disabled={loading === plan.id}
-              style={{
-                width: '100%',
-                padding: '1rem',
-                background: 'linear-gradient(135deg,#3B82F6,#2563EB)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '12px',
-                fontSize: '1rem',
-                fontWeight: 600,
-                cursor: loading === plan.id ? 'not-allowed' : 'pointer',
-                opacity: loading === plan.id ? .7 : 1,
-              }}
+              style={{ width: '100%', padding: '1rem', background: 'linear-gradient(135deg,#3B82F6,#2563EB)', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '1rem', fontWeight: 600, cursor: loading === plan.id ? 'not-allowed' : 'pointer', opacity: loading === plan.id ? .7 : 1 }}
             >
-              {loading === plan.id ? 'Redirection...' : 'S\'abonner maintenant →'}
+              {loading === plan.id ? 'Redirection...' : "S'abonner maintenant →"}
             </button>
           </div>
         ))}
@@ -158,5 +136,13 @@ export default function BillingPage() {
         Paiement sécurisé via PayTech · Wave · Orange Money · Visa/Mastercard
       </p>
     </div>
+  );
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: '#080C14', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>Chargement...</div>}>
+      <BillingContent />
+    </Suspense>
   );
 }
