@@ -34,8 +34,10 @@ export async function requestPayment(
     body: JSON.stringify(payload),
   });
 
-  if (!res.ok) {
-    throw new Error(`PayTech error: ${res.status} ${res.statusText}`);
+ if (!res.ok) {
+    const errorBody = await res.text();
+    console.error("[PayTech response]", errorBody);
+    throw new Error(`PayTech error: ${res.status} ${res.statusText} - ${errorBody}`);
   }
 
   const data = await res.json();
