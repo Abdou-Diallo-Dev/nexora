@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
-import { Send, MessageSquare, Mic, Square, X } from 'lucide-react';
+import { Send, MessageSquare, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store';
 import { LoadingSpinner, inputCls } from '@/components/ui';
@@ -130,69 +130,6 @@ export default function TenantMessagesPage() {
     toast.success('Message modifié');
   };
 
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm')
-        ? 'audio/webm'
-        : MediaRecorder.isTypeSupported('audio/mp4')
-        ? 'audio/mp4'
-        : 'audio/ogg';
-      const mr = new MediaRecorder(stream, { mimeType });
-      mediaRecorderRef.current = mr;
-      audioChunksRef.current = [];
-      mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
-      mr.start();
-      setRecording(true);
-      setRecordTime(0);
-      recordTimerRef.current = setInterval(() => setRecordTime(t => t + 1), 1000);
-    } catch (err: any) {
-      if (err.name === 'NotAllowedError') {
-        toast.error('Autorisation microphone refusée. Activez-la dans les paramètres.');
-      } else {
-        toast.error('Microphone non accessible : ' + err.message);
-      }
-    }
-  };
-
-  const stopRecording = () => {
-    if (!mediaRecorderRef.current || !ta) return;
-    const mr = mediaRecorderRef.current;
-    mr.onstop = async () => {
-      clearInterval(recordTimerRef.current);
-      setRecording(false);
-      setRecordTime(0);
-      const mimeType = mediaRecorderRef.current?.mimeType || 'audio/webm';
-      const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
-      const blob = new Blob(audioChunksRef.current, { type: mimeType });
-      const fileName = `voice_${Date.now()}.${ext}`;
-      const sb = createClient();
-      const { error } = await sb.storage.from('voice-messages').upload(fileName, blob, { contentType: mimeType });
-      if (error) { toast.error('Erreur upload audio'); return; }
-      const { data: urlData } = sb.storage.from('voice-messages').getPublicUrl(fileName);
-      const audioUrl = urlData.publicUrl;
-
-      const tempMsg: Message = {
-        id: `temp_${Date.now()}`, content: '🎤 Message vocal',
-        sender_role: 'tenant', sender_name: user?.full_name || 'Locataire',
-        created_at: new Date().toISOString(), is_read: false,
-        audio_url: audioUrl, message_type: 'audio',
-      };
-      setMessages(prev => [...prev, tempMsg]);
-
-      const { data: msgData } = await sb.from('messages').insert({
-        tenant_id: ta.tenant_id, company_id: ta.company_id,
-        sender_role: 'tenant', sender_name: user?.full_name || 'Locataire',
-        content: '🎤 Message vocal', audio_url: audioUrl,
-        message_type: 'audio', is_read: false,
-      }).select().single();
-
-      if (msgData) setMessages(prev => prev.map(m => m.id === tempMsg.id ? msgData as Message : m));
-      mr.stream.getTracks().forEach(t => t.stop());
-    };
-    mr.stop();
-  };
-
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
   };
@@ -299,18 +236,7 @@ export default function TenantMessagesPage() {
                       </div>
                     ) : (
                       <div style={{ maxWidth: '75vw' }} className={`rounded-2xl px-4 py-2.5 ${isMine ? 'bg-primary text-white rounded-br-sm' : 'bg-white dark:bg-slate-800 border border-border rounded-bl-sm'}`}>
-                        {m.message_type === 'audio' && m.audio_url ? (
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2">
-                              <Mic size={14} className={isMine ? 'text-white/80' : 'text-primary'} />
-                              <span className={`text-xs font-medium ${isMine ? 'text-white/80' : 'text-muted-foreground'}`}>Message vocal</span>
-                            </div>
-                            <audio controls src={m.audio_url} className="w-full max-w-[220px] h-8"
-                              style={{ filter: isMine ? 'invert(1) brightness(2)' : 'none' }} />
-                          </div>
-                        ) : (
-                          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{m.content}</p>
-                        )}
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{m.content}</p>
                         <p className={`text-[10px] mt-1 text-right ${isMine ? 'text-white/60' : 'text-muted-foreground'}`}>
                           {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                           {m.edited_at && <span className="ml-1 italic">· modifié</span>}
@@ -328,35 +254,13 @@ export default function TenantMessagesPage() {
 
       {/* Input */}
       <div className="flex gap-2 items-center flex-shrink-0">
-        {recording ? (
-          <div className="flex-1 flex items-center gap-3 bg-red-50 dark:bg-red-900/20 rounded-xl px-4 py-2 border border-red-200 dark:border-red-800">
-            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-            <span className="text-sm text-red-600 font-medium flex-1">
-              Enregistrement... {Math.floor(recordTime/60).toString().padStart(2,'0')}:{(recordTime%60).toString().padStart(2,'0')}
-            </span>
-            <button onClick={stopRecording}
-              className="w-9 h-9 bg-red-500 rounded-xl flex items-center justify-center text-white flex-shrink-0">
-              <Square size={14} />
-            </button>
-          </div>
-        ) : (
-          <>
-            <textarea value={text} onChange={e => setText(e.target.value)} onKeyDown={handleKey}
-              placeholder="Écrire un message..." rows={1} style={{ resize: 'none' }}
-              className={inputCls + ' flex-1 max-h-24 overflow-y-auto'} />
-            {text.trim() ? (
-              <button onClick={send} disabled={!text.trim() || sending}
-                className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white disabled:opacity-50 flex-shrink-0">
-                {sending ? <LoadingSpinner size={16} /> : <Send size={16} />}
-              </button>
-            ) : (
-              <button onClick={startRecording}
-                className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white flex-shrink-0">
-                <Mic size={16} />
-              </button>
-            )}
-          </>
-        )}
+        <textarea value={text} onChange={e => setText(e.target.value)} onKeyDown={handleKey}
+          placeholder="Écrire un message..." rows={1} style={{ resize: 'none' }}
+          className={inputCls + ' flex-1 max-h-24 overflow-y-auto'} />
+        <button onClick={send} disabled={!text.trim() || sending}
+          className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white disabled:opacity-50 flex-shrink-0">
+          {sending ? <LoadingSpinner size={16} /> : <Send size={16} />}
+        </button>
       </div>
     </div>
   );
