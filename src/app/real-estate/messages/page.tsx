@@ -40,6 +40,9 @@ export default function MessagesPage() {
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [notifText, setNotifText]   = useState('');
   const [showChat, setShowChat]     = useState(false); // mobile: show chat panel
+  const [editingMsg, setEditingMsg] = useState<string | null>(null);
+  const [editText, setEditText]     = useState('');
+  const [msgMenuOpen, setMsgMenuOpen] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -141,6 +144,34 @@ export default function MessagesPage() {
     }
 
     setSending(false);
+  };
+
+  const deleteMessage = async (msgId: string) => {
+    const sb = createClient();
+    await sb.from('messages').update({ is_deleted: true }).eq('id', msgId);
+    setMessages(prev => prev.map(m => m.id === msgId ? { ...m, is_deleted: true } : m));
+    setMsgMenuOpen(null);
+    toast.success('Message supprimé');
+  };
+
+  const startEdit = (msg: Message) => {
+    setEditingMsg(msg.id);
+    setEditText(msg.content);
+    setMsgMenuOpen(null);
+  };
+
+  const saveEdit = async (msgId: string) => {
+    if (msgId === 'cancel') { setEditingMsg(null); setEditText(''); return; }
+    if (!editText.trim()) return;
+    const sb = createClient();
+    await sb.from('messages').update({
+      content: editText.trim(),
+      edited_at: new Date().toISOString(),
+    }).eq('id', msgId);
+    setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content: editText.trim(), edited_at: new Date().toISOString() } : m));
+    setEditingMsg(null);
+    setEditText('');
+    toast.success('Message modifié');
   };
 
   const updateTicketStatus = async (ticketId: string, status: string) => {
@@ -260,6 +291,9 @@ export default function MessagesPage() {
             notifText={notifText} setNotifText={setNotifText}
             sendPaymentReminder={sendPaymentReminder} sendingNotif={sendingNotif}
             updateTicketStatus={updateTicketStatus} showBack={false} onBack={handleBack}
+            deleteMessage={deleteMessage} startEdit={startEdit} saveEdit={saveEdit}
+            editingMsg={editingMsg} editText={editText} setEditText={setEditText}
+            msgMenuOpen={msgMenuOpen} setMsgMenuOpen={setMsgMenuOpen}
           />
         )}
       </div>
@@ -316,6 +350,9 @@ export default function MessagesPage() {
               notifText={notifText} setNotifText={setNotifText}
               sendPaymentReminder={sendPaymentReminder} sendingNotif={sendingNotif}
               updateTicketStatus={updateTicketStatus} showBack={true} onBack={handleBack}
+              deleteMessage={deleteMessage} startEdit={startEdit} saveEdit={saveEdit}
+              editingMsg={editingMsg} editText={editText} setEditText={setEditText}
+              msgMenuOpen={msgMenuOpen} setMsgMenuOpen={setMsgMenuOpen}
             />
           )
         )}
@@ -374,7 +411,9 @@ function ChatPanel({
   selected, messages, tickets, payments, grouped, latePayments,
   rightTab, setRightTab, text, setText, send, sending, bottomRef,
   showNotifModal, setShowNotifModal, notifText, setNotifText,
-  sendPaymentReminder, sendingNotif, updateTicketStatus, showBack, onBack
+  sendPaymentReminder, sendingNotif, updateTicketStatus, showBack, onBack,
+  deleteMessage, startEdit, saveEdit, editingMsg, editText, setEditText,
+  msgMenuOpen, setMsgMenuOpen,
 }: any) {
   return (
     <div className="flex-1 flex flex-col min-w-0 h-full">
@@ -444,19 +483,66 @@ function ChatPanel({
                 {group.msgs.map((m: any, i: number) => {
                   const isMine = m.sender_role === 'company';
                   const prevSame = i > 0 && group.msgs[i-1].sender_role === m.sender_role;
-                  return (
+                  if (m.is_deleted) return (
                     <div key={m.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'} ${prevSame ? 'mt-0.5' : 'mt-3'}`}>
+                      <div className="max-w-[75%] rounded-2xl px-3 py-2 bg-slate-100 dark:bg-slate-800 opacity-50">
+                        <p className="text-xs italic text-muted-foreground">Message supprimé</p>
+                      </div>
+                    </div>
+                  );
+                  return (
+                    <div key={m.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'} ${prevSame ? 'mt-0.5' : 'mt-3'} group/msg relative`}>
                       {!isMine && !prevSame && (
                         <div className="w-7 h-7 rounded-full bg-slate-300 dark:bg-slate-600 flex items-center justify-center text-xs font-bold mr-2 self-end mb-1 flex-shrink-0">
                           {selected.first_name.charAt(0)}
                         </div>
                       )}
                       {!isMine && prevSame && <div className="w-7 mr-2 flex-shrink-0" />}
-                      <div className={`max-w-[75%] rounded-2xl px-3 py-2 ${isMine ? 'bg-primary text-white rounded-br-sm' : 'bg-slate-100 dark:bg-slate-800 rounded-bl-sm'}`}>
-                        <p className="text-sm whitespace-pre-wrap">{m.content}</p>
-                        <p className={`text-[10px] mt-0.5 text-right ${isMine ? 'text-white/60' : 'text-muted-foreground'}`}>
-                          {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
+
+                      <div className="relative">
+                        {/* Menu button - only for own messages */}
+                        {isMine && (
+                          <div className="absolute -left-8 top-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => setMsgMenuOpen(msgMenuOpen === m.id ? null : m.id)}
+                              className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 hover:bg-slate-300 text-xs"
+                            >⋮</button>
+                            {msgMenuOpen === m.id && (
+                              <div className="absolute bottom-8 left-0 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-border py-1 z-10 min-w-[120px]">
+                                <button
+                                  onClick={() => startEdit(m)}
+                                  className="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-50 dark:hover:bg-slate-700 text-foreground flex items-center gap-2"
+                                >✏️ Modifier</button>
+                                <button
+                                  onClick={() => deleteMessage(m.id)}
+                                  className="w-full text-left px-3 py-1.5 text-xs hover:bg-red-50 text-red-600 flex items-center gap-2"
+                                >🗑️ Supprimer</button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {editingMsg === m.id ? (
+                          <div className="flex gap-2 items-center max-w-[75%]">
+                            <input
+                              value={editText}
+                              onChange={(e: any) => setEditText(e.target.value)}
+                              onKeyDown={(e: any) => e.key === 'Enter' && saveEdit(m.id)}
+                              className="flex-1 text-sm px-3 py-2 rounded-xl border border-primary outline-none bg-white dark:bg-slate-800"
+                              autoFocus
+                            />
+                            <button onClick={() => saveEdit(m.id)} className="text-xs bg-primary text-white px-2 py-1 rounded-lg">✓</button>
+                            <button onClick={() => saveEdit('cancel')} className="text-xs bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded-lg">✕</button>
+                          </div>
+                        ) : (
+                          <div className={`max-w-[75%] rounded-2xl px-3 py-2 ${isMine ? 'bg-primary text-white rounded-br-sm' : 'bg-slate-100 dark:bg-slate-800 rounded-bl-sm'}`}>
+                            <p className="text-sm whitespace-pre-wrap">{m.content}</p>
+                            <p className={`text-[10px] mt-0.5 text-right ${isMine ? 'text-white/60' : 'text-muted-foreground'}`}>
+                              {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                              {m.edited_at && <span className="ml-1 italic">· modifié</span>}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
