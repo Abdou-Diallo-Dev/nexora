@@ -133,7 +133,12 @@ export default function TenantMessagesPage() {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream);
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : MediaRecorder.isTypeSupported('audio/mp4')
+        ? 'audio/mp4'
+        : 'audio/ogg';
+      const mr = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mr;
       audioChunksRef.current = [];
       mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
@@ -141,8 +146,12 @@ export default function TenantMessagesPage() {
       setRecording(true);
       setRecordTime(0);
       recordTimerRef.current = setInterval(() => setRecordTime(t => t + 1), 1000);
-    } catch {
-      toast.error('Microphone non accessible');
+    } catch (err: any) {
+      if (err.name === 'NotAllowedError') {
+        toast.error('Autorisation microphone refusée. Activez-la dans les paramètres.');
+      } else {
+        toast.error('Microphone non accessible : ' + err.message);
+      }
     }
   };
 
@@ -153,10 +162,12 @@ export default function TenantMessagesPage() {
       clearInterval(recordTimerRef.current);
       setRecording(false);
       setRecordTime(0);
-      const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-      const fileName = `voice_${Date.now()}.webm`;
+      const mimeType = mediaRecorderRef.current?.mimeType || 'audio/webm';
+      const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+      const blob = new Blob(audioChunksRef.current, { type: mimeType });
+      const fileName = `voice_${Date.now()}.${ext}`;
       const sb = createClient();
-      const { error } = await sb.storage.from('voice-messages').upload(fileName, blob, { contentType: 'audio/webm' });
+      const { error } = await sb.storage.from('voice-messages').upload(fileName, blob, { contentType: mimeType });
       if (error) { toast.error('Erreur upload audio'); return; }
       const { data: urlData } = sb.storage.from('voice-messages').getPublicUrl(fileName);
       const audioUrl = urlData.publicUrl;
