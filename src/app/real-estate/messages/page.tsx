@@ -217,6 +217,17 @@ export default function MessagesPage() {
 
   const deleteMessage = async (msgId: string) => {
     const sb = createClient();
+
+    // Supprimer le fichier audio du storage si c'est un vocal
+    const msgToDelete = messages.find(m => m.id === msgId);
+    if (msgToDelete?.audio_url) {
+      const fileName = msgToDelete.audio_url.split('/').pop();
+      if (fileName) {
+        await sb.storage.from('voice-messages').remove([fileName]);
+      }
+    }
+
+    // Marquer comme supprimé dans la base
     await sb.from('messages').update({ is_deleted: true }).eq('id', msgId);
     setMessages(prev => prev.map(m => m.id === msgId ? { ...m, is_deleted: true } : m));
     setMsgMenuOpen(null);
@@ -656,7 +667,7 @@ function ChatPanel({
                     {sending ? <LoadingSpinner size={14} /> : <Send size={14} />}
                   </button>
                 ) : (
-                  <button onMouseDown={startRecording} onTouchStart={startRecording}
+                  <button onClick={startRecording}
                     className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center text-white flex-shrink-0">
                     <Mic size={14} />
                   </button>
