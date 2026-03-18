@@ -17,6 +17,7 @@ type KPIs = {
   totalProps: number; rentedProps: number; availableProps: number;
   activeTenants: number; monthlyRevenue: number; pendingAmount: number;
   overdueAmount: number; openTickets: number;
+  totalCommissions: number; totalDepenses: number; totalRestitue: number; tauxRecouvrement: number;
   tenantTickets: { id:string; title:string; category:string; priority:string; tenant:string; created_at:string }[];
   expiringLeases: { id:string; tenant:string; property:string; end_date:string }[];
   overdueRents: { id:string; tenant:string; amount:number; period_month:number; period_year:number }[];
@@ -54,7 +55,6 @@ export default function REDashboard() {
   const role = (user?.role || 'viewer') as UserRole;
   const sections = getDashboardSections(role);
 
-  // Auto-slide properties
   useEffect(() => {
     if (properties.length <= 1) return;
     autoRef.current = setInterval(() => {
@@ -72,7 +72,6 @@ export default function REDashboard() {
     const sb = createClient();
     const cid = company.id;
 
-    // Fetch properties with images
     sb.from('properties')
       .select('id,name,address,city,type,status,rent_amount,rooms_count,image_urls')
       .eq('company_id', cid)
@@ -85,18 +84,21 @@ export default function REDashboard() {
       sb.from('leases').select('id,status,end_date,rent_amount,tenants(first_name,last_name),properties(address)').eq('company_id', cid),
       sb.from('rent_payments').select('id,amount,status,period_month,period_year,tenant_id').eq('company_id', cid).limit(200),
       sb.from('tenant_tickets').select('id,status').eq('company_id', cid),
+      sb.from('expenses').select('id,type,amount').eq('company_id', cid).limit(500),
+      sb.from('companies').select('commission_rate').eq('id', cid).maybeSingle(),
       sb.from('tenant_tickets').select('id,title,category,priority,status,created_at,tenants(first_name,last_name)').eq('company_id', cid).eq('status','open').order('created_at',{ascending:false}).limit(5),
-    ]).then(([{ data: props }, { data: leases }, { data: payments }, { data: tickets }, { data: tenantTix }]) => {
+    ]).then(([{ data: props }, { data: leases }, { data: payments }, { data: tickets }, { data: exps }, { data: compData }, { data: tenantTix }]) => {
       const P = props || [];
       type LeaseRow = { id:string; status:string; end_date:string; rent_amount:number; tenants:{first_name:string;last_name:string}|null; properties:{address:string}|null };
       type PayRow   = { id:string; amount:number; status:string; period_month:number; period_year:number; tenant_id:string|null };
       const L   = (leases   || []) as unknown as LeaseRow[];
       const PAY = (payments || []) as unknown as PayRow[];
-      const T   = (tickets || []) as {id:string;status:string}[];
+      const T   = (tickets  || []) as {id:string;status:string}[];
       const active  = L.filter(l => l.status === 'active');
       const paid    = PAY.filter(p => p.status === 'paid');
       const overdue = PAY.filter(p => p.status === 'late' || p.status === 'overdue');
       const pending = PAY.filter(p => p.status === 'pending');
+      const commRate = (compData as any)?.commission_rate ?? 10;
       const now = new Date();
       const chart = Array.from({ length: 6 }, (_, i) => {
         const d  = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
@@ -104,6 +106,11 @@ export default function REDashboard() {
         return { month: format(d, 'MMM', { locale: fr }), revenue: paid.filter(p => String(p.period_month)+'/'+String(p.period_year)===mo).reduce((s,p)=>s+p.amount,0) };
       });
       const thisMonth = String(now.getMonth()+1)+'/'+String(now.getFullYear());
+      const totalLoyers = paid.reduce((s,p)=>s+p.amount,0);
+      const totalComm = totalLoyers * (commRate / 100);
+      const totalDep = ((exps||[]) as any[]).reduce((s:number,e:any)=>s+e.amount, 0);
+      const totalBailleurDep = ((exps||[]) as any[]).filter((e:any)=>e.type==='bailleur').reduce((s:number,e:any)=>s+e.amount, 0);
+
       const result: KPIs = {
         totalProps: P.length,
         rentedProps: P.filter(p=>p.status==='rented').length,
@@ -113,6 +120,10 @@ export default function REDashboard() {
         pendingAmount: pending.reduce((s,p)=>s+p.amount,0),
         overdueAmount: overdue.reduce((s,p)=>s+p.amount,0),
         openTickets: T.filter(t=>t.status==='open'||t.status==='in_progress').length,
+        totalCommissions: totalComm,
+        totalDepenses: totalDep,
+        totalRestitue: Math.max(0, totalLoyers - totalComm - totalBailleurDep),
+        tauxRecouvrement: payments && payments.length > 0 ? Math.round((paid.length / payments.length) * 100) : 0,
         tenantTickets: ((tenantTix||[]) as any[]).map(t=>({
           id: t.id, title: t.title, category: t.category, priority: t.priority,
           tenant: (t.tenants?.first_name||'') + ' ' + (t.tenants?.last_name||''),
@@ -141,7 +152,6 @@ export default function REDashboard() {
 
   const prevSlide = () => { if (autoRef.current) clearInterval(autoRef.current); setSlideIndex(i => (i - 1 + properties.length) % properties.length); };
   const nextSlide = () => { if (autoRef.current) clearInterval(autoRef.current); setSlideIndex(i => (i + 1) % properties.length); };
-
   const setImgIdx = (propId: string, idx: number) => setImgIndexes(prev => ({ ...prev, [propId]: idx }));
 
   return (
@@ -181,7 +191,7 @@ export default function REDashboard() {
           { show:true, title:'Biens immobiliers', value:data.totalProps, subtitle:data.rentedProps+' loues · '+data.availableProps+' disponibles', icon:<Home size={20}/>, color:'blue' as const, href:'/real-estate/properties' },
           { show:true, title:'Locataires actifs', value:data.activeTenants, subtitle:'Contrats en cours', icon:<Users size={20}/>, color:'green' as const, href:'/real-estate/tenants' },
           { show:sections.showRevenue, title:'Revenus du mois', value:formatCurrency(data.monthlyRevenue), subtitle:formatCurrency(data.pendingAmount)+' en attente', icon:<CreditCard size={20}/>, color:'purple' as const, href:'/real-estate/payments' },
-          { show:true, title:'Signalements', value:data.openTickets, subtitle:'Tickets locataires ouverts', icon:<Wrench size={20}/>, color:'orange' as const, href:'/real-estate/maintenance' },
+          { show:true, title:'Signalements', value:data.openTickets, subtitle:'Tickets locataires ouverts', icon:<Wrench size={20}/>, color:'orange' as const, href:'/real-estate/messages' },
         ].filter(k=>k.show).map((k,i) => (
           <motion.div key={k.title} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{delay:i*0.06}}>
             <Link href={k.href}>
@@ -190,6 +200,25 @@ export default function REDashboard() {
           </motion.div>
         ))}
       </div>
+
+      {/* Accounting KPIs */}
+      {sections.showRevenue && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { title:'Commissions générées', value:formatCurrency(data.totalCommissions), color:'text-blue-700', bg:'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800' },
+            { title:'Total dépenses', value:formatCurrency(data.totalDepenses), color:'text-red-700', bg:'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800' },
+            { title:'À reverser bailleurs', value:formatCurrency(data.totalRestitue), color:'text-purple-700', bg:'bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800' },
+            { title:'Taux de recouvrement', value:data.tauxRecouvrement+'%', color:data.tauxRecouvrement>=80?'text-green-700':'text-amber-700', bg:data.tauxRecouvrement>=80?'bg-green-50 dark:bg-green-900/20 border-green-100':'bg-amber-50 dark:bg-amber-900/20 border-amber-100' },
+          ].map((k,i) => (
+            <Link key={i} href="/real-estate/accounting">
+              <div className={`border rounded-2xl p-4 cursor-pointer hover:opacity-90 transition-opacity ${k.bg}`}>
+                <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${k.color}`}>{k.title}</p>
+                <p className={`text-xl font-bold ${k.color}`}>{k.value}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Overdue alert */}
       {sections.showPendingRents && data.overdueAmount > 0 && (
@@ -201,7 +230,7 @@ export default function REDashboard() {
         </div>
       )}
 
-      {/* ── SLIDER BIENS ── */}
+      {/* SLIDER BIENS */}
       {properties.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
@@ -209,7 +238,6 @@ export default function REDashboard() {
             <Link href="/real-estate/properties" className="text-xs text-primary hover:underline">Voir tous →</Link>
           </div>
           <div className="relative">
-            {/* Slide principal */}
             <div className="overflow-hidden rounded-2xl">
               {properties.map((p, pi) => {
                 const imgs = p.image_urls && p.image_urls.length > 0 ? p.image_urls : [];
@@ -221,7 +249,6 @@ export default function REDashboard() {
                     style={{ display: pi === slideIndex ? 'block' : 'none' }}
                     className="relative">
                     <Link href={'/real-estate/properties/' + p.id}>
-                      {/* Image principale */}
                       <div className="relative w-full h-64 md:h-80 bg-slate-100 dark:bg-slate-700">
                         {imgs.length > 0 ? (
                           <img src={imgs[imgIdx]} alt={p.name} className="w-full h-full object-cover" />
@@ -230,22 +257,15 @@ export default function REDashboard() {
                             <Home size={48} className="text-slate-300" />
                           </div>
                         )}
-                        {/* Gradient overlay */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                        
-                        {/* Badge statut */}
                         <div className="absolute top-4 left-4">
                           <Badge variant={st.variant}>{st.label}</Badge>
                         </div>
-
-                        {/* Compteur photos du bien */}
                         {imgs.length > 1 && (
                           <div className="absolute top-4 right-4 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
                             {imgIdx + 1}/{imgs.length} 📷
                           </div>
                         )}
-
-                        {/* Infos en bas */}
                         <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                           <p className="font-bold text-lg">{p.name}</p>
                           <p className="text-sm opacity-80 flex items-center gap-1"><MapPin size={12}/>{p.address}, {p.city}</p>
@@ -256,8 +276,6 @@ export default function REDashboard() {
                         </div>
                       </div>
                     </Link>
-
-                    {/* Flèches navigation photos du bien */}
                     {imgs.length > 1 && (
                       <>
                         <button onClick={e => { e.preventDefault(); setImgIdx(p.id, (imgIdx - 1 + imgs.length) % imgs.length); }}
@@ -274,8 +292,6 @@ export default function REDashboard() {
                 );
               })}
             </div>
-
-            {/* Flèches navigation entre biens */}
             {properties.length > 1 && (
               <>
                 <button onClick={prevSlide}
@@ -288,8 +304,6 @@ export default function REDashboard() {
                 </button>
               </>
             )}
-
-            {/* Dots navigation entre biens */}
             {properties.length > 1 && (
               <div className="flex justify-center gap-1.5 mt-3">
                 {properties.map((_, i) => (

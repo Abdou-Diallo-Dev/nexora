@@ -9,7 +9,7 @@ import {
   Truck, MapPin, ShoppingCart, Box, Car, Building2, Receipt, MessageSquare,
   FileCheck, Bell, TrendingUp, Globe, Package,
   Shield, Crown, Lock, LayoutDashboard, Zap, Settings, ScrollText, ClipboardCheck,
-  PieChart, DollarSign, FileSignature,
+  PieChart, DollarSign, FileSignature, Calculator,
 } from 'lucide-react';
 import { useAuthStore, UserRole } from '@/lib/store';
 import { getNavItems } from '@/lib/permissions';
@@ -30,8 +30,9 @@ const ALL_RE_ITEMS: NavItem[] = [
   // Paiements
   { key:'payments',         href:'/real-estate/payments',          label:'Loyers',              icon:<CreditCard size={15}/> },
   { key:'onlinePayment',    href:'/real-estate/online-payment',    label:'Paiement en ligne',   icon:<Globe size={15}/> },
-  { key:'invoices',         href:'/real-estate/invoices',          label:'Factures',            icon:<FileText size={15}/> },
   { key:'expenses',         href:'/real-estate/expenses',          label:'Dépenses',            icon:<Receipt size={15}/> },
+  { key:'accounting',       href:'/real-estate/accounting',        label:'Comptabilité',         icon:<Calculator size={15}/> },
+  { key:'disbursements',    href:'/real-estate/disbursements',     label:'Reversements',         icon:<Building2 size={15}/> },
   // Locataires
   { key:'maintenance',      href:'/real-estate/messages',          label:'Signalements',        icon:<Wrench size={15}/> },
   { key:'notifications',    href:'/real-estate/messages',          label:'Messagerie locataires', icon:<MessageSquare size={15}/> },
@@ -51,7 +52,7 @@ const ALL_RE_ITEMS: NavItem[] = [
 const RE_GROUP_MAP: { label: string; keys: string[]; adminOnly?: boolean }[] = [
   { label:'Dashboard',     keys:['dashboard'] },
   { label:'Biens',         keys:['properties','tenants','leases','inspections','terminations','convention'] },
-  { label:'Paiements',     keys:['payments','onlinePayment','invoices','expenses'] },
+  { label:'Paiements',     keys:['payments','onlinePayment','expenses','accounting','disbursements'] },
   { label:'Locataires',    keys:['maintenance','notifications'] },
   { label:'Analyse',       keys:['analytics','stats','reports'] },
   { label:'Documents',     keys:['documents','contractTemplate'], adminOnly: true },

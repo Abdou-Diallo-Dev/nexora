@@ -18,12 +18,12 @@ const PRESET_COLORS = [
   { name: 'Rose',          value: '#db2777' },
 ];
 
-type CompanyForm = { name:string; email:string; phone:string; address:string; primary_color:string };
+type CompanyForm = { name:string; email:string; phone:string; address:string; primary_color:string; commission_rate:number };
 
 export default function SettingsPage() {
   const { company, user, setCompany } = useAuthStore();
   const [tab, setTab] = useState<'company'|'profile'|'appearance'|'security'>('company');
-  const [form, setForm] = useState<CompanyForm>({ name:'', email:'', phone:'', address:'', primary_color:'#1e40af' });
+  const [form, setForm] = useState<CompanyForm>({ name:'', email:'', phone:'', address:'', primary_color:'#1e40af', commission_rate:10 });
   const [logoUrl, setLogoUrl] = useState<string|null>(null);
   const [profile, setProfile] = useState({ full_name:'', email:'' });
   const [avatarUrl, setAvatarUrl] = useState<string|null>(null);
@@ -40,6 +40,7 @@ export default function SettingsPage() {
         phone:         company.phone || '',
         address:       (company as any).address || '',
         primary_color: (company as any).primary_color || '#1e40af',
+        commission_rate: (company as any).commission_rate ?? 10,
       });
       setLogoUrl((company as any).logo_url || null);
       setFetching(false);
@@ -61,6 +62,7 @@ export default function SettingsPage() {
       address:       form.address || null,
       logo_url:      logoUrl,
       primary_color: form.primary_color,
+      commission_rate: form.commission_rate,
     };
     const { error } = await createClient().from('companies').update(payload as never).eq('id', company.id);
     setLoading(false);
@@ -125,6 +127,17 @@ export default function SettingsPage() {
             <div><label className={labelCls}>Email professionnel</label><input type="email" value={form.email} onChange={e=>set('email',e.target.value)} className={inputCls}/></div>
             <div><label className={labelCls}>Téléphone</label><input value={form.phone} onChange={e=>set('phone',e.target.value)} className={inputCls}/></div>
             <div className="md:col-span-2"><label className={labelCls}>Adresse</label><input value={form.address} onChange={e=>set('address',e.target.value)} className={inputCls}/></div>
+            <div>
+              <label className={labelCls}>Taux de commission (%)</label>
+              <div className="relative">
+                <input type="number" min="0" max="100" step="0.5"
+                  value={form.commission_rate}
+                  onChange={e=>setForm(f=>({...f, commission_rate: parseFloat(e.target.value)||0}))}
+                  className={inputCls+' pr-8'}/>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Commission automatiquement déduite du loyer. Par défaut : 10%</p>
+            </div>
           </div>
           <div className="mt-6">
             <button type="submit" disabled={loading} className={btnPrimary}>
