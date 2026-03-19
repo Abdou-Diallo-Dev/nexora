@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
-import { Send, MessageSquare, Search, Bell, Wrench, CreditCard, CheckCircle, Clock, AlertTriangle, X, ChevronLeft } from 'lucide-react';
+import { Send, MessageSquare, Search, Bell, Wrench, CreditCard, CheckCircle, Clock, AlertTriangle, X, ChevronLeft, Mic, Square, Play } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store';
 import { LoadingSpinner, inputCls, Badge, BadgeVariant } from '@/components/ui';
@@ -41,6 +41,11 @@ export default function MessagesPage() {
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [notifText, setNotifText]   = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder|null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const [recording, setRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const timerRef = useRef<NodeJS.Timeout|null>(null);
 
   // Load tenants list
   useEffect(() => {
@@ -122,6 +127,46 @@ export default function MessagesPage() {
   }, [selected, company?.id]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      mediaRecorderRef.current = mr;
+      audioChunksRef.current = [];
+      mr.ondataavailable = e => audioChunksRef.current.push(e.data);
+      mr.onstop = async () => {
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        stream.getTracks().forEach(t => t.stop());
+        // Upload to Supabase Storage
+        const fileName = `voice/${Date.now()}.webm`;
+        const sb = createClient();
+        const { data: up } = await sb.storage.from('messages-audio').upload(fileName, blob);
+        if (up) {
+          const { data: url } = sb.storage.from('messages-audio').getPublicUrl(fileName);
+          if (url && selected && company?.id) {
+            await sb.from('messages').insert({
+              tenant_id: selected.id, company_id: company.id,
+              sender_role: 'company', sender_name: user?.full_name||'Gestionnaire',
+              sender_id: user?.id, content: '🎤 Note vocale',
+              audio_url: url.publicUrl, message_type: 'audio', is_read: false,
+            });
+          }
+        }
+      };
+      mr.start();
+      setRecording(true);
+      setRecordingTime(0);
+      timerRef.current = setInterval(() => setRecordingTime(t => t+1), 1000);
+    } catch { toast.error('Microphone non disponible'); }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setRecording(false);
+    if (timerRef.current) clearInterval(timerRef.current);
+    setRecordingTime(0);
+  };
 
   const send = async () => {
     if (!text.trim() || !selected || !company?.id || sending) return;
@@ -351,7 +396,11 @@ export default function MessagesPage() {
                           )}
                           {!isMine && prevSame && <div className="w-7 mr-2 flex-shrink-0" />}
                           <div className={`max-w-[70%] rounded-2xl px-3 py-2 ${isMine ? 'bg-primary text-white rounded-br-sm' : 'bg-slate-100 dark:bg-slate-800 rounded-bl-sm'}`}>
+                            {(m as any).message_type === 'audio' && (m as any).audio_url ? (
+                            <audio controls src={(m as any).audio_url} className="max-w-[200px] h-8"/>
+                          ) : (
                             <p className="text-sm whitespace-pre-wrap">{m.content}</p>
+                          )}
                             <p className={`text-[10px] mt-0.5 text-right ${isMine ? 'text-white/60' : 'text-muted-foreground'}`}>
                               {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                             </p>
@@ -368,6 +417,17 @@ export default function MessagesPage() {
                   onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
                   placeholder={`Message à ${selected.first_name}...`}
                   className={inputCls + ' flex-1 text-sm'} />
+                {recording ? (
+                  <button onClick={stopRecording}
+                    className="flex items-center gap-1.5 px-3 h-9 bg-red-500 rounded-xl text-white text-xs font-medium animate-pulse">
+                    <Square size={12}/> {recordingTime}s
+                  </button>
+                ) : (
+                  <button onClick={startRecording} disabled={sending}
+                    className="w-9 h-9 bg-slate-100 dark:bg-slate-700 rounded-xl flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-blue-50 transition-colors flex-shrink-0">
+                    <Mic size={14}/>
+                  </button>
+                )}
                 <button onClick={send} disabled={!text.trim() || sending}
                   className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center text-white disabled:opacity-50 flex-shrink-0">
                   {sending ? <LoadingSpinner size={14} /> : <Send size={14} />}

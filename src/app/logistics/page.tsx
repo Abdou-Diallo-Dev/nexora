@@ -1,167 +1,208 @@
 'use client';
-
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Package, Truck, Users, Plus, ArrowRight } from 'lucide-react';
+import { Package, Truck, Users, MapPin, CheckCircle, Clock, AlertTriangle, TrendingUp, Plus, ArrowRight, Wrench } from 'lucide-react';
 import Link from 'next/link';
-import { StatCard, Badge } from '@/components/ui';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store';
-import { formatCurrency, formatDateRelative } from '@/lib/utils';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { formatCurrency, formatDate } from '@/lib/utils';
+import { StatCard, LoadingSpinner, Badge, cardCls, btnPrimary } from '@/components/ui';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { format, subDays } from 'date-fns';
+import { fr } from 'date-fns/locale';
+
+const STATUS_MAP: Record<string,{l:string;v:any;color:string}> = {
+  pending:     { l:'En attente',  v:'warning', color:'#f59e0b' },
+  assigned:    { l:'Assigné',     v:'info',    color:'#3b82f6' },
+  in_progress: { l:'En cours',    v:'info',    color:'#8b5cf6' },
+  delivered:   { l:'Livré',       v:'success', color:'#22c55e' },
+  failed:      { l:'Échec',       v:'error',   color:'#ef4444' },
+  cancelled:   { l:'Annulé',      v:'default', color:'#94a3b8' },
+};
 
 export default function LogisticsDashboard() {
-  const { company } = useAuthStore();
-  const [stats, setStats] = useState({ pendingOrders: 0, activeShipments: 0, availableDrivers: 0, totalVehicles: 0 });
-  const [recentOrders, setRecentOrders] = useState<{ id: string; reference: string; client_name: string; status: string; total_amount: number; created_at: string }[]>([]);
-  const [deliveryData, setDeliveryData] = useState<{ day: string; livraisons: number; commandes: number }[]>([]);
-  const [statusDistrib, setStatusDistrib] = useState<{ name: string; value: number; color: string }[]>([]);
+  const { company, user } = useAuthStore();
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ total:0, pending:0, inProgress:0, delivered:0, failed:0, drivers:0, availableDrivers:0, vehicles:0, availableVehicles:0, todayRevenue:0, monthRevenue:0 });
+  const [recent, setRecent] = useState<any[]>([]);
+  const [chart, setChart] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<{type:string;message:string}[]>([]);
 
   useEffect(() => {
     if (!company?.id) return;
-    const supabase = createClient();
-    const fetchData = async () => {
-      try {
-        const [
-          { count: pendingOrders },
-          { count: activeShipments },
-          { count: availableDrivers },
-          { count: totalVehicles },
-          { data: orders },
-        ] = await Promise.all([
-          supabase.from('orders').select('*', { count: 'exact', head: true }).eq('company_id', company.id).eq('status', 'pending'),
-          supabase.from('shipments').select('*', { count: 'exact', head: true }).eq('company_id', company.id).eq('status', 'in_transit'),
-          supabase.from('drivers').select('*', { count: 'exact', head: true }).eq('company_id', company.id).eq('status', 'available'),
-          supabase.from('vehicles').select('*', { count: 'exact', head: true }).eq('company_id', company.id),
-          supabase.from('orders').select('id, reference, status, total_amount, created_at, clients(company_name)').eq('company_id', company.id).order('created_at', { ascending: false }).limit(6),
-        ]);
+    const sb = createClient();
+    const cid = company.id;
+    const today = new Date().toISOString().split('T')[0];
+    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
 
-        setStats({ pendingOrders: pendingOrders || 0, activeShipments: activeShipments || 0, availableDrivers: availableDrivers || 0, totalVehicles: totalVehicles || 0 });
-        setRecentOrders(((orders || []) as { id: string; reference: string; status: string; total_amount: number; created_at: string; clients: { company_name: string } | null }[]).map(o => ({
-          id: o.id, reference: o.reference, client_name: o.clients?.company_name || 'Client', status: o.status, total_amount: o.total_amount, created_at: o.created_at,
-        })));
+    Promise.all([
+      sb.from('deliveries').select('id,status,final_price,created_at,payment_status').eq('company_id', cid),
+      sb.from('drivers').select('id,status,first_name,last_name').eq('company_id', cid),
+      sb.from('vehicles').select('id,status,type,insurance_expiry,inspection_expiry').eq('company_id', cid),
+      sb.from('deliveries').select('id,reference,status,final_price,created_at,pickup_city,delivery_city,priority,logistics_clients(name)').eq('company_id', cid).order('created_at', { ascending: false }).limit(8),
+    ]).then(([{data:D},{data:Dr},{data:V},{data:R}]) => {
+      const deliveries = D||[];
+      const drivers = Dr||[];
+      const vehicles = V||[];
+      const now = new Date();
 
-        const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-        setDeliveryData(days.map(day => ({ day, livraisons: Math.floor(Math.random() * 20) + 5, commandes: Math.floor(Math.random() * 25) + 8 })));
+      // Stats
+      const todayRev = deliveries.filter((d:any) => d.created_at?.startsWith(today) && d.payment_status==='paid').reduce((s:number,d:any)=>s+Number(d.final_price||0),0);
+      const monthRev = deliveries.filter((d:any) => new Date(d.created_at) >= new Date(monthStart) && d.payment_status==='paid').reduce((s:number,d:any)=>s+Number(d.final_price||0),0);
 
-        const statuses = ['pending', 'confirmed', 'in_transit', 'delivered', 'cancelled'];
-        const colors = ['#F59E0B', '#3B82F6', '#8B5CF6', '#22C55E', '#EF4444'];
-        setStatusDistrib(statuses.map((s, i) => ({
-          name: s === 'pending' ? 'En attente' : s === 'confirmed' ? 'Confirmé' : s === 'in_transit' ? 'En transit' : s === 'delivered' ? 'Livré' : 'Annulé',
-          value: ((orders || []) as { status: string }[]).filter(o => o.status === s).length || Math.floor(Math.random() * 10) + 1,
-          color: colors[i],
-        })));
-      } finally { setLoading(false); }
-    };
-    fetchData();
+      setStats({
+        total: deliveries.length,
+        pending: deliveries.filter((d:any)=>d.status==='pending').length,
+        inProgress: deliveries.filter((d:any)=>d.status==='in_progress'||d.status==='assigned').length,
+        delivered: deliveries.filter((d:any)=>d.status==='delivered').length,
+        failed: deliveries.filter((d:any)=>d.status==='failed').length,
+        drivers: drivers.length,
+        availableDrivers: drivers.filter((d:any)=>d.status==='available').length,
+        vehicles: vehicles.length,
+        availableVehicles: vehicles.filter((v:any)=>v.status==='available').length,
+        todayRevenue: todayRev, monthRevenue: monthRev,
+      });
+
+      setRecent((R||[]) as any[]);
+
+      // Chart 7 days
+      const chartData = Array.from({length:7},(_,i)=>{
+        const d = subDays(now, 6-i);
+        const day = d.toISOString().split('T')[0];
+        const count = deliveries.filter((del:any)=>del.created_at?.startsWith(day)).length;
+        const rev = deliveries.filter((del:any)=>del.created_at?.startsWith(day)&&del.payment_status==='paid').reduce((s:number,del:any)=>s+Number(del.final_price||0),0);
+        return { day: format(d,'EEE',{locale:fr}), livraisons: count, revenus: rev };
+      });
+      setChart(chartData);
+
+      // Alerts
+      const alts: {type:string;message:string}[] = [];
+      const expiringSoon = vehicles.filter((v:any) => {
+        if (!v.insurance_expiry) return false;
+        const diff = (new Date(v.insurance_expiry).getTime() - now.getTime()) / (1000*60*60*24);
+        return diff >= 0 && diff <= 30;
+      });
+      if (expiringSoon.length > 0) alts.push({ type:'warning', message:`${expiringSoon.length} véhicule(s) avec assurance expirant dans 30 jours` });
+      if (deliveries.filter((d:any)=>d.status==='failed').length > 0) alts.push({ type:'error', message:`${deliveries.filter((d:any)=>d.status==='failed').length} livraison(s) en échec à traiter` });
+      if (drivers.filter((d:any)=>d.status==='available').length === 0) alts.push({ type:'warning', message:'Aucun chauffeur disponible actuellement' });
+      setAlerts(alts);
+      setLoading(false);
+    });
   }, [company?.id]);
 
-  const ORDER_STATUS: Record<string, { label: string; variant: 'warning' | 'info' | 'success' | 'error' | 'purple' | 'default' }> = {
-    pending:    { label: 'En attente', variant: 'warning' },
-    confirmed:  { label: 'Confirmé',   variant: 'info' },
-    in_transit: { label: 'En transit', variant: 'purple' },
-    delivered:  { label: 'Livré',      variant: 'success' },
-    cancelled:  { label: 'Annulé',     variant: 'error' },
-  };
+  if (loading) return <div className="flex items-center justify-center h-64"><LoadingSpinner size={36}/></div>;
+
+  const successRate = stats.total > 0 ? Math.round((stats.delivered/stats.total)*100) : 0;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Gestion Logistique</h1>
-          <p className="text-sm text-muted-foreground">Tableau de bord opérationnel</p>
+          <h1 className="text-2xl font-bold text-foreground">Tableau de bord Logistique 🚛</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Vue globale de vos opérations</p>
         </div>
-        <Link href="/logistics/orders/new"
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors">
-          <Plus size={16} /> Nouvelle commande
-        </Link>
+        <Link href="/logistics/deliveries/new" className={btnPrimary}><Plus size={16}/> Nouvelle livraison</Link>
       </div>
 
-      {/* KPIs */}
+      {/* Alertes */}
+      {alerts.length > 0 && (
+        <div className="space-y-2">
+          {alerts.map((a,i) => (
+            <div key={i} className={`flex items-center gap-3 p-3 rounded-xl border ${a.type==='error'?'bg-red-50 border-red-200 dark:bg-red-900/20':'bg-amber-50 border-amber-200 dark:bg-amber-900/20'}`}>
+              <AlertTriangle size={16} className={a.type==='error'?'text-red-600':'text-amber-600'}/>
+              <p className={`text-sm font-medium ${a.type==='error'?'text-red-700':'text-amber-700'}`}>{a.message}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Commandes en attente"  value={stats.pendingOrders}    icon={<Package size={20}/>} color="amber"  loading={loading} />
-        <StatCard title="Expéditions actives"    value={stats.activeShipments}  icon={<Truck size={20}/>}   color="blue"   loading={loading} />
-        <StatCard title="Chauffeurs disponibles" value={stats.availableDrivers} icon={<Users size={20}/>}   color="green"  loading={loading} />
-        <StatCard title="Véhicules totaux"       value={stats.totalVehicles}    icon={<Truck size={20}/>}   color="purple" loading={loading} />
+        {[
+          { title:'Total livraisons', value:stats.total, subtitle:`${stats.pending} en attente`, icon:<Package size={20}/>, color:'blue' as const, href:'/logistics/deliveries' },
+          { title:'En cours', value:stats.inProgress, subtitle:`${stats.pending} assignées`, icon:<Truck size={20}/>, color:'purple' as const, href:'/logistics/deliveries' },
+          { title:'Chauffeurs dispo', value:`${stats.availableDrivers}/${stats.drivers}`, subtitle:'Disponibles maintenant', icon:<Users size={20}/>, color:'green' as const, href:'/logistics/drivers' },
+          { title:'Véhicules dispo', value:`${stats.availableVehicles}/${stats.vehicles}`, subtitle:'En flotte', icon:<Truck size={20}/>, color:'orange' as const, href:'/logistics/fleet' },
+        ].map((k,i) => (
+          <motion.div key={k.title} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{delay:i*0.06}}>
+            <Link href={k.href}><StatCard title={k.title} value={k.value} subtitle={k.subtitle} icon={k.icon} color={k.color}/></Link>
+          </motion.div>
+        ))}
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-border p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-foreground">Livraisons par jour</h3>
-            <Badge variant="info">7 derniers jours</Badge>
+      {/* Revenus + Taux */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label:"Revenus aujourd'hui", value:formatCurrency(stats.todayRevenue), color:'text-green-700', bg:'bg-green-50 dark:bg-green-900/20 border-green-100' },
+          { label:'Revenus du mois', value:formatCurrency(stats.monthRevenue), color:'text-blue-700', bg:'bg-blue-50 dark:bg-blue-900/20 border-blue-100' },
+          { label:'Taux de succès', value:`${successRate}%`, color:successRate>=80?'text-green-700':'text-amber-700', bg:successRate>=80?'bg-green-50 dark:bg-green-900/20 border-green-100':'bg-amber-50 dark:bg-amber-900/20 border-amber-100' },
+          { label:'Échecs', value:String(stats.failed), color:stats.failed>0?'text-red-700':'text-green-700', bg:stats.failed>0?'bg-red-50 dark:bg-red-900/20 border-red-100':'bg-green-50 dark:bg-green-900/20 border-green-100' },
+        ].map((k,i) => (
+          <div key={i} className={`border rounded-2xl p-4 ${k.bg}`}>
+            <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${k.color}`}>{k.label}</p>
+            <p className={`text-2xl font-bold ${k.color}`}>{k.value}</p>
           </div>
+        ))}
+      </div>
+
+      {/* Chart + Recent */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className={cardCls+' lg:col-span-2 p-5'}>
+          <h3 className="font-semibold text-foreground mb-4">Activité — 7 derniers jours</h3>
           <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={deliveryData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="day" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip />
-              <Bar dataKey="livraisons" fill="#2563EB" radius={[4, 4, 0, 0]} name="Livraisons" />
-              <Bar dataKey="commandes"  fill="#93C5FD" radius={[4, 4, 0, 0]} name="Commandes" />
+            <BarChart data={chart} barSize={20}>
+              <XAxis dataKey="day" tick={{fontSize:11}} axisLine={false} tickLine={false}/>
+              <YAxis tick={{fontSize:10}} axisLine={false} tickLine={false}/>
+              <Tooltip/>
+              <Bar dataKey="livraisons" fill="#3b82f6" radius={[4,4,0,0]} name="Livraisons"/>
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-border p-6">
-          <h3 className="font-semibold text-foreground mb-4">Répartition des commandes</h3>
-          <div className="space-y-3">
-            {statusDistrib.map(s => (
-              <div key={s.name} className="flex items-center gap-3">
-                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: s.color }} />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-muted-foreground">{s.name}</span>
-                    <span className="text-xs font-semibold text-foreground">{s.value}</span>
-                  </div>
-                  <div className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                    <motion.div className="h-full rounded-full" style={{ background: s.color }}
-                      initial={{ width: 0 }} animate={{ width: `${Math.min(100, (s.value / Math.max(...statusDistrib.map(x => x.value))) * 100)}%` }}
-                      transition={{ duration: 0.8, delay: 0.2 }} />
-                  </div>
-                </div>
-              </div>
+        {/* Quick stats */}
+        <div className={cardCls+' p-5'}>
+          <h3 className="font-semibold text-foreground mb-4">Actions rapides</h3>
+          <div className="space-y-2">
+            {[
+              { href:'/logistics/deliveries/new', label:'Nouvelle livraison', icon:<Plus size={15}/>, cls:'text-blue-700 bg-blue-50 border-blue-100' },
+              { href:'/logistics/drivers/new', label:'Ajouter chauffeur', icon:<Users size={15}/>, cls:'text-green-700 bg-green-50 border-green-100' },
+              { href:'/logistics/fleet/new', label:'Ajouter véhicule', icon:<Truck size={15}/>, cls:'text-purple-700 bg-purple-50 border-purple-100' },
+              { href:'/logistics/deliveries?status=pending', label:'Voir en attente', icon:<Clock size={15}/>, cls:'text-amber-700 bg-amber-50 border-amber-100' },
+            ].map(a => (
+              <Link key={a.href} href={a.href} className={`flex items-center gap-2.5 p-3 rounded-xl border transition-colors ${a.cls}`}>
+                {a.icon}<span className="text-sm font-medium">{a.label}</span>
+              </Link>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Recent orders */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-border">
+      {/* Recent deliveries */}
+      <div className={cardCls}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <h3 className="font-semibold text-foreground">Commandes récentes</h3>
-          <Link href="/logistics/orders" className="text-xs text-primary hover:underline flex items-center gap-1">Voir tout <ArrowRight size={12} /></Link>
+          <h3 className="font-semibold text-foreground">Livraisons récentes</h3>
+          <Link href="/logistics/deliveries" className="text-xs text-primary hover:underline">Voir toutes →</Link>
         </div>
         <div className="divide-y divide-border">
-          {loading ? (
-            Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="px-5 py-3 flex items-center gap-4">
-                <div className="h-4 bg-slate-100 dark:bg-slate-700 rounded animate-pulse flex-1" />
-              </div>
-            ))
-          ) : recentOrders.length === 0 ? (
-            <p className="text-sm text-center text-muted-foreground py-8">Aucune commande</p>
-          ) : recentOrders.map((order, i) => {
-            const s = ORDER_STATUS[order.status] || ORDER_STATUS.pending;
+          {recent.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8 text-sm">Aucune livraison</p>
+          ) : recent.map((d:any) => {
+            const sm = STATUS_MAP[d.status]||{l:d.status,v:'default',color:'#94a3b8'};
             return (
-              <motion.div key={order.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}
-                className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
-                    <Package size={14} className="text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{order.reference}</p>
-                    <p className="text-xs text-muted-foreground">{order.client_name} · {formatDateRelative(order.created_at)}</p>
-                  </div>
+              <Link key={d.id} href={`/logistics/deliveries/${d.id}`} className="flex items-center gap-4 px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{background:`${sm.color}20`}}>
+                  <Package size={16} style={{color:sm.color}}/>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold text-foreground">{formatCurrency(order.total_amount)}</span>
-                  <Badge variant={s.variant}>{s.label}</Badge>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm text-foreground">{d.reference}</p>
+                  <p className="text-xs text-muted-foreground truncate">{d.logistics_clients?.name||'—'} · {d.pickup_city||'?'} → {d.delivery_city||'?'}</p>
                 </div>
-              </motion.div>
+                {d.priority === 'urgent' && <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">URGENT</span>}
+                {d.priority === 'express' && <span className="text-xs font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">EXPRESS</span>}
+                <Badge variant={sm.v}>{sm.l}</Badge>
+                <span className="text-sm font-semibold text-foreground">{formatCurrency(d.final_price||0)}</span>
+              </Link>
             );
           })}
         </div>
