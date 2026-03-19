@@ -55,7 +55,7 @@ export default function ReportsPage() {
     const startDate = startOfMonth(subMonths(now, months - 1));
 
     Promise.all([
-      sb.from('rent_payments').select('id,amount,status,period_month,period_year,paid_date,tenant_id,lease_id,tenants(first_name,last_name),leases(property_id,properties(name))').eq('company_id', cid).limit(1000),
+      sb.from('rent_payments').select('id,amount,status,period_month,period_year,paid_date,tenant_id,lease_id').eq('company_id', cid).limit(1000),
       sb.from('expenses').select('id,amount,type,category,date').eq('company_id', cid).limit(500),
       sb.from('properties').select('id,name,status,rent_amount').eq('company_id', cid),
       sb.from('leases').select('id,status,tenant_id,tenants(first_name,last_name)').eq('company_id', cid).eq('status','active'),
@@ -126,26 +126,36 @@ export default function ReportsPage() {
       const availableProps = PR.filter((p:any) => p.status==='available').length;
       // Taux d'occupation basé sur biens loués / total biens
       const occupancyRate = PR.length > 0 ? Math.min(100, Math.round((rentedProps/PR.length)*100)) : 0;
-      // Map property revenue via leases join
+      // Map property revenue via leases
+      const leasePropertyMap: Record<string,string> = {};
+      L.forEach((l:any) => { if (l.id && l.tenant_id) leasePropertyMap[l.tenant_id] = l.id; });
       const revenuePerProperty = PR.filter((p:any) => p.status==='rented').slice(0,6).map((p:any) => ({
         name: p.name.length > 12 ? p.name.slice(0,12)+'…' : p.name,
-        revenue: paid.filter((pay:any) => (pay.leases as any)?.property_id === p.id || (pay.leases as any)?.properties?.name === p.name).reduce((s:number,pay:any) => s+pay.amount, 0),
+        revenue: periodPaid.filter((pay:any) => {
+          const lease = L.find((l:any) => l.tenant_id === pay.tenant_id);
+          return lease && (lease.property_id === p.id || lease.properties?.name === p.name);
+        }).reduce((s:number,pay:any) => s+pay.amount, 0),
       }));
 
       // Tenants
       const tenantPayMap: Record<string,{name:string;amount:number;paid:boolean}> = {};
       periodPaid.forEach((p:any) => {
-        const name = (p.tenants?.first_name||'') + ' ' + (p.tenants?.last_name||'');
-        if (!tenantPayMap[p.tenant_id]) tenantPayMap[p.tenant_id] = { name, amount:0, paid:true };
-        tenantPayMap[p.tenant_id].amount += p.amount;
+        const tid = p.tenant_id || 'inconnu';
+        // Find tenant name from leases data
+        const lease = L.find((l:any) => l.tenant_id === tid);
+        const name = lease?.tenants ? (lease.tenants.first_name||'') + ' ' + (lease.tenants.last_name||'') : 'Locataire';
+        if (!tenantPayMap[tid]) tenantPayMap[tid] = { name, amount:0, paid:true };
+        tenantPayMap[tid].amount += p.amount;
       });
       const topPayers = Object.values(tenantPayMap).sort((a,b) => b.amount-a.amount).slice(0,5).map(t => ({ name:t.name, amount:t.amount, onTime:true }));
       const latePayerMap: Record<string,{name:string;amount:number;periods:string[]}> = {};
       overdue.forEach((p:any) => {
-        const name = (p.tenants?.first_name||'') + ' ' + (p.tenants?.last_name||'');
-        if (!latePayerMap[p.tenant_id]) latePayerMap[p.tenant_id] = { name, amount:0, periods:[] };
-        latePayerMap[p.tenant_id].amount += p.amount;
-        latePayerMap[p.tenant_id].periods.push(p.period_month+'/'+p.period_year);
+        const tid = p.tenant_id || 'inconnu';
+        const lease = L.find((l:any) => l.tenant_id === tid);
+        const name = lease?.tenants ? (lease.tenants.first_name||'') + ' ' + (lease.tenants.last_name||'') : 'Locataire';
+        if (!latePayerMap[tid]) latePayerMap[tid] = { name, amount:0, periods:[] };
+        latePayerMap[tid].amount += p.amount;
+        latePayerMap[tid].periods.push(p.period_month+'/'+p.period_year);
       });
       const latePayers = Object.values(latePayerMap).slice(0,5).map(t => ({ name:t.name, amount:t.amount, periods:t.periods.join(', ') }));
       const paidTenantIds = new Set(periodPaid.map((p:any) => p.tenant_id));
