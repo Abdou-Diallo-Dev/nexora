@@ -70,6 +70,7 @@ export default function AnalyticsPage() {
   useEffect(() => {
     if (!company?.id) return;
     setLoading(true);
+    const run = async () => {
     const sb = createClient();
     const cid = company.id;
     const now = new Date();
@@ -77,17 +78,31 @@ export default function AnalyticsPage() {
 
     const now2 = new Date();
     const startDate2 = new Date(now2.getFullYear(), now2.getMonth() - (months-1), 1);
-    let payQ = sb.from('rent_payments').select('amount,status,period_month,period_year,tenant_id,lease_id').eq('company_id', cid).limit(1000);
     let expQ = sb.from('expenses').select('amount,date,category,type').eq('company_id', cid).limit(500);
 
+    // Get lease_ids for the selected property first
+    const leaseIdsForProperty: string[] = [];
     if (filterProperty) {
-      payQ = payQ.eq('lease_id', filterProperty);
+      const { data: leaseRows } = await sb.from('leases')
+        .select('id').eq('property_id', filterProperty).eq('company_id', cid);
+      (leaseRows||[]).forEach((l:any) => leaseIdsForProperty.push(l.id));
+    }
+
+    let payQ = sb.from('rent_payments').select('amount,status,period_month,period_year,tenant_id,lease_id').eq('company_id', cid).limit(1000);
+    if (filterProperty && leaseIdsForProperty.length > 0) {
+      payQ = payQ.in('lease_id', leaseIdsForProperty);
+    } else if (filterProperty && leaseIdsForProperty.length === 0) {
+      // No leases for this property — return empty
     }
     if (filterTenant) {
       payQ = payQ.eq('tenant_id', filterTenant);
     }
 
     Promise.all([payQ, expQ]).then(([{ data: pay }, { data: exp }]) => {
+      if (filterProperty && leaseIdsForProperty.length === 0) {
+        setTotals({ revenue:0, prevRevenue:0, depenses:0, prevDepenses:0, commissions:0, restitue:0, recouvrement:0, impayeRate:0, cashFlow:0 });
+        setChart([]); setCatData([]); setLoading(false); return;
+      }
       const rate = commissionRate / 100;
       const now3 = new Date();
       const startDate3 = new Date(now3.getFullYear(), now3.getMonth() - (months-1), 1);
@@ -140,6 +155,8 @@ export default function AnalyticsPage() {
       setCatData(Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([name,value],i) => ({ name, value, color:COLORS[i%COLORS.length] })));
       setLoading(false);
     });
+    };
+    run();
   }, [company?.id, quick, filterProperty, filterTenant, commissionRate]);
 
   const revenueGrowth = totals.prevRevenue > 0 ? Math.round(((totals.revenue-totals.prevRevenue)/totals.prevRevenue)*100) : 0;
