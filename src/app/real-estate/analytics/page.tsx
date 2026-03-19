@@ -2,119 +2,251 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store';
-import { PageHeader, StatCard, LoadingSpinner } from '@/components/ui';
+import { PageHeader, LoadingSpinner, selectCls, inputCls } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
-import { TrendingUp, TrendingDown, CreditCard, Home, Percent, Building2 } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, Legend } from 'recharts';
-import { format } from 'date-fns';
+import { TrendingUp, TrendingDown, CreditCard, Percent, Building2, ArrowUp, ArrowDown, AlertTriangle } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
+import { format, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
+
+const COLORS = ['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316'];
+const QUICK = [
+  { label: 'Ce mois', value: 'month' },
+  { label: '3 mois', value: '3' },
+  { label: '6 mois', value: '6' },
+  { label: '1 an', value: '12' },
+];
 
 export default function AnalyticsPage() {
   const { company } = useAuthStore();
-  const [chart, setChart] = useState<{ month:string; revenue:number; depenses:number; commissions:number; restitue:number }[]>([]);
-  const [catData, setCatData] = useState<{ name:string; value:number; color:string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [quick, setQuick] = useState('3');
+  const [filterProperty, setFilterProperty] = useState('');
+  const [filterTenant, setFilterTenant] = useState('');
+  const [properties, setProperties] = useState<{id:string;name:string}[]>([]);
+  const [tenants, setTenants] = useState<{id:string;name:string}[]>([]);
   const [commissionRate, setCommissionRate] = useState(10);
-  const [totals, setTotals] = useState({ revenue:0, depenses:0, commissions:0, restitue:0, recouvrement:0 });
+
+  const [totals, setTotals] = useState({
+    revenue:0, prevRevenue:0, depenses:0, prevDepenses:0,
+    commissions:0, restitue:0, recouvrement:0, impayeRate:0, cashFlow:0,
+  });
+  const [chart, setChart] = useState<any[]>([]);
+  const [catData, setCatData] = useState<{name:string;value:number;color:string}[]>([]);
 
   useEffect(() => {
     if (!company?.id) return;
-    const sb = createClient(); const cid = company.id;
-    Promise.all([
-      sb.from('rent_payments').select('amount,status,period_month,period_year').eq('company_id', cid).limit(500),
-      sb.from('expenses').select('amount,date,category,type').eq('company_id', cid).limit(500),
-      sb.from('companies').select('commission_rate').eq('id', cid).maybeSingle(),
-    ]).then(([{ data: pay }, { data: exp }, { data: comp }]) => {
-      const rate = (comp?.commission_rate ?? 10) / 100;
-      setCommissionRate(comp?.commission_rate ?? 10);
-      const paid = (pay || []).filter((p: any) => p.status === 'paid');
-      const all = pay || [];
-      const totalRev = paid.reduce((s: number, p: any) => s + p.amount, 0);
-      const totalDep = (exp || []).reduce((s: number, e: any) => s + e.amount, 0);
-      const totalComm = totalRev * rate;
-      const totalBailleurExp = (exp || []).filter((e: any) => e.type === 'bailleur').reduce((s: number, e: any) => s + e.amount, 0);
-      setTotals({
-        revenue: totalRev, depenses: totalDep, commissions: totalComm,
-        restitue: Math.max(0, totalRev - totalComm - totalBailleurExp),
-        recouvrement: all.length > 0 ? Math.round((paid.length / all.length) * 100) : 0,
-      });
-      const now = new Date();
-      const months = Array.from({ length: 12 }, (_, i) => {
-        const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
+    const sb = createClient();
+    sb.from('properties').select('id,name').eq('company_id', company.id).order('name')
+      .then(({ data }) => setProperties((data||[]) as any[]));
+    sb.from('tenants').select('id,first_name,last_name').eq('company_id', company.id).order('first_name')
+      .then(({ data }) => setTenants(((data||[]) as any[]).map(t => ({ id:t.id, name:`${t.first_name} ${t.last_name}` }))));
+    sb.from('companies').select('commission_rate').eq('id', company.id).maybeSingle()
+      .then(({ data }) => setCommissionRate((data as any)?.commission_rate ?? 10));
+  }, [company?.id]);
+
+  useEffect(() => {
+    if (!company?.id) return;
+    setLoading(true);
+    const sb = createClient();
+    const cid = company.id;
+    const now = new Date();
+    const months = quick === 'month' ? 1 : parseInt(quick);
+
+    let payQ = sb.from('rent_payments').select('amount,status,period_month,period_year,tenant_id,lease_id').eq('company_id', cid).limit(1000);
+    let expQ = sb.from('expenses').select('amount,date,category,type').eq('company_id', cid).limit(500);
+
+    if (filterProperty) {
+      payQ = payQ.eq('lease_id', filterProperty);
+    }
+    if (filterTenant) {
+      payQ = payQ.eq('tenant_id', filterTenant);
+    }
+
+    Promise.all([payQ, expQ]).then(([{ data: pay }, { data: exp }]) => {
+      const rate = commissionRate / 100;
+      const paid = (pay||[]).filter((p:any) => p.status === 'paid');
+      const all = pay||[];
+      const overdue = (pay||[]).filter((p:any) => p.status === 'late' || p.status === 'overdue');
+
+      // Current month
+      const curMo = String(now.getMonth()+1)+'/'+String(now.getFullYear());
+      const prevMo = String(subMonths(now,1).getMonth()+1)+'/'+String(subMonths(now,1).getFullYear());
+      const curRevenue = paid.filter((p:any) => String(p.period_month)+'/'+String(p.period_year)===curMo).reduce((s:number,p:any)=>s+p.amount,0);
+      const prevRevenue = paid.filter((p:any) => String(p.period_month)+'/'+String(p.period_year)===prevMo).reduce((s:number,p:any)=>s+p.amount,0);
+      const totalRevenue = paid.reduce((s:number,p:any)=>s+p.amount,0);
+      const totalDep = (exp||[]).reduce((s:number,e:any)=>s+e.amount,0);
+      const curDep = (exp||[]).filter((e:any) => { const d=new Date(e.date); return String(d.getMonth()+1)+'/'+String(d.getFullYear())===curMo; }).reduce((s:number,e:any)=>s+e.amount,0);
+      const prevDep = (exp||[]).filter((e:any) => { const d=new Date(e.date); return String(d.getMonth()+1)+'/'+String(d.getFullYear())===prevMo; }).reduce((s:number,e:any)=>s+e.amount,0);
+      const totalComm = totalRevenue * rate;
+      const totalBailleurDep = (exp||[]).filter((e:any)=>e.type==='bailleur').reduce((s:number,e:any)=>s+e.amount,0);
+      const cashFlow = totalRevenue - totalDep;
+      const impayeRate = all.length > 0 ? Math.round((overdue.length / all.length) * 100) : 0;
+      const recouvrement = all.length > 0 ? Math.round((paid.length / all.length) * 100) : 0;
+
+      setTotals({ revenue:curRevenue, prevRevenue, depenses:curDep, prevDepenses:prevDep, commissions:totalComm, restitue:Math.max(0,totalRevenue-totalComm-totalBailleurDep), recouvrement, impayeRate, cashFlow });
+
+      // Chart
+      const monthsArr = Array.from({ length: months }, (_, i) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - (months-1) + i, 1);
         const mo = String(d.getMonth()+1)+'/'+String(d.getFullYear());
-        const revenue = paid.filter((p: any) => String(p.period_month)+'/'+String(p.period_year)===mo).reduce((s: number, p: any) => s+p.amount, 0);
-        const depenses = (exp||[]).filter((e: any) => { const ed=new Date(e.date); return String(ed.getMonth()+1)+'/'+String(ed.getFullYear())===mo; }).reduce((s: number, e: any) => s+e.amount, 0);
+        const revenue = paid.filter((p:any) => String(p.period_month)+'/'+String(p.period_year)===mo).reduce((s:number,p:any)=>s+p.amount,0);
+        const expenses = (exp||[]).filter((e:any) => { const ed=new Date(e.date); return String(ed.getMonth()+1)+'/'+String(ed.getFullYear())===mo; }).reduce((s:number,e:any)=>s+e.amount,0);
         const commissions = revenue * rate;
-        return { month: format(d, 'MMM yy', { locale: fr }), revenue, depenses, commissions, restitue: Math.max(0, revenue - commissions - depenses) };
+        return { month: format(d,'MMM yy',{locale:fr}), revenue, expenses, commissions, net: revenue-commissions-expenses };
       });
-      setChart(months);
-      const cats: Record<string, number> = {};
-      (exp||[]).forEach((e: any) => { cats[e.category||'Autre'] = (cats[e.category||'Autre']||0) + e.amount; });
-      const colors = ['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316'];
-      setCatData(Object.entries(cats).map(([k,v], i) => ({ name: k, value: v, color: colors[i%colors.length] })));
+      setChart(monthsArr);
+
+      // Categories
+      const cats: Record<string,number> = {};
+      (exp||[]).forEach((e:any) => { cats[e.category||'Autre'] = (cats[e.category||'Autre']||0)+e.amount; });
+      setCatData(Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([name,value],i) => ({ name, value, color:COLORS[i%COLORS.length] })));
       setLoading(false);
     });
-  }, [company?.id]);
+  }, [company?.id, quick, filterProperty, filterTenant, commissionRate]);
+
+  const revenueGrowth = totals.prevRevenue > 0 ? Math.round(((totals.revenue-totals.prevRevenue)/totals.prevRevenue)*100) : 0;
+  const depGrowth = totals.prevDepenses > 0 ? Math.round(((totals.depenses-totals.prevDepenses)/totals.prevDepenses)*100) : 0;
+
+  const GrowthBadge = ({ val }: { val:number }) => (
+    <span className={`inline-flex items-center gap-0.5 text-xs font-semibold ${val>=0?'text-green-600':'text-red-600'}`}>
+      {val>=0?<ArrowUp size={10}/>:<ArrowDown size={10}/>}{Math.abs(val)}% vs mois préc.
+    </span>
+  );
 
   if (loading) return <div className="flex items-center justify-center h-64"><LoadingSpinner size={36}/></div>;
 
   return (
     <div className="space-y-6">
       <PageHeader title="Analyse financière" subtitle="Revenus, dépenses et commissions"/>
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard title="Revenus totaux" value={formatCurrency(totals.revenue)} subtitle="Loyers perçus" icon={<CreditCard size={20}/>} color="green"/>
-        <StatCard title={`Commissions (${commissionRate}%)`} value={formatCurrency(totals.commissions)} subtitle="Générées automatiquement" icon={<Percent size={20}/>} color="blue"/>
-        <StatCard title="Total dépenses" value={formatCurrency(totals.depenses)} subtitle="Bailleur + entreprise" icon={<TrendingDown size={20}/>} color="orange"/>
-        <StatCard title="À reverser bailleurs" value={formatCurrency(totals.restitue)} subtitle="Après déductions" icon={<Building2 size={20}/>} color="purple"/>
-        <StatCard title="Taux recouvrement" value={totals.recouvrement+'%'} subtitle="Loyers payés / total" icon={<TrendingUp size={20}/>} color={totals.recouvrement>=80?'green':'orange'}/>
+
+      {/* Filtres */}
+      <div className="bg-white dark:bg-slate-800 border border-border rounded-2xl p-4 space-y-3">
+        {/* Quick selector */}
+        <div className="flex gap-2 flex-wrap">
+          {QUICK.map(q => (
+            <button key={q.value} onClick={() => setQuick(q.value)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${quick===q.value?'bg-primary text-white':'bg-slate-100 dark:bg-slate-700 text-muted-foreground hover:bg-slate-200'}`}>
+              {q.label}
+            </button>
+          ))}
+        </div>
+        {/* Filtres avancés */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">🏠 Bien immobilier</label>
+            <select value={filterProperty} onChange={e => setFilterProperty(e.target.value)} className={selectCls+' w-full'}>
+              <option value="">Tous les biens</option>
+              {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">👤 Locataire</label>
+            <select value={filterTenant} onChange={e => setFilterTenant(e.target.value)} className={selectCls+' w-full'}>
+              <option value="">Tous les locataires</option>
+              {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </div>
+        </div>
       </div>
 
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-1 text-green-600"><CreditCard size={14}/><p className="text-xs font-semibold uppercase">Revenus du mois</p></div>
+          <p className="text-2xl font-bold text-green-700">{formatCurrency(totals.revenue)}</p>
+          <GrowthBadge val={revenueGrowth}/>
+        </div>
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-1 text-red-600"><TrendingDown size={14}/><p className="text-xs font-semibold uppercase">Dépenses du mois</p></div>
+          <p className="text-2xl font-bold text-red-700">{formatCurrency(totals.depenses)}</p>
+          <GrowthBadge val={-depGrowth}/>
+        </div>
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-1 text-blue-600"><Percent size={14}/><p className="text-xs font-semibold uppercase">Commissions ({commissionRate}%)</p></div>
+          <p className="text-2xl font-bold text-blue-700">{formatCurrency(totals.commissions)}</p>
+        </div>
+        <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-1 text-purple-600"><Building2 size={14}/><p className="text-xs font-semibold uppercase">Cash flow net</p></div>
+          <p className={`text-2xl font-bold ${totals.cashFlow>=0?'text-purple-700':'text-red-700'}`}>{formatCurrency(totals.cashFlow)}</p>
+          <p className="text-xs text-muted-foreground">Revenus − Dépenses</p>
+        </div>
+        <div className={`border rounded-2xl p-4 ${totals.recouvrement>=80?'bg-green-50 dark:bg-green-900/20 border-green-100':'bg-amber-50 dark:bg-amber-900/20 border-amber-100'}`}>
+          <div className={`flex items-center gap-2 mb-1 ${totals.recouvrement>=80?'text-green-600':'text-amber-600'}`}><TrendingUp size={14}/><p className="text-xs font-semibold uppercase">Taux de recouvrement</p></div>
+          <p className={`text-2xl font-bold ${totals.recouvrement>=80?'text-green-700':'text-amber-700'}`}>{totals.recouvrement}%</p>
+        </div>
+        <div className={`border rounded-2xl p-4 ${totals.impayeRate===0?'bg-green-50 dark:bg-green-900/20 border-green-100':'bg-red-50 dark:bg-red-900/20 border-red-100'}`}>
+          <div className={`flex items-center gap-2 mb-1 ${totals.impayeRate===0?'text-green-600':'text-red-600'}`}><AlertTriangle size={14}/><p className="text-xs font-semibold uppercase">Taux d'impayés</p></div>
+          <p className={`text-2xl font-bold ${totals.impayeRate===0?'text-green-700':'text-red-700'}`}>{totals.impayeRate}%</p>
+        </div>
+      </div>
+
+      {/* Graphique barres */}
       <div className="bg-white dark:bg-slate-800 border border-border rounded-2xl p-5">
-        <h3 className="font-semibold text-foreground mb-4">Évolution annuelle — Loyers / Commissions / Dépenses / Reversements</h3>
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={chart} barSize={10}>
-            <XAxis dataKey="month" tick={{ fontSize:11 }} axisLine={false} tickLine={false}/>
-            <YAxis tickFormatter={v => (v/1000).toFixed(0)+'k'} tick={{ fontSize:10 }} axisLine={false} tickLine={false}/>
-            <Tooltip formatter={(v: number) => formatCurrency(v)}/>
-            <Legend iconSize={10} wrapperStyle={{ fontSize:12 }}/>
-            <Bar dataKey="revenue" fill="#22c55e" radius={[3,3,0,0]} name="Loyers"/>
+        <h3 className="font-semibold text-foreground mb-4">Évolution mensuelle</h3>
+        <ResponsiveContainer width="100%" height={240}>
+          <BarChart data={chart} barSize={12}>
+            <XAxis dataKey="month" tick={{fontSize:11}} axisLine={false} tickLine={false}/>
+            <YAxis tickFormatter={v=>(v/1000).toFixed(0)+'k'} tick={{fontSize:10}} axisLine={false} tickLine={false}/>
+            <Tooltip formatter={(v:number) => formatCurrency(v)}/>
+            <Legend iconSize={10} wrapperStyle={{fontSize:12}}/>
+            <Bar dataKey="revenue" fill="#22c55e" radius={[3,3,0,0]} name="Revenus"/>
             <Bar dataKey="commissions" fill="#3b82f6" radius={[3,3,0,0]} name="Commissions"/>
-            <Bar dataKey="depenses" fill="#f97316" radius={[3,3,0,0]} name="Dépenses"/>
-            <Bar dataKey="restitue" fill="#a855f7" radius={[3,3,0,0]} name="Reversements"/>
+            <Bar dataKey="expenses" fill="#f97316" radius={[3,3,0,0]} name="Dépenses"/>
+            <Bar dataKey="net" fill="#a855f7" radius={[3,3,0,0]} name="Net"/>
           </BarChart>
         </ResponsiveContainer>
       </div>
 
+      {/* Courbe d'évolution */}
+      <div className="bg-white dark:bg-slate-800 border border-border rounded-2xl p-5">
+        <h3 className="font-semibold text-foreground mb-4">Courbe de croissance</h3>
+        <ResponsiveContainer width="100%" height={200}>
+          <LineChart data={chart}>
+            <XAxis dataKey="month" tick={{fontSize:11}} axisLine={false} tickLine={false}/>
+            <YAxis tickFormatter={v=>(v/1000).toFixed(0)+'k'} tick={{fontSize:10}} axisLine={false} tickLine={false}/>
+            <Tooltip formatter={(v:number) => formatCurrency(v)}/>
+            <Legend iconSize={10} wrapperStyle={{fontSize:12}}/>
+            <Line type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2} dot={{r:4}} name="Revenus"/>
+            <Line type="monotone" dataKey="net" stroke="#a855f7" strokeWidth={2} dot={{r:4}} name="Net"/>
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Camembert dépenses */}
       {catData.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="bg-white dark:bg-slate-800 border border-border rounded-2xl p-5">
             <h3 className="font-semibold text-foreground mb-4">Dépenses par catégorie</h3>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
-                <Pie data={catData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, percent }) => `${name} ${(percent*100).toFixed(0)}%`} labelLine={false} fontSize={11}>
-                  {catData.map((d, i) => <Cell key={i} fill={d.color}/>)}
+                <Pie data={catData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({name,percent})=>`${name} ${(percent*100).toFixed(0)}%`} labelLine={false} fontSize={10}>
+                  {catData.map((_,i) => <Cell key={i} fill={COLORS[i%COLORS.length]}/>)}
                 </Pie>
-                <Tooltip formatter={(v: number) => formatCurrency(v)}/>
+                <Tooltip formatter={(v:number) => formatCurrency(v)}/>
               </PieChart>
             </ResponsiveContainer>
           </div>
           <div className="bg-white dark:bg-slate-800 border border-border rounded-2xl p-5">
-            <h3 className="font-semibold text-foreground mb-4">Détail par catégorie</h3>
+            <h3 className="font-semibold text-foreground mb-4">Détail</h3>
             <div className="space-y-3">
-              {catData.sort((a,b) => b.value-a.value).map((d, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: d.color }}/>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-foreground font-medium">{d.name}</span>
-                      <span className="text-muted-foreground">{formatCurrency(d.value)}</span>
-                    </div>
-                    <div className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full">
-                      <div className="h-1.5 rounded-full" style={{ background: d.color, width: `${Math.round((d.value/totals.depenses)*100)}%` }}/>
+              {catData.map((d,i) => {
+                const total = catData.reduce((s,c)=>s+c.value,0);
+                return (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{background:d.color}}/>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-foreground font-medium">{d.name}</span>
+                        <span className="text-muted-foreground">{formatCurrency(d.value)}</span>
+                      </div>
+                      <div className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full">
+                        <div className="h-1.5 rounded-full" style={{background:d.color,width:`${Math.round((d.value/total)*100)}%`}}/>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

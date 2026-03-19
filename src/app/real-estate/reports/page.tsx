@@ -89,9 +89,10 @@ export default function ReportsPage() {
       const currentMonthCommissions = currentMonthRevenue * (commRate/100);
       const currentMonthNet = currentMonthRevenue - currentMonthCommissions - currentMonthExpenses;
 
-      // Collection rate
+      // Collection rate — basé sur tous les paiements dans la période sélectionnée
       const allCurrentMonth = P.filter(p => String(p.period_month)+'/'+String(p.period_year) === curMo);
-      const collectionRate = allCurrentMonth.length > 0 ? Math.round((curPaid.length / allCurrentMonth.length) * 100) : 0;
+      const collectionRate = allCurrentMonth.length > 0 ? Math.round((curPaid.length / allCurrentMonth.length) * 100) : 
+        (P.length > 0 ? Math.round((paid.length / P.length) * 100) : 0);
 
       // Expenses by category
       const catMap: Record<string,number> = {};
@@ -103,7 +104,8 @@ export default function ReportsPage() {
       // Properties
       const rentedProps = PR.filter((p:any) => p.status==='rented').length;
       const availableProps = PR.filter((p:any) => p.status==='available').length;
-      const occupancyRate = PR.length > 0 ? Math.round((rentedProps/PR.length)*100) : 0;
+      // Taux d'occupation basé sur les baux actifs
+      const occupancyRate = PR.length > 0 ? Math.round((L.length/PR.length)*100) : 0;
       const revenuePerProperty = PR.filter((p:any) => p.status==='rented').slice(0,6).map((p:any) => ({
         name: p.name.length > 12 ? p.name.slice(0,12)+'…' : p.name,
         revenue: paid.filter((pay:any) => pay.leases?.property_id === p.id).reduce((s:number,pay:any) => s+pay.amount, 0),
@@ -152,8 +154,8 @@ export default function ReportsPage() {
         currentMonthRevenue, currentMonthExpenses, currentMonthNet,
         prevMonthRevenue, prevMonthExpenses,
         collectionRate, totalProperties: PR.length, totalTenants: L.length,
-        commissionRate: commRate, totalCommissions: paid.reduce((s:number,p:any) => s+p.amount,0) * (commRate/100),
-        collectedRents: paid.reduce((s:number,p:any) => s+p.amount,0),
+        commissionRate: commRate, totalCommissions: curPaid.reduce((s:number,p:any) => s+p.amount,0) * (commRate/100),
+        collectedRents: paid.reduce((s:number,p:any) => s+p.amount,0),  // total sur la période
         pendingRents: pending.reduce((s:number,p:any) => s+p.amount,0),
         overdueRents: overdue.reduce((s:number,p:any) => s+p.amount,0),
         revenueGrowth, expensesByCategory, totalBailleurExp, totalEntrepriseExp,
