@@ -265,41 +265,48 @@ export default function SuperAdminUsersPage() {
                   const rm = ROLE_MAP[u.role]||{l:u.role,v:'default' as BadgeVariant};
                   const isSelf = u.id === user?.id;
                   return (
-                    <div key={u.id} className="grid grid-cols-1 md:grid-cols-[1fr_160px_120px_100px_120px] gap-3 px-5 py-3.5 items-center hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
+                    <div key={u.id} className="px-4 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors">
+                      {/* Mobile layout */}
+                      <div className="flex items-start gap-3">
+                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0 mt-0.5">
                           {getInitials(u.full_name||u.email)}
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-medium text-sm text-foreground truncate">{u.full_name||'—'} {isSelf && <span className="text-xs text-muted-foreground">(vous)</span>}</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-medium text-sm text-foreground truncate">
+                              {u.full_name||'—'} {isSelf && <span className="text-xs text-muted-foreground">(vous)</span>}
+                            </p>
+                            {/* Actions */}
+                            <div className="flex items-center gap-0.5 flex-shrink-0">
+                              <button onClick={()=>{ setEditingUser(u); setEditRole(u.role); }}
+                                className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" title="Modifier rôle">
+                                <Edit size={14}/>
+                              </button>
+                              {!isSelf && u.role !== 'super_admin' && (
+                                <button onClick={()=>setPromotingUser(u)}
+                                  className="p-1.5 rounded-lg text-muted-foreground hover:text-yellow-600 hover:bg-yellow-50 transition-colors" title="Nommer Super Admin">
+                                  <ShieldCheck size={14}/>
+                                </button>
+                              )}
+                              <button onClick={()=>toggleActive(u)} disabled={togglingId===u.id || isSelf}
+                                className={'p-1.5 rounded-lg transition-colors '+(isSelf?'opacity-30 cursor-not-allowed':u.is_active?'text-amber-500 hover:bg-amber-50':'text-green-600 hover:bg-green-50')}
+                                title={isSelf?'Impossible':u.is_active?'Désactiver':'Activer'}>
+                                {togglingId===u.id ? <LoadingSpinner size={13}/> : u.is_active ? <ToggleRight size={14}/> : <ToggleLeft size={14}/>}
+                              </button>
+                              <button onClick={()=>!isSelf && setDeletingUser(u)} disabled={isSelf}
+                                className={'p-1.5 rounded-lg transition-colors '+(isSelf?'opacity-30 cursor-not-allowed':'text-red-400 hover:text-red-600 hover:bg-red-50')}
+                                title={isSelf?'Impossible':'Supprimer'}>
+                                <Trash2 size={14}/>
+                              </button>
+                            </div>
+                          </div>
                           <p className="text-xs text-muted-foreground truncate">{u.email}</p>
-                          <p className="text-xs text-muted-foreground">{formatDate(u.created_at)}</p>
+                          <p className="text-xs text-muted-foreground">{(u as any).companies?.name||'—'} · {formatDate(u.created_at)}</p>
+                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            <Badge variant={rm.v}>{rm.l}</Badge>
+                            <Badge variant={u.is_active?'success':'default'}>{u.is_active?'Actif':'Inactif'}</Badge>
+                          </div>
                         </div>
-                      </div>
-                      <span className="text-xs text-muted-foreground truncate">{(u as any).companies?.name||'—'}</span>
-                      <Badge variant={rm.v}>{rm.l}</Badge>
-                      <Badge variant={u.is_active?'success':'default'}>{u.is_active?'Actif':'Inactif'}</Badge>
-                      <div className="flex items-center gap-1 md:justify-end">
-                        <button onClick={()=>{ setEditingUser(u); setEditRole(u.role); }}
-                          className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" title="Modifier role">
-                          <Edit size={15}/>
-                        </button>
-                        {!isSelf && u.role !== 'super_admin' && (
-                          <button onClick={()=>setPromotingUser(u)}
-                            className="p-1.5 rounded-lg text-muted-foreground hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors" title="Nommer Super Admin">
-                            <ShieldCheck size={15}/>
-                          </button>
-                        )}
-                        <button onClick={()=>toggleActive(u)} disabled={togglingId===u.id || isSelf}
-                          className={'p-1.5 rounded-lg transition-colors '+(isSelf?'opacity-30 cursor-not-allowed':u.is_active?'text-amber-500 hover:bg-amber-50':'text-green-600 hover:bg-green-50')}
-                          title={isSelf?'Impossible':u.is_active?'Desactiver':'Activer'}>
-                          {togglingId===u.id ? <LoadingSpinner size={14}/> : u.is_active ? <ToggleRight size={15}/> : <ToggleLeft size={15}/>}
-                        </button>
-                        <button onClick={()=>!isSelf && setDeletingUser(u)} disabled={isSelf}
-                          className={'p-1.5 rounded-lg transition-colors '+(isSelf?'opacity-30 cursor-not-allowed':'text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20')}
-                          title={isSelf?'Impossible':'Supprimer'}>
-                          <Trash2 size={15}/>
-                        </button>
                       </div>
                     </div>
                   );
