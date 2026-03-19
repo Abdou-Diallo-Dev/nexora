@@ -12,20 +12,25 @@ export default function NewVehiclePage() {
   const { company, user } = useAuthStore();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ type:'camion', brand:'', model:'', plate:'', year:'', capacity_kg:'', capacity_m3:'', fuel_type:'diesel', consumption_per_km:'', insurance_expiry:'', inspection_expiry:'', notes:'' });
+  const [form, setForm] = useState({ type:'truck', brand:'', model:'', plate:'', year:'', capacity_kg:'', capacity_m3:'', fuel_type:'diesel', consumption_per_km:'', insurance_expiry:'', inspection_expiry:'', notes:'' });
+  // plate maps to both 'plate' and 'license_plate' columns
   const set = (k:string,v:string) => setForm(f=>({...f,[k]:v}));
 
   const save = async () => {
     if (!form.plate) { toast.error('Immatriculation requise'); return; }
     setSaving(true);
     const { error } = await createClient().from('vehicles').insert({
-      company_id: company!.id, ...form,
+      company_id: company!.id,
+      type: form.type, brand: form.brand||null, model: form.model||null,
+      plate: form.plate, license_plate: form.plate,
       year: parseInt(form.year)||null,
       capacity_kg: parseFloat(form.capacity_kg)||null,
       capacity_m3: parseFloat(form.capacity_m3)||null,
+      fuel_type: form.fuel_type,
       consumption_per_km: parseFloat(form.consumption_per_km)||null,
       insurance_expiry: form.insurance_expiry||null,
       inspection_expiry: form.inspection_expiry||null,
+      notes: form.notes||null,
     });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
@@ -45,11 +50,11 @@ export default function NewVehiclePage() {
           <div className="grid grid-cols-2 gap-4">
             <div><label className={labelCls}>Type</label>
               <select value={form.type} onChange={e=>set('type',e.target.value)} className={selectCls+' w-full'}>
-                <option value="camion">🚛 Camion</option>
-                <option value="pickup">🛻 Pickup</option>
+                <option value="truck">🚛 Camion</option>
                 <option value="van">🚐 Van</option>
-                <option value="moto">🏍️ Moto</option>
-                <option value="autre">🚚 Autre</option>
+                <option value="car">🚗 Voiture</option>
+                <option value="motorcycle">🏍️ Moto</option>
+                <option value="bicycle">🚲 Vélo</option>
               </select>
             </div>
             <div><label className={labelCls}>Immatriculation *</label><input value={form.plate} onChange={e=>set('plate',e.target.value)} placeholder="Ex: DK-1234-AB" className={inputCls}/></div>
