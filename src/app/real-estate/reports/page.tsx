@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, Home, Users, Wrench, AlertTriangle, CheckCircle, Clock, Percent, Building2, ArrowUp, ArrowDown, Download } from 'lucide-react';
-import { useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store';
 import { LoadingSpinner, cardCls, selectCls, PageHeader } from '@/components/ui';
@@ -46,31 +45,19 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('3');
   const [exporting, setExporting] = useState(false);
-  const printRef = useRef<HTMLDivElement>(null);
 
   const exportPDF = async () => {
+    if (!data) return;
     setExporting(true);
     try {
-      const { default: jsPDF } = await import('jspdf');
-      const { default: html2canvas } = await import('html2canvas');
-      if (!printRef.current) return;
-      const canvas = await html2canvas(printRef.current, { scale:1.5, useCORS:true, backgroundColor:'#ffffff' });
-      const pdf = new jsPDF('p','mm','a4');
-      const w = pdf.internal.pageSize.getWidth();
-      const h = (canvas.height*w)/canvas.width;
-      const pageH = pdf.internal.pageSize.getHeight();
-      let y=0;
-      while(y<h){
-        const srcY=(y/h)*canvas.height;
-        const srcH=Math.min((pageH/h)*canvas.height,canvas.height-srcY);
-        const tmp=document.createElement('canvas');tmp.width=canvas.width;tmp.height=srcH;
-        const ctx=tmp.getContext('2d')!;ctx.drawImage(canvas,0,-srcY);
-        if(y>0)pdf.addPage();
-        pdf.addImage(tmp.toDataURL('image/jpeg',0.85),'JPEG',0,0,w,Math.min(pageH,(srcH/canvas.height)*h));
-        y+=pageH;
-      }
-      pdf.save(`rapport-financier-${new Date().toISOString().split('T')[0]}.pdf`);
-    } catch(e){console.error(e);}
+      const mod = await import('@/lib/exportPDF');
+      await mod.exportReportPDF(
+        { ...data, period },
+        company?.name || 'Nexora',
+        (company as any)?.logo_url || null,
+        (company as any)?.primary_color || null,
+      );
+    } catch(e) { console.error(e); }
     setExporting(false);
   };
 
@@ -265,7 +252,6 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      <div ref={printRef}>
       {/* ═══ 1. RÉSUMÉ EXÉCUTIF ═══ */}
       <div>
         <h2 className="text-base font-bold text-foreground mb-3 flex items-center gap-2">
@@ -578,7 +564,6 @@ export default function ReportsPage() {
           </div>
         </div>
       </div>
-    </div>
     </div>
   );
 }

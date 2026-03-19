@@ -5,7 +5,6 @@ import { useAuthStore } from '@/lib/store';
 import { PageHeader, LoadingSpinner, selectCls, inputCls } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
 import { TrendingUp, TrendingDown, CreditCard, Percent, Building2, ArrowUp, ArrowDown, AlertTriangle, Download } from 'lucide-react';
-import { useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
 import { format, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -35,31 +34,25 @@ export default function AnalyticsPage() {
   const [chart, setChart] = useState<any[]>([]);
   const [catData, setCatData] = useState<{name:string;value:number;color:string}[]>([]);
   const [exporting, setExporting] = useState(false);
-  const printRef = useRef<HTMLDivElement>(null);
 
   const exportPDF = async () => {
     setExporting(true);
     try {
-      const { default: jsPDF } = await import('jspdf');
-      const { default: html2canvas } = await import('html2canvas');
-      if (!printRef.current) return;
-      const canvas = await html2canvas(printRef.current, { scale:1.5, useCORS:true, backgroundColor:'#ffffff' });
-      const pdf = new jsPDF('p','mm','a4');
-      const w = pdf.internal.pageSize.getWidth();
-      const h = (canvas.height*w)/canvas.width;
-      const pageH = pdf.internal.pageSize.getHeight();
-      let y=0;
-      while(y<h){
-        const srcY=(y/h)*canvas.height;
-        const srcH=Math.min((pageH/h)*canvas.height,canvas.height-srcY);
-        const tmp=document.createElement('canvas');tmp.width=canvas.width;tmp.height=srcH;
-        const ctx=tmp.getContext('2d')!;ctx.drawImage(canvas,0,-srcY);
-        if(y>0)pdf.addPage();
-        pdf.addImage(tmp.toDataURL('image/jpeg',0.85),'JPEG',0,0,w,Math.min(pageH,(srcH/canvas.height)*h));
-        y+=pageH;
-      }
-      pdf.save(`analyse-financiere-${new Date().toISOString().split('T')[0]}.pdf`);
-    } catch(e){console.error(e);}
+      const mod = await import('@/lib/exportPDF');
+      await mod.exportStatsPDF({
+        rented: 0, props: 0, available: 0, occupancy: 0,
+        tenants: 0, activeTenants: 0,
+        revenue: totals.revenue, prevRevenue: totals.prevRevenue,
+        expenses: totals.depenses, commissions: totals.commissions,
+        net: totals.cashFlow, collectionRate: totals.recouvrement,
+        impayeRate: totals.impayeRate, chart, expCats: catData,
+        commissionRate, period: quick === 'month' ? 1 : parseInt(quick),
+      },
+        company?.name || 'Nexora',
+        (company as any)?.logo_url || null,
+        (company as any)?.primary_color || null,
+      );
+    } catch(e) { console.error(e); }
     setExporting(false);
   };
 
@@ -170,7 +163,6 @@ export default function AnalyticsPage() {
         </button>
       </div>
 
-      <div ref={printRef}>
       {/* Filtres */}
       <div className="bg-white dark:bg-slate-800 border border-border rounded-2xl p-4 space-y-3">
         {/* Quick selector */}
@@ -302,7 +294,6 @@ export default function AnalyticsPage() {
           </div>
         </div>
       )}
-    </div>
     </div>
   );
 }

@@ -16,7 +16,6 @@ export default function StatsPage() {
   const [period, setPeriod] = useState('6');
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
-  const printRef = useRef<HTMLDivElement>(null);
   const [d, setD] = useState<{
     props:number; rented:number; available:number; occupancy:number;
     tenants:number; activeTenants:number;
@@ -105,30 +104,16 @@ export default function StatsPage() {
   }, [company?.id, period]);
 
   const exportPDF = async () => {
+    if (!d) return;
     setExporting(true);
     try {
-      const { default: jsPDF } = await import('jspdf');
-      const { default: html2canvas } = await import('html2canvas');
-      if (!printRef.current) return;
-      const canvas = await html2canvas(printRef.current, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' });
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const w = pdf.internal.pageSize.getWidth();
-      const h = (canvas.height * w) / canvas.width;
-      let y = 0;
-      const pageH = pdf.internal.pageSize.getHeight();
-      while (y < h) {
-        const srcY = (y / h) * canvas.height;
-        const srcH = Math.min((pageH / h) * canvas.height, canvas.height - srcY);
-        const tmpCanvas = document.createElement('canvas');
-        tmpCanvas.width = canvas.width;
-        tmpCanvas.height = srcH;
-        const ctx = tmpCanvas.getContext('2d')!;
-        ctx.drawImage(canvas, 0, -srcY);
-        if (y > 0) pdf.addPage();
-        pdf.addImage(tmpCanvas.toDataURL('image/jpeg', 0.85), 'JPEG', 0, 0, w, Math.min(pageH, (srcH/canvas.height)*h));
-        y += pageH;
-      }
-      pdf.save(`statistiques-nexora-${format(new Date(),'yyyy-MM-dd')}.pdf`);
+      const mod = await import('@/lib/exportPDF');
+      await mod.exportStatsPDF(
+        { ...d, period },
+        company?.name || 'Nexora',
+        (company as any)?.logo_url || null,
+        (company as any)?.primary_color || null,
+      );
     } catch(e) { console.error(e); }
     setExporting(false);
   };
@@ -156,7 +141,7 @@ export default function StatsPage() {
         </div>
       </div>
 
-      <div ref={printRef} className="space-y-6">
+      <div className="space-y-6">
         {/* KPIs */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
