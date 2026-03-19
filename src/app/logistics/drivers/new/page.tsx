@@ -28,7 +28,7 @@ export default function NewDriverPage() {
       ...form,
       license_expiry: form.license_expiry||null,
       id_card_expiry: form.id_card_expiry||null,
-      created_by: user?.id,
+      // created_by: user?.id,
     });
     setSaving(false);
     if (error) { toast.error(error.message); return; }

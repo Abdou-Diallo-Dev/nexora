@@ -26,7 +26,6 @@ export default function NewVehiclePage() {
       consumption_per_km: parseFloat(form.consumption_per_km)||null,
       insurance_expiry: form.insurance_expiry||null,
       inspection_expiry: form.inspection_expiry||null,
-      created_by: user?.id,
     });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
