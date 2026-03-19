@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { TrendingUp, TrendingDown, DollarSign, Home, Users, Wrench, AlertTriangle, CheckCircle, Clock, Percent, Building2, ArrowUp, ArrowDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Home, Users, Wrench, AlertTriangle, CheckCircle, Clock, Percent, Building2, ArrowUp, ArrowDown, Download } from 'lucide-react';
+import { useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store';
 import { LoadingSpinner, cardCls, selectCls, PageHeader } from '@/components/ui';
@@ -44,6 +45,34 @@ export default function ReportsPage() {
   const [data, setData] = useState<ReportData|null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('3');
+  const [exporting, setExporting] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const exportPDF = async () => {
+    setExporting(true);
+    try {
+      const { default: jsPDF } = await import('jspdf');
+      const { default: html2canvas } = await import('html2canvas');
+      if (!printRef.current) return;
+      const canvas = await html2canvas(printRef.current, { scale:1.5, useCORS:true, backgroundColor:'#ffffff' });
+      const pdf = new jsPDF('p','mm','a4');
+      const w = pdf.internal.pageSize.getWidth();
+      const h = (canvas.height*w)/canvas.width;
+      const pageH = pdf.internal.pageSize.getHeight();
+      let y=0;
+      while(y<h){
+        const srcY=(y/h)*canvas.height;
+        const srcH=Math.min((pageH/h)*canvas.height,canvas.height-srcY);
+        const tmp=document.createElement('canvas');tmp.width=canvas.width;tmp.height=srcH;
+        const ctx=tmp.getContext('2d')!;ctx.drawImage(canvas,0,-srcY);
+        if(y>0)pdf.addPage();
+        pdf.addImage(tmp.toDataURL('image/jpeg',0.85),'JPEG',0,0,w,Math.min(pageH,(srcH/canvas.height)*h));
+        y+=pageH;
+      }
+      pdf.save(`rapport-financier-${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch(e){console.error(e);}
+    setExporting(false);
+  };
 
   useEffect(() => {
     if (!company?.id) return;
@@ -223,13 +252,20 @@ export default function ReportsPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <PageHeader title="Rapport financier" subtitle="Vue complète de votre activité immobilière"/>
-        <select value={period} onChange={e => setPeriod(e.target.value)} className={selectCls + ' w-40'}>
+        <div className="flex items-center gap-3">
+          <select value={period} onChange={e => setPeriod(e.target.value)} className={selectCls + ' w-40'}>
           <option value="3">3 derniers mois</option>
           <option value="6">6 derniers mois</option>
           <option value="12">12 derniers mois</option>
-        </select>
+          </select>
+          <button onClick={exportPDF} disabled={exporting}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60">
+            <Download size={15}/>{exporting?'Export...':'Export PDF'}
+          </button>
+        </div>
       </div>
 
+      <div ref={printRef}>
       {/* ═══ 1. RÉSUMÉ EXÉCUTIF ═══ */}
       <div>
         <h2 className="text-base font-bold text-foreground mb-3 flex items-center gap-2">
@@ -542,6 +578,7 @@ export default function ReportsPage() {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }
