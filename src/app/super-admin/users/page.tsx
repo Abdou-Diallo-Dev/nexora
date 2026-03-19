@@ -311,16 +311,16 @@ export default function SuperAdminUsersPage() {
 
       {/* MODAL CREER */}
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className={cardCls+' w-full max-w-md'}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4">
+          <div className={cardCls+' w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[92vh] flex flex-col'}>
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-border flex-shrink-0">
               <div className="flex items-center gap-2">
                 <UserPlus size={18} className="text-primary"/>
-                <h3 className="font-semibold text-foreground">Creer un utilisateur</h3>
+                <h3 className="font-semibold text-foreground">Créer un utilisateur</h3>
               </div>
               <button onClick={()=>setShowCreate(false)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-muted-foreground"><X size={16}/></button>
             </div>
-            <div className="px-6 py-5 space-y-4">
+            <div className="px-4 sm:px-6 py-4 space-y-4 overflow-y-auto flex-1">
               <div>
                 <label className={labelCls}>Nom complet *</label>
                 <input value={newUser.full_name} onChange={e=>setNewUser(f=>({...f,full_name:e.target.value}))} placeholder="Ex: Abdou Diallo" className={inputCls}/>
@@ -331,17 +331,17 @@ export default function SuperAdminUsersPage() {
               </div>
               <div>
                 <label className={labelCls}>Mot de passe *</label>
-                <input type="password" value={newUser.password} onChange={e=>setNewUser(f=>({...f,password:e.target.value}))} placeholder="Minimum 6 caracteres" className={inputCls}/>
+                <input type="password" value={newUser.password} onChange={e=>setNewUser(f=>({...f,password:e.target.value}))} placeholder="Minimum 6 caractères" className={inputCls}/>
               </div>
               <div>
-                <label className={labelCls}>Role *</label>
-                <div className="grid grid-cols-2 gap-2 mt-1">
+                <label className={labelCls}>Rôle *</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                   {ROLES.map(r => {
                     const rm = ROLE_MAP[r];
                     return (
                       <button key={r} onClick={()=>setNewUser(f=>({...f,role:r}))}
-                        className={'p-3 rounded-xl border-2 text-left transition-all '+(newUser.role===r?'border-primary bg-blue-50 dark:bg-blue-900/20':'border-border hover:border-primary/40')}>
-                        <div className="flex items-center gap-2 mb-0.5"><Badge variant={rm.v}>{rm.l}</Badge></div>
+                        className={'flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all '+(newUser.role===r?'border-primary bg-blue-50 dark:bg-blue-900/20':'border-border hover:border-primary/40')}>
+                        <Badge variant={rm.v}>{rm.l}</Badge>
                         <p className="text-xs text-muted-foreground">{ROLE_DESC[r]}</p>
                       </button>
                     );
@@ -356,11 +356,11 @@ export default function SuperAdminUsersPage() {
                 </select>
               </div>
             </div>
-            <div className="flex gap-3 justify-end px-6 py-4 border-t border-border bg-slate-50 dark:bg-slate-700/20 rounded-b-2xl">
+            <div className="flex gap-3 justify-end px-4 sm:px-6 py-4 border-t border-border bg-slate-50 dark:bg-slate-700/20 rounded-b-2xl flex-shrink-0">
               <button onClick={()=>setShowCreate(false)} className={btnSecondary}>Annuler</button>
               <button onClick={handleCreateUser} disabled={creating} className={btnPrimary}>
                 {creating ? <LoadingSpinner size={15}/> : <UserPlus size={15}/>}
-                {creating ? 'Creation...' : 'Creer le compte'}
+                {creating ? 'Création...' : 'Créer le compte'}
               </button>
             </div>
           </div>
