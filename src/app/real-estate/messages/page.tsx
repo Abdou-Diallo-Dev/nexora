@@ -12,6 +12,15 @@ type Message = { id: string; content: string; sender_role: string; sender_name: 
 type Ticket = { id: string; title: string; category: string; priority: string; status: string; description: string | null; created_at: string };
 type Payment = { id: string; amount: number; period_month: number; period_year: number; status: string; due_date: string | null };
 
+// iOS compatible audio format detection
+function getSupportedMimeType(): string {
+  const types = ['audio/mp4','audio/webm;codecs=opus','audio/webm','audio/ogg'];
+  for (const t of types) {
+    if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(t)) return t;
+  }
+  return 'audio/webm';
+}
+
 const TICKET_STATUS: Record<string, { l: string; v: BadgeVariant }> = {
   open:        { l: 'Ouvert',   v: 'error'   },
   in_progress: { l: 'En cours', v: 'warning' },
@@ -131,34 +140,35 @@ export default function MessagesPage() {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream);
+      const mimeType = getSupportedMimeType();
+      const mr = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       mediaRecorderRef.current = mr;
       audioChunksRef.current = [];
-      mr.ondataavailable = e => audioChunksRef.current.push(e.data);
+      mr.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
       mr.onstop = async () => {
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         stream.getTracks().forEach(t => t.stop());
-        // Upload to Supabase Storage
-        const fileName = `voice/${Date.now()}.webm`;
+        if (!selected || !company?.id) return;
+        const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+        const blob = new Blob(audioChunksRef.current, { type: mimeType });
+        const fileName = `voice/${selected.id}/${Date.now()}.${ext}`;
         const sb = createClient();
-        const { data: up } = await sb.storage.from('messages-audio').upload(fileName, blob);
-        if (up) {
-          const { data: url } = sb.storage.from('messages-audio').getPublicUrl(fileName);
-          if (url && selected && company?.id) {
-            await sb.from('messages').insert({
-              tenant_id: selected.id, company_id: company.id,
-              sender_role: 'company', sender_name: user?.full_name||'Gestionnaire',
-              sender_id: user?.id, content: '🎤 Note vocale',
-              audio_url: url.publicUrl, message_type: 'audio', is_read: false,
-            });
-          }
-        }
+        const { error: upErr } = await sb.storage.from('messages-audio').upload(fileName, blob, { upsert: true, contentType: mimeType });
+        if (upErr) { toast.error('Erreur upload : ' + upErr.message); return; }
+        const { data: url } = sb.storage.from('messages-audio').getPublicUrl(fileName);
+        if (!url?.publicUrl) return;
+        await sb.from('messages').insert({
+          tenant_id: selected.id, company_id: company.id,
+          sender_role: 'company', sender_name: user?.full_name||'Gestionnaire',
+          sender_id: user?.id, content: '🎤 Note vocale',
+          audio_url: url.publicUrl, message_type: 'audio', is_read: false,
+        });
+        toast.success('Note vocale envoyée ✓');
       };
-      mr.start();
+      mr.start(100);
       setRecording(true);
       setRecordingTime(0);
       timerRef.current = setInterval(() => setRecordingTime(t => t+1), 1000);
-    } catch { toast.error('Microphone non disponible'); }
+    } catch(e) { toast.error('Microphone non disponible'); console.error(e); }
   };
 
   const stopRecording = () => {
