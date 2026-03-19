@@ -123,7 +123,7 @@ export default function TenantsPage() {
                   const badge = getPaymentBadge(ps);
                   const isLate = ps?.status === 'late';
                   return (
-                    <div key={t.id} className={`flex items-center gap-4 px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group ${isLate ? 'bg-red-50/30 dark:bg-red-900/10' : ''}`}>
+                    <Link key={t.id} href={`/real-estate/tenants/${t.id}`} className={`flex items-center gap-4 px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group ${isLate ? 'bg-red-50/30 dark:bg-red-900/10' : ''}`}>
                       {/* Avatar */}
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 ${isLate ? 'bg-red-100 text-red-600' : 'bg-primary/10 text-primary'}`}>
                         {getInitials(`${t.first_name} ${t.last_name}`)}
@@ -166,8 +166,8 @@ export default function TenantsPage() {
                         </button>
                       </div>
 
-                      <Link href={`/real-estate/tenants/${t.id}`} className="text-xs text-primary hover:underline ml-1 hidden sm:block">Voir</Link>
-                    </div>
+                      <Link href={`/real-estate/tenants/${t.id}`} onClick={e=>e.stopPropagation()} className="text-xs text-primary hover:underline ml-1 flex-shrink-0">→</Link>
+                    </Link>
                   );
                 })}
               </div>

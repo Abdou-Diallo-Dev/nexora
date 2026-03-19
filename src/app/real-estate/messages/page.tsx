@@ -98,16 +98,23 @@ export default function MessagesPage() {
   useEffect(()=>{
     if(!company?.id) return;
     const sb=createClient();
-    sb.from('tenant_accounts').select('tenant_id,tenants(id,first_name,last_name,email)').eq('company_id',company.id)
-      .then(async({data})=>{
-        const list=(data||[]).map((d:any)=>d.tenants).filter(Boolean) as Tenant[];
-        setTenants(list);
-        const {data:ur}=await sb.from('messages').select('tenant_id').eq('company_id',company.id).eq('sender_role','tenant').eq('is_read',false);
-        const counts:Record<string,number>={};
-        (ur||[]).forEach((m:any)=>{counts[m.tenant_id]=(counts[m.tenant_id]||0)+1;});
-        setUnread(counts);
-        setLoadingTenants(false);
+    // Only tenants with active portal accounts
+    Promise.all([
+      sb.from('tenant_accounts').select('tenant_id,tenants(id,first_name,last_name,email)').eq('company_id',company.id),
+      sb.from('messages').select('tenant_id').eq('company_id',company.id).eq('sender_role','tenant').eq('is_read',false),
+    ]).then(([{data:taData},{data:ur}])=>{
+      const seen = new Set<string>();
+      const list: Tenant[] = [];
+      (taData||[]).forEach((d:any)=>{
+        const t = d.tenants;
+        if(t && !seen.has(t.id)){ seen.add(t.id); list.push(t as Tenant); }
       });
+      setTenants(list);
+      const counts:Record<string,number>={};
+      (ur||[]).forEach((m:any)=>{counts[m.tenant_id]=(counts[m.tenant_id]||0)+1;});
+      setUnread(counts);
+      setLoadingTenants(false);
+    });
   },[company?.id]);
 
   // Subscribe/unsubscribe on tenant change

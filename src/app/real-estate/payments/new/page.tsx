@@ -76,9 +76,56 @@ export default function NewPaymentPage() {
     e.preventDefault();
     if (!company?.id || !form.lease_id) { toast.error('Veuillez sélectionner un bail'); return; }
     setLoading(true);
-    const { error } = await createClient().from('rent_payments').insert({
+    const sb = createClient();
+
+    // Get lease details for tenant_id
+    const lease = leases.find(l => l.id === form.lease_id);
+    const { data: leaseData } = await sb.from('leases').select('tenant_id').eq('id', form.lease_id).maybeSingle();
+    const tenantId = (leaseData as any)?.tenant_id;
+
+    // Block duplicate: check if paid payment already exists for this lease + period
+    if (form.status === 'paid') {
+      const { data: existing } = await sb.from('rent_payments')
+        .select('id,status')
+        .eq('lease_id', form.lease_id)
+        .eq('period_month', Number(form.period_month))
+        .eq('period_year', Number(form.period_year))
+        .eq('status', 'paid')
+        .maybeSingle();
+      if (existing) {
+        toast.error(`❌ Un paiement payé existe déjà pour ${lease?.tenants?.first_name} ${lease?.tenants?.last_name} en ${form.period_month}/${form.period_year}`);
+        setLoading(false);
+        return;
+      }
+      // If pending exists, update it instead of inserting
+      const { data: pending } = await sb.from('rent_payments')
+        .select('id')
+        .eq('lease_id', form.lease_id)
+        .eq('period_month', Number(form.period_month))
+        .eq('period_year', Number(form.period_year))
+        .in('status', ['pending', 'late', 'overdue'])
+        .maybeSingle();
+      if (pending) {
+        const { error } = await sb.from('rent_payments').update({
+          status: 'paid',
+          amount: Number(form.amount),
+          paid_date: form.paid_date,
+          payment_method: form.payment_method,
+          notes: form.notes || null,
+        }).eq('id', (pending as any).id);
+        setLoading(false);
+        if (error) { toast.error(error.message); return; }
+        qc.bust('re-');
+        toast.success('✅ Paiement mis à jour — marqué comme payé !');
+        router.push('/real-estate/payments');
+        return;
+      }
+    }
+
+    const { error } = await sb.from('rent_payments').insert({
       company_id:     company.id,
       lease_id:       form.lease_id,
+      tenant_id:      tenantId || null,
       amount:         Number(form.amount),
       charges_amount: Number(form.charges_amount),
       period_month:   Number(form.period_month),
@@ -93,7 +140,7 @@ export default function NewPaymentPage() {
     setLoading(false);
     if (error) { toast.error(error.message); return; }
     qc.bust('re-');
-    toast.success('Paiement enregistré');
+    toast.success('✅ Paiement enregistré avec succès !');
     router.push('/real-estate/payments');
   };
 
