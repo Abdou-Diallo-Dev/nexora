@@ -115,7 +115,7 @@ export default function SuperAdminDashboard() {
 
       {/* Alertes demandes en attente */}
       {stats.pendingCompanies > 0 && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex items-center justify-between gap-3">
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Clock size={18} className="text-amber-600 flex-shrink-0"/>
             <div>
@@ -132,7 +132,7 @@ export default function SuperAdminDashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 min-w-0">
         {/* Entreprises récentes */}
         <div className={cardCls+' p-5'}>
           <div className="flex items-center justify-between mb-4">
@@ -142,18 +142,16 @@ export default function SuperAdminDashboard() {
           <div className="space-y-2">
             {stats.recentCompanies.map(c => (
               <Link key={c.id} href={`/super-admin/companies/${c.id}`}
-                className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary font-bold text-xs">
-                    {c.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{c.name}</p>
-                    <p className="text-xs text-muted-foreground">{formatDate(c.created_at)}</p>
-                  </div>
+                className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
+                  {c.name.charAt(0).toUpperCase()}
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PLAN_COLORS[c.plan]||'bg-slate-100 text-slate-600'}`}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
+                  <p className="text-xs text-muted-foreground">{formatDate(c.created_at)}</p>
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium hidden sm:inline ${PLAN_COLORS[c.plan]||'bg-slate-100 text-slate-600'}`}>
                     {c.plan}
                   </span>
                   {c.is_active
@@ -196,7 +194,7 @@ export default function SuperAdminDashboard() {
               <Zap size={16} className="text-amber-500"/>
               <h3 className="font-semibold text-foreground">Répartition des plans</h3>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-2 gap-2">
               {stats.planStats.map(p => (
                 <div key={p.plan} className={`p-3 rounded-xl text-center ${PLAN_COLORS[p.plan]||'bg-slate-100 text-slate-600'}`}>
                   <p className="text-xl font-bold">{p.count}</p>
@@ -214,7 +212,7 @@ export default function SuperAdminDashboard() {
           <Activity size={16} className="text-primary"/>
           <h3 className="font-semibold text-foreground">Actions rapides</h3>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { href:'/super-admin/companies', label:'Gérer les entreprises', icon:<Building2 size={18}/>, color:'text-blue-600 bg-blue-50 border-blue-100' },
             { href:'/super-admin/users',     label:'Gérer les utilisateurs', icon:<Users size={18}/>,    color:'text-green-600 bg-green-50 border-green-100' },
@@ -222,9 +220,9 @@ export default function SuperAdminDashboard() {
             { href:'/super-admin/companies/new', label:'Nouvelle entreprise', icon:<Zap size={18}/>,     color:'text-amber-600 bg-amber-50 border-amber-100' },
           ].map(a => (
             <Link key={a.href} href={a.href}
-              className={`flex items-center gap-3 p-4 rounded-xl border transition-all hover:shadow-sm ${a.color}`}>
-              {a.icon}
-              <span className="text-sm font-medium">{a.label}</span>
+              className={`flex items-center gap-3 p-3 sm:p-4 rounded-xl border transition-all hover:shadow-sm ${a.color}`}>
+              <div className="flex-shrink-0">{a.icon}</div>
+              <span className="text-sm font-medium leading-tight">{a.label}</span>
             </Link>
           ))}
         </div>
