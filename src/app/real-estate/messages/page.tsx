@@ -8,7 +8,7 @@ import { formatDate, formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 
 type Tenant = { id: string; first_name: string; last_name: string; email: string };
-type Message = { id: string; content: string; sender_role: string; sender_name: string; sender_id: string | null; created_at: string; is_read: boolean };
+type Message = { id: string; content: string; sender_role: string; sender_name: string; sender_id: string | null; created_at: string; is_read: boolean; audio_url: string | null; message_type: string | null };
 type Ticket = { id: string; title: string; category: string; priority: string; status: string; description: string | null; created_at: string };
 type Payment = { id: string; amount: number; period_month: number; period_year: number; status: string; due_date: string | null };
 
@@ -75,7 +75,7 @@ export default function MessagesPage() {
 
     // Messages — filtrés par sender_id pour que chaque agent ait sa propre conversation
     let msgQuery = sb.from('messages')
-      .select('id,content,sender_role,sender_name,created_at,is_read,sender_id')
+      .select('id,content,sender_role,sender_name,created_at,is_read,sender_id,audio_url,message_type')
       .eq('tenant_id', selected.id)
       .eq('company_id', company.id);
 
@@ -396,11 +396,14 @@ export default function MessagesPage() {
                           )}
                           {!isMine && prevSame && <div className="w-7 mr-2 flex-shrink-0" />}
                           <div className={`max-w-[70%] rounded-2xl px-3 py-2 ${isMine ? 'bg-primary text-white rounded-br-sm' : 'bg-slate-100 dark:bg-slate-800 rounded-bl-sm'}`}>
-                            {(m as any).message_type === 'audio' && (m as any).audio_url ? (
-                            <audio controls src={(m as any).audio_url} className="max-w-[200px] h-8"/>
-                          ) : (
-                            <p className="text-sm whitespace-pre-wrap">{m.content}</p>
-                          )}
+                            {m.message_type === 'audio' && m.audio_url ? (
+                              <div className="flex flex-col gap-1">
+                                <p className="text-xs opacity-70">🎤 Note vocale</p>
+                                <audio controls src={m.audio_url} style={{height:'36px', minWidth:'180px', maxWidth:'220px'}}/>
+                              </div>
+                            ) : (
+                              <p className="text-sm whitespace-pre-wrap">{m.content}</p>
+                            )}
                             <p className={`text-[10px] mt-0.5 text-right ${isMine ? 'text-white/60' : 'text-muted-foreground'}`}>
                               {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                             </p>
