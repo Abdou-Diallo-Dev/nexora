@@ -260,7 +260,7 @@ export default function ReportsPage() {
         </h2>
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-2xl p-5 mb-4">
           <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
-            Ce mois-ci, la plateforme a généré <strong>{formatCurrency(data.currentMonthRevenue)}</strong> de revenus
+            Ce mois-ci, l'entreprise a généré <strong>{formatCurrency(data.currentMonthRevenue)}</strong> de revenus
             avec un taux de recouvrement de <strong>{data.collectionRate}%</strong>,
             pour un bénéfice net de <strong>{formatCurrency(data.currentMonthNet)}</strong>.
             {data.revenueGrowth !== 0 && (
