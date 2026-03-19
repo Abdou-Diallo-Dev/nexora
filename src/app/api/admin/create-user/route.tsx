@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const { email, password, full_name, role, company_id, is_active } = await request.json();
+    const { email, password, full_name, role, company_id, is_active, driver_id } = await request.json();
 
     if (!email || !password || !full_name) {
       return NextResponse.json({ error: 'Nom, email et mot de passe requis' }, { status: 400 });
@@ -43,6 +43,11 @@ export async function POST(request: Request) {
       company_id: company_id || null,
       is_active:  is_active  ?? true,
     }).eq('id', uid);
+
+    // Si c'est un chauffeur, lier le user_id au driver
+    if (driver_id) {
+      await admin.from('drivers').update({ user_id: uid }).eq('id', driver_id);
+    }
 
     return NextResponse.json({ success: true });
   } catch (e: any) {
