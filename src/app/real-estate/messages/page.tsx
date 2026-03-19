@@ -126,8 +126,9 @@ export default function MessagesPage() {
     }
     msgQuery.order('created_at', { ascending: true }).then(({ data }) => {
       setMessages((data||[]) as Message[]);
-      sb.from('messages').update({ is_read: true }).eq('tenant_id', selected.id).eq('sender_role','tenant');
+      // Mark as read immediately
       setUnread(prev => ({ ...prev, [selected.id]: 0 }));
+      sb.from('messages').update({ is_read: true }).eq('tenant_id', selected.id).eq('sender_role','tenant').then(()=>{});
     });
     sb.from('tenant_tickets').select('id,title,category,priority,status,description,created_at').eq('tenant_id', selected.id).order('created_at', { ascending:false }).then(({ data }) => setTickets((data||[]) as Ticket[]));
     sb.from('rent_payments').select('id,amount,period_month,period_year,status,due_date').eq('tenant_id', selected.id).eq('company_id', company.id).order('period_year',{ascending:false}).order('period_month',{ascending:false}).limit(12).then(({ data }) => setPayments((data||[]) as Payment[]));
@@ -184,15 +185,16 @@ export default function MessagesPage() {
 
   const deleteMsg = async (id: string) => {
     setDeletingMsgId(id); setLongPressId(null);
-    await createClient().from('messages').delete().eq('id', id);
-    setMessages(prev => prev.filter(m=>m.id!==id));
+    await createClient().from('messages').update({ content:'_deleted_', message_type:'text', audio_url:null }).eq('id', id);
+    setMessages(prev => prev.map(m => m.id===id ? {...m, content:'_deleted_', message_type:'text', audio_url:null} : m));
     setDeletingMsgId(null);
   };
   const startEditMsg = (m: Message) => { setEditingMsgId(m.id); setEditMsgText(m.content); setLongPressId(null); };
   const saveEditMsg = async () => {
     if (!editingMsgId||!editMsgText.trim()) return;
-    await createClient().from('messages').update({ content:editMsgText.trim() }).eq('id', editingMsgId);
-    setMessages(prev=>prev.map(m=>m.id===editingMsgId?{...m,content:editMsgText.trim()}:m));
+    const newContent = editMsgText.trim()+'✏️';
+    await createClient().from('messages').update({ content:newContent }).eq('id', editingMsgId);
+    setMessages(prev=>prev.map(m=>m.id===editingMsgId?{...m,content:newContent}:m));
     setEditingMsgId(null); setEditMsgText('');
   };
   const handleLongPressStart = (id:string) => { longPressTimer.current = setTimeout(()=>setLongPressId(id),500); };
@@ -335,21 +337,24 @@ export default function MessagesPage() {
                                   <div
                                     onTouchStart={()=>handleLongPressStart(m.id)} onTouchEnd={handleLongPressEnd}
                                     onContextMenu={e=>{e.preventDefault();setLongPressId(m.id);}}
+                                    style={{WebkitUserSelect:'none',userSelect:'none',WebkitTouchCallout:'none'}}
                                     className={`relative rounded-2xl px-3 py-2 ${isMine?'bg-primary text-white rounded-br-sm':'bg-slate-100 dark:bg-slate-800 rounded-bl-sm'}`}>
                                     {isAudio ? (
                                       <div>
                                         <p className={`text-[10px] mb-1 font-medium ${isMine?'text-white/70':'text-muted-foreground'}`}>🎤 Note vocale</p>
                                         <AudioPlayer src={m.audio_url!} isMine={isMine}/>
                                       </div>
+                                    ) : m.content==='_deleted_' ? (
+                                      <p className={`text-sm italic opacity-60`}>🚫 Message supprimé</p>
                                     ) : (
                                       <p className="text-sm whitespace-pre-wrap">{m.content}</p>
                                     )}
                                     <p className={`text-[10px] mt-0.5 text-right ${isMine?'text-white/60':'text-muted-foreground'}`}>
                                       {new Date(m.created_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}
                                     </p>
-                                    {longPressId===m.id && (
+                                    {longPressId===m.id && m.content!=='_deleted_' && (
                                       <div className={`absolute z-50 flex flex-col gap-1 bg-white dark:bg-slate-800 border border-border rounded-xl shadow-lg p-1.5 ${isMine?'right-0':'left-0'} bottom-full mb-1`} onClick={e=>e.stopPropagation()}>
-                                        {isMine && !isAudio && <button onClick={()=>startEditMsg(m)} className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-foreground whitespace-nowrap"><Pencil size={11}/>Modifier</button>}
+                                        {isMine && !isAudio && m.content!=='_deleted_' && <button onClick={()=>startEditMsg(m)} className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-foreground whitespace-nowrap"><Pencil size={11}/>Modifier</button>}
                                         <button onClick={()=>deleteMsg(m.id)} disabled={deletingMsgId===m.id} className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg hover:bg-red-50 text-red-600 whitespace-nowrap">
                                           {deletingMsgId===m.id?<LoadingSpinner size={11}/>:<Trash2 size={11}/>}Supprimer
                                         </button>

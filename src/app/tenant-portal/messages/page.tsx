@@ -170,11 +170,13 @@ export default function TenantMessagesPage() {
     setDeletingId(null);
   };
 
-  const startEdit = (m: Message) => { setEditingId(m.id); setEditText(m.content); setLongPressId(null); };
+  const startEdit = (m: Message) => { setEditingId(m.id); setEditText(m.content.replace('✏️','')); setLongPressId(null); };
 
   const saveEdit = async () => {
     if (!editingId || !editText.trim()) return;
-    await createClient().from('messages').update({ content: editText.trim() }).eq('id', editingId);
+    const newContent = editText.trim()+'✏️';
+    await createClient().from('messages').update({ content: newContent }).eq('id', editingId);
+    setMessages(prev=>prev.map(m=>m.id===editingId?{...m,content:newContent}:m));
     setEditingId(null); setEditText('');
   };
 
@@ -256,6 +258,7 @@ export default function TenantMessagesPage() {
                         onTouchStart={()=>handleLongPressStart(m.id)}
                         onTouchEnd={handleLongPressEnd}
                         onContextMenu={e=>{e.preventDefault();setLongPressId(m.id);}}
+                        style={{WebkitUserSelect:'none',userSelect:'none',WebkitTouchCallout:'none'}}
                         className={`relative rounded-2xl px-3 py-2.5 ${isMine?'bg-primary text-white rounded-br-sm':'bg-white dark:bg-slate-800 border border-border rounded-bl-sm'}`}>
                         {isAudio ? (
                           <div>
@@ -270,9 +273,9 @@ export default function TenantMessagesPage() {
                         </p>
 
                         {/* Context menu on long press */}
-                        {isLongPressed && (
+                        {isLongPressed && m.content!=='_deleted_' && (
                           <div className={`absolute z-50 flex flex-col gap-1 bg-white dark:bg-slate-800 border border-border rounded-xl shadow-lg p-1.5 ${isMine?'right-0':'left-0'} bottom-full mb-1`}>
-                            {isMine && !isAudio && (
+                            {isMine && !isAudio && m.content!=='_deleted_' && (
                               <button onClick={()=>startEdit(m)} className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-foreground whitespace-nowrap">
                                 <Pencil size={12}/> Modifier
                               </button>
