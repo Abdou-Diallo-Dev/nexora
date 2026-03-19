@@ -53,6 +53,8 @@ export default function AnalyticsPage() {
     const now = new Date();
     const months = quick === 'month' ? 1 : parseInt(quick);
 
+    const now2 = new Date();
+    const startDate2 = new Date(now2.getFullYear(), now2.getMonth() - (months-1), 1);
     let payQ = sb.from('rent_payments').select('amount,status,period_month,period_year,tenant_id,lease_id').eq('company_id', cid).limit(1000);
     let expQ = sb.from('expenses').select('amount,date,category,type').eq('company_id', cid).limit(500);
 
@@ -65,9 +67,17 @@ export default function AnalyticsPage() {
 
     Promise.all([payQ, expQ]).then(([{ data: pay }, { data: exp }]) => {
       const rate = commissionRate / 100;
-      const paid = (pay||[]).filter((p:any) => p.status === 'paid');
-      const all = pay||[];
-      const overdue = (pay||[]).filter((p:any) => p.status === 'late' || p.status === 'overdue');
+      const now3 = new Date();
+      const startDate3 = new Date(now3.getFullYear(), now3.getMonth() - (months-1), 1);
+      const periodFilter = (p:any) => {
+        const d = new Date(p.period_year, p.period_month - 1, 1);
+        return d >= startDate3 && d <= now3;
+      };
+      const allRaw = pay||[];
+      const periodAll2 = allRaw.filter(periodFilter);
+      const paid = periodAll2.filter((p:any) => p.status === 'paid');
+      const all = periodAll2;
+      const overdue = periodAll2.filter((p:any) => p.status === 'late' || p.status === 'overdue');
 
       // Current month
       const curMo = String(now.getMonth()+1)+'/'+String(now.getFullYear());
@@ -75,9 +85,14 @@ export default function AnalyticsPage() {
       const curRevenue = paid.filter((p:any) => String(p.period_month)+'/'+String(p.period_year)===curMo).reduce((s:number,p:any)=>s+p.amount,0);
       const prevRevenue = paid.filter((p:any) => String(p.period_month)+'/'+String(p.period_year)===prevMo).reduce((s:number,p:any)=>s+p.amount,0);
       const totalRevenue = paid.reduce((s:number,p:any)=>s+p.amount,0);
-      const totalDep = (exp||[]).reduce((s:number,e:any)=>s+e.amount,0);
-      const curDep = (exp||[]).filter((e:any) => { const d=new Date(e.date); return String(d.getMonth()+1)+'/'+String(d.getFullYear())===curMo; }).reduce((s:number,e:any)=>s+e.amount,0);
-      const prevDep = (exp||[]).filter((e:any) => { const d=new Date(e.date); return String(d.getMonth()+1)+'/'+String(d.getFullYear())===prevMo; }).reduce((s:number,e:any)=>s+e.amount,0);
+      const periodExp = (exp||[]).filter((e:any) => {
+        const d = new Date(e.date);
+        const s3 = new Date(now3.getFullYear(), now3.getMonth() - (months-1), 1);
+        return d >= s3 && d <= now3;
+      });
+      const totalDep = periodExp.reduce((s:number,e:any)=>s+e.amount,0);
+      const curDep = periodExp.filter((e:any) => { const d=new Date(e.date); return String(d.getMonth()+1)+'/'+String(d.getFullYear())===curMo; }).reduce((s:number,e:any)=>s+e.amount,0);
+      const prevDep = periodExp.filter((e:any) => { const d=new Date(e.date); return String(d.getMonth()+1)+'/'+String(d.getFullYear())===prevMo; }).reduce((s:number,e:any)=>s+e.amount,0);
       const totalComm = totalRevenue * rate;
       const totalBailleurDep = (exp||[]).filter((e:any)=>e.type==='bailleur').reduce((s:number,e:any)=>s+e.amount,0);
       const cashFlow = totalRevenue - totalDep;
@@ -91,7 +106,7 @@ export default function AnalyticsPage() {
         const d = new Date(now.getFullYear(), now.getMonth() - (months-1) + i, 1);
         const mo = String(d.getMonth()+1)+'/'+String(d.getFullYear());
         const revenue = paid.filter((p:any) => String(p.period_month)+'/'+String(p.period_year)===mo).reduce((s:number,p:any)=>s+p.amount,0);
-        const expenses = (exp||[]).filter((e:any) => { const ed=new Date(e.date); return String(ed.getMonth()+1)+'/'+String(ed.getFullYear())===mo; }).reduce((s:number,e:any)=>s+e.amount,0);
+        const expenses = periodExp.filter((e:any) => { const ed=new Date(e.date); return String(ed.getMonth()+1)+'/'+String(ed.getFullYear())===mo; }).reduce((s:number,e:any)=>s+e.amount,0);
         const commissions = revenue * rate;
         return { month: format(d,'MMM yy',{locale:fr}), revenue, expenses, commissions, net: revenue-commissions-expenses };
       });
@@ -99,7 +114,7 @@ export default function AnalyticsPage() {
 
       // Categories
       const cats: Record<string,number> = {};
-      (exp||[]).forEach((e:any) => { cats[e.category||'Autre'] = (cats[e.category||'Autre']||0)+e.amount; });
+      periodExp.forEach((e:any) => { cats[e.category||'Autre'] = (cats[e.category||'Autre']||0)+e.amount; });
       setCatData(Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([name,value],i) => ({ name, value, color:COLORS[i%COLORS.length] })));
       setLoading(false);
     });

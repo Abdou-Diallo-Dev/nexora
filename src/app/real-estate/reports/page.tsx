@@ -55,7 +55,7 @@ export default function ReportsPage() {
     const startDate = startOfMonth(subMonths(now, months - 1));
 
     Promise.all([
-      sb.from('rent_payments').select('id,amount,status,period_month,period_year,paid_date,tenant_id,leases(tenant_id,property_id,properties(name)),tenants(first_name,last_name)').eq('company_id', cid).limit(1000),
+      sb.from('rent_payments').select('id,amount,status,period_month,period_year,paid_date,tenant_id,lease_id,tenants(first_name,last_name),leases(property_id,properties(name))').eq('company_id', cid).limit(1000),
       sb.from('expenses').select('id,amount,type,category,date').eq('company_id', cid).limit(500),
       sb.from('properties').select('id,name,status,rent_amount').eq('company_id', cid),
       sb.from('leases').select('id,status,tenant_id,tenants(first_name,last_name)').eq('company_id', cid).eq('status','active'),
@@ -73,26 +73,46 @@ export default function ReportsPage() {
       const pending = P.filter(p => p.status === 'pending');
       const overdue = P.filter(p => p.status === 'late' || p.status === 'overdue');
 
-      // Current & prev month
+      // Période sélectionnée — tous les paiements dans la période
       const curMo = String(now.getMonth()+1)+'/'+String(now.getFullYear());
       const prevMo = String(subMonths(now,1).getMonth()+1)+'/'+String(subMonths(now,1).getFullYear());
-      const curPaid = paid.filter(p => String(p.period_month)+'/'+String(p.period_year) === curMo);
-      const prevPaid = paid.filter(p => String(p.period_month)+'/'+String(p.period_year) === prevMo);
-      const currentMonthRevenue = curPaid.reduce((s:number,p:any) => s+p.amount, 0);
+
+      // Filtrer par période sélectionnée
+      const periodPaid = months === 1
+        ? paid.filter((p:any) => String(p.period_month)+'/'+String(p.period_year) === curMo)
+        : paid.filter((p:any) => {
+            const d = new Date(p.period_year, p.period_month - 1, 1);
+            return d >= startDate && d <= now;
+          });
+      const periodAll = months === 1
+        ? P.filter((p:any) => String(p.period_month)+'/'+String(p.period_year) === curMo)
+        : P.filter((p:any) => {
+            const d = new Date(p.period_year, p.period_month - 1, 1);
+            return d >= startDate && d <= now;
+          });
+
+      const curPaid = paid.filter((p:any) => String(p.period_month)+'/'+String(p.period_year) === curMo);
+      const prevPaid = paid.filter((p:any) => String(p.period_month)+'/'+String(p.period_year) === prevMo);
+      const currentMonthRevenue = periodPaid.reduce((s:number,p:any) => s+p.amount, 0);
       const prevMonthRevenue = prevPaid.reduce((s:number,p:any) => s+p.amount, 0);
       const revenueGrowth = prevMonthRevenue > 0 ? Math.round(((currentMonthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100) : 0;
 
-      const curExp = E.filter((e:any) => { const d = new Date(e.date); return String(d.getMonth()+1)+'/'+String(d.getFullYear()) === curMo; });
+      const curExp = E.filter((e:any) => {
+        const d = new Date(e.date);
+        return months === 1
+          ? String(d.getMonth()+1)+'/'+String(d.getFullYear()) === curMo
+          : d >= startDate && d <= now;
+      });
       const prevExp = E.filter((e:any) => { const d = new Date(e.date); return String(d.getMonth()+1)+'/'+String(d.getFullYear()) === prevMo; });
       const currentMonthExpenses = curExp.reduce((s:number,e:any) => s+e.amount, 0);
       const prevMonthExpenses = prevExp.reduce((s:number,e:any) => s+e.amount, 0);
       const currentMonthCommissions = currentMonthRevenue * (commRate/100);
       const currentMonthNet = currentMonthRevenue - currentMonthCommissions - currentMonthExpenses;
 
-      // Collection rate — basé sur tous les paiements dans la période sélectionnée
-      const allCurrentMonth = P.filter(p => String(p.period_month)+'/'+String(p.period_year) === curMo);
-      const collectionRate = allCurrentMonth.length > 0 ? Math.round((curPaid.length / allCurrentMonth.length) * 100) : 
-        (P.length > 0 ? Math.round((paid.length / P.length) * 100) : 0);
+      // Taux de recouvrement sur la période
+      const collectionRate = periodAll.length > 0
+        ? Math.round((periodPaid.length / periodAll.length) * 100)
+        : (P.length > 0 ? Math.round((paid.length / P.length) * 100) : 0);
 
       // Expenses by category
       const catMap: Record<string,number> = {};
@@ -106,14 +126,15 @@ export default function ReportsPage() {
       const availableProps = PR.filter((p:any) => p.status==='available').length;
       // Taux d'occupation basé sur biens loués / total biens
       const occupancyRate = PR.length > 0 ? Math.min(100, Math.round((rentedProps/PR.length)*100)) : 0;
+      // Map property revenue via leases join
       const revenuePerProperty = PR.filter((p:any) => p.status==='rented').slice(0,6).map((p:any) => ({
         name: p.name.length > 12 ? p.name.slice(0,12)+'…' : p.name,
-        revenue: paid.filter((pay:any) => pay.leases?.property_id === p.id).reduce((s:number,pay:any) => s+pay.amount, 0),
+        revenue: paid.filter((pay:any) => (pay.leases as any)?.property_id === p.id || (pay.leases as any)?.properties?.name === p.name).reduce((s:number,pay:any) => s+pay.amount, 0),
       }));
 
       // Tenants
       const tenantPayMap: Record<string,{name:string;amount:number;paid:boolean}> = {};
-      paid.forEach((p:any) => {
+      periodPaid.forEach((p:any) => {
         const name = (p.tenants?.first_name||'') + ' ' + (p.tenants?.last_name||'');
         if (!tenantPayMap[p.tenant_id]) tenantPayMap[p.tenant_id] = { name, amount:0, paid:true };
         tenantPayMap[p.tenant_id].amount += p.amount;
@@ -127,8 +148,8 @@ export default function ReportsPage() {
         latePayerMap[p.tenant_id].periods.push(p.period_month+'/'+p.period_year);
       });
       const latePayers = Object.values(latePayerMap).slice(0,5).map(t => ({ name:t.name, amount:t.amount, periods:t.periods.join(', ') }));
-      const paidTenantIds = new Set(paid.map((p:any) => p.tenant_id));
-      const lateTenantIds = new Set(overdue.map((p:any) => p.tenant_id));
+      const paidTenantIds = new Set(periodPaid.map((p:any) => p.tenant_id));
+      const lateTenantIds = new Set(periodAll.filter((p:any)=>p.status==='late'||p.status==='overdue').map((p:any) => p.tenant_id));
 
       // Tickets
       const catTickets: Record<string,number> = {};
@@ -154,10 +175,10 @@ export default function ReportsPage() {
         currentMonthRevenue, currentMonthExpenses, currentMonthNet,
         prevMonthRevenue, prevMonthExpenses,
         collectionRate, totalProperties: PR.length, totalTenants: L.length,
-        commissionRate: commRate, totalCommissions: curPaid.reduce((s:number,p:any) => s+p.amount,0) * (commRate/100),
-        collectedRents: paid.reduce((s:number,p:any) => s+p.amount,0),
-        pendingRents: pending.reduce((s:number,p:any) => s+p.amount,0),
-        overdueRents: overdue.reduce((s:number,p:any) => s+p.amount,0),
+        commissionRate: commRate, totalCommissions: currentMonthRevenue * (commRate/100),
+        collectedRents: currentMonthRevenue,
+        pendingRents: periodAll.filter((p:any)=>p.status==='pending').reduce((s:number,p:any)=>s+p.amount,0),
+        overdueRents: periodAll.filter((p:any)=>p.status==='late'||p.status==='overdue').reduce((s:number,p:any)=>s+p.amount,0),
         revenueGrowth, expensesByCategory, totalBailleurExp, totalEntrepriseExp,
         rentedProps, availableProps, occupancyRate, revenuePerProperty,
         activeTenants: L.length, paidTenants: paidTenantIds.size, lateTenants: lateTenantIds.size,
