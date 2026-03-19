@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
-import { Send, MessageSquare, Search, Bell, Wrench, CreditCard, CheckCircle, Clock, AlertTriangle, X } from 'lucide-react';
+import { Send, MessageSquare, Search, Bell, Wrench, CreditCard, CheckCircle, Clock, AlertTriangle, X, ChevronLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store';
 import { LoadingSpinner, inputCls, Badge, BadgeVariant } from '@/components/ui';
@@ -27,6 +27,7 @@ export default function MessagesPage() {
   const { company, user } = useAuthStore();
   const [tenants, setTenants]       = useState<Tenant[]>([]);
   const [selected, setSelected]     = useState<Tenant | null>(null);
+  const [mobileView, setMobileView] = useState<'list'|'chat'>('list');
   const [messages, setMessages]     = useState<Message[]>([]);
   const [tickets, setTickets]       = useState<Ticket[]>([]);
   const [payments, setPayments]     = useState<Payment[]>([]);
@@ -214,10 +215,11 @@ export default function MessagesPage() {
   });
 
   return (
-    <div className="flex h-[calc(100vh-80px)] gap-0 rounded-2xl overflow-hidden border border-border bg-white dark:bg-slate-900 shadow-sm">
+    <div className="relative flex h-[calc(100vh-80px)] gap-0 rounded-2xl overflow-hidden border border-border bg-white dark:bg-slate-900 shadow-sm">
+
 
       {/* ── LEFT: Tenants list ── */}
-      <div className="w-72 flex-shrink-0 border-r border-border flex flex-col">
+      <div className={`${mobileView === "chat" ? "hidden" : "flex"} md:flex w-full md:w-72 flex-shrink-0 border-r border-border flex-col`}>
         <div className="p-4 border-b border-border">
           <h2 className="font-bold text-foreground mb-3">Messagerie</h2>
           <div className="relative">
@@ -237,7 +239,8 @@ export default function MessagesPage() {
               Aucun locataire avec compte
             </div>
           ) : filtered.map(t => (
-            <button key={t.id} onClick={() => { setSelected(t); setRightTab('messages'); }}
+            <button key={t.id}
+              onClick={() => { setSelected(t); setRightTab('messages'); setMobileView('chat'); }}
               className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left ${selected?.id === t.id ? 'bg-blue-50 dark:bg-blue-900/20 border-r-2 border-primary' : ''}`}>
               <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                 {t.first_name.charAt(0).toUpperCase()}
@@ -257,6 +260,14 @@ export default function MessagesPage() {
       </div>
 
       {/* ── RIGHT: Content ── */}
+      {mobileView === 'chat' && (
+        <div className="md:hidden flex items-center gap-2 px-3 py-2.5 border-b border-border bg-white dark:bg-slate-900 w-full absolute top-0 left-0 z-10">
+          <button onClick={() => setMobileView('list')} className="flex items-center gap-1 text-sm text-primary font-medium">
+            <ChevronLeft size={18}/> Retour
+          </button>
+          {selected && <span className="text-sm font-semibold text-foreground truncate ml-2">{selected.first_name} {selected.last_name}</span>}
+        </div>
+      )}
       {!selected ? (
         <div className="flex-1 flex items-center justify-center text-muted-foreground">
           <div className="text-center">
