@@ -18,6 +18,7 @@ type KPIs = {
   activeTenants: number; monthlyRevenue: number; pendingAmount: number;
   overdueAmount: number; openTickets: number;
   totalCommissions: number; totalDepenses: number; totalRestitue: number; tauxRecouvrement: number;
+  latePayments: { id:string; tenant:string; amount:number; period_month:number; period_year:number }[];
   tenantTickets: { id:string; title:string; category:string; priority:string; tenant:string; created_at:string }[];
   expiringLeases: { id:string; tenant:string; property:string; end_date:string }[];
   overdueRents: { id:string; tenant:string; amount:number; period_month:number; period_year:number }[];
@@ -82,7 +83,7 @@ export default function REDashboard() {
     Promise.all([
       sb.from('properties').select('id,status').eq('company_id', cid),
       sb.from('leases').select('id,status,end_date,rent_amount,tenants(first_name,last_name),properties(address)').eq('company_id', cid),
-      sb.from('rent_payments').select('id,amount,status,period_month,period_year,tenant_id').eq('company_id', cid).limit(200),
+      sb.from('rent_payments').select('id,amount,status,period_month,period_year,tenant_id,tenants(first_name,last_name)').eq('company_id', cid).limit(200),
       sb.from('tenant_tickets').select('id,status').eq('company_id', cid),
       sb.from('expenses').select('id,type,amount').eq('company_id', cid).limit(500),
       sb.from('companies').select('commission_rate').eq('id', cid).maybeSingle(),
@@ -90,7 +91,7 @@ export default function REDashboard() {
     ]).then(([{ data: props }, { data: leases }, { data: payments }, { data: tickets }, { data: exps }, { data: compData }, { data: tenantTix }]) => {
       const P = props || [];
       type LeaseRow = { id:string; status:string; end_date:string; rent_amount:number; tenants:{first_name:string;last_name:string}|null; properties:{address:string}|null };
-      type PayRow   = { id:string; amount:number; status:string; period_month:number; period_year:number; tenant_id:string|null };
+      type PayRow   = { id:string; amount:number; status:string; period_month:number; period_year:number; tenant_id:string|null; tenants:{first_name:string;last_name:string}|null };
       const L   = (leases   || []) as unknown as LeaseRow[];
       const PAY = (payments || []) as unknown as PayRow[];
       const T   = (tickets  || []) as {id:string;status:string}[];
@@ -124,6 +125,9 @@ export default function REDashboard() {
         totalDepenses: totalDep,
         totalRestitue: Math.max(0, totalLoyers - totalComm - totalBailleurDep),
         tauxRecouvrement: payments && payments.length > 0 ? Math.round((paid.length / payments.length) * 100) : 0,
+        latePayments: PAY.filter(p => p.status === 'late' || p.status === 'overdue').slice(0,5).map(r => ({
+          id: r.id, tenant: (r.tenants?.first_name||'') + ' ' + (r.tenants?.last_name||''), amount: r.amount, period_month: r.period_month, period_year: r.period_year
+        })),
         tenantTickets: ((tenantTix||[]) as any[]).map(t=>({
           id: t.id, title: t.title, category: t.category, priority: t.priority,
           tenant: (t.tenants?.first_name||'') + ' ' + (t.tenants?.last_name||''),
@@ -217,6 +221,29 @@ export default function REDashboard() {
               </div>
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* Late payments alert */}
+      {sections.showPendingRents && data.latePayments && data.latePayments.length > 0 && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle size={16} className="text-red-600 flex-shrink-0"/>
+            <p className="text-sm font-bold text-red-700">{data.latePayments.length} paiement(s) en retard</p>
+          </div>
+          <div className="space-y-2">
+            {data.latePayments.map(r => (
+              <Link key={r.id} href="/real-estate/payments"
+                className="flex items-center justify-between p-2.5 bg-white dark:bg-slate-800 rounded-xl hover:shadow-sm transition-shadow">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"/>
+                  <p className="text-xs font-medium text-foreground">{r.tenant}</p>
+                  <p className="text-xs text-muted-foreground">{r.period_month}/{r.period_year}</p>
+                </div>
+                <span className="text-xs font-bold text-red-600">{formatCurrency(r.amount)}</span>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 

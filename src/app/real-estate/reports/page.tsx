@@ -104,8 +104,8 @@ export default function ReportsPage() {
       // Properties
       const rentedProps = PR.filter((p:any) => p.status==='rented').length;
       const availableProps = PR.filter((p:any) => p.status==='available').length;
-      // Taux d'occupation basé sur les baux actifs
-      const occupancyRate = PR.length > 0 ? Math.round((L.length/PR.length)*100) : 0;
+      // Taux d'occupation basé sur biens loués / total biens
+      const occupancyRate = PR.length > 0 ? Math.min(100, Math.round((rentedProps/PR.length)*100)) : 0;
       const revenuePerProperty = PR.filter((p:any) => p.status==='rented').slice(0,6).map((p:any) => ({
         name: p.name.length > 12 ? p.name.slice(0,12)+'…' : p.name,
         revenue: paid.filter((pay:any) => pay.leases?.property_id === p.id).reduce((s:number,pay:any) => s+pay.amount, 0),
@@ -155,7 +155,7 @@ export default function ReportsPage() {
         prevMonthRevenue, prevMonthExpenses,
         collectionRate, totalProperties: PR.length, totalTenants: L.length,
         commissionRate: commRate, totalCommissions: curPaid.reduce((s:number,p:any) => s+p.amount,0) * (commRate/100),
-        collectedRents: paid.reduce((s:number,p:any) => s+p.amount,0),  // total sur la période
+        collectedRents: paid.reduce((s:number,p:any) => s+p.amount,0),
         pendingRents: pending.reduce((s:number,p:any) => s+p.amount,0),
         overdueRents: overdue.reduce((s:number,p:any) => s+p.amount,0),
         revenueGrowth, expensesByCategory, totalBailleurExp, totalEntrepriseExp,
@@ -207,7 +207,7 @@ export default function ReportsPage() {
         </h2>
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-2xl p-5 mb-4">
           <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
-            Ce mois-ci, l'entreprise a généré <strong>{formatCurrency(data.currentMonthRevenue)}</strong> de revenus
+            Ce mois-ci, la plateforme a généré <strong>{formatCurrency(data.currentMonthRevenue)}</strong> de revenus
             avec un taux de recouvrement de <strong>{data.collectionRate}%</strong>,
             pour un bénéfice net de <strong>{formatCurrency(data.currentMonthNet)}</strong>.
             {data.revenueGrowth !== 0 && (
