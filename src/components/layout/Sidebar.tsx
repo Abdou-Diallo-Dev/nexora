@@ -62,16 +62,13 @@ const RE_GROUP_MAP: { label: string; keys: string[]; adminOnly?: boolean }[] = [
 
 const LOG_NAV: NavGroup[] = [
   { label:'Operations', items:[
-    { key:'dashboard',  href:'/logistics',            label:'Tableau de bord', icon:<Home size={15}/> },
-    { key:'clients',    href:'/logistics/clients',    label:'Clients',         icon:<Users size={15}/> },
-    { key:'orders',     href:'/logistics/orders',     label:'Commandes',       icon:<ShoppingCart size={15}/> },
-    { key:'shipments',  href:'/logistics/shipments',  label:'Expéditions',     icon:<Package size={15}/> },
-    { key:'deliveries', href:'/logistics/deliveries', label:'Livraisons',      icon:<MapPin size={15}/> },
+    { key:'dashboard',  href:'/logistics',                label:'Tableau de bord', icon:<Home size={15}/> },
+    { key:'deliveries', href:'/logistics/deliveries',     label:'Livraisons',      icon:<Package size={15}/> },
+    { key:'clients',    href:'/logistics/clients',        label:'Clients',         icon:<Users size={15}/> },
   ]},
   { label:'Ressources', items:[
     { key:'drivers',   href:'/logistics/drivers',   label:'Chauffeurs',       icon:<Users size={15}/> },
-    { key:'fleet',     href:'/logistics/fleet',     label:'Flotte véhicules', icon:<Car size={15}/> },
-    { key:'warehouse', href:'/logistics/warehouse', label:'Entrepôt',         icon:<Box size={15}/> },
+    { key:'fleet',     href:'/logistics/fleet',     label:'Flotte véhicules', icon:<Truck size={15}/> },
     { key:'stats',     href:'/logistics/stats',     label:'Statistiques',     icon:<BarChart3 size={15}/> },
   ]},
 ];
