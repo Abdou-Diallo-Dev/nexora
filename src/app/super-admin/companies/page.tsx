@@ -72,9 +72,12 @@ export default function SuperAdminCompanies() {
 
   const toggleStatus = async (c: Company) => {
     setTogglingId(c.id);
-    await createClient().from('companies').update({ is_active:!c.is_active } as never).eq('id', c.id);
+    const sb2 = createClient();
+    await sb2.from('companies').update({ is_active:!c.is_active } as never).eq('id', c.id);
+    // Sync all users of this company
+    await sb2.from('users').update({ is_active:!c.is_active } as never).eq('company_id', c.id);
     setItems(prev => prev.map(co => co.id===c.id ? {...co, is_active:!co.is_active} : co));
-    toast.success(c.is_active ? 'Entreprise suspendue' : 'Entreprise activee');
+    toast.success(c.is_active ? 'Entreprise suspendue' : 'Entreprise activée');
     setTogglingId(null);
   };
 
@@ -89,9 +92,11 @@ export default function SuperAdminCompanies() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Erreur suppression');
-      setItems(prev => prev.filter(c => c.id !== deletingCompany.id));
-      setTotal(t => t - 1);
       toast.success('Entreprise supprimée définitivement');
+      setDeletingCompany(null);
+      setDeleting(false);
+      load();
+      return;
     } catch (e: any) {
       toast.error('Erreur: ' + e.message);
     }

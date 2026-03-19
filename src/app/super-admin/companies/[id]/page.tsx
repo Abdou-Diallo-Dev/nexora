@@ -50,9 +50,14 @@ export default function CompanyDetailPage() {
   const toggle = async () => {
     if (!c) return;
     setToggling(true);
-    await createClient().from('companies').update({is_active:!c.is_active} as never).eq('id',id);
-    setC(prev => prev ? {...prev,is_active:!prev.is_active} : prev);
-    toast.success(c.is_active ? 'Entreprise suspendue' : 'Entreprise activee');
+    const sb = createClient();
+    const newStatus = !c.is_active;
+    await sb.from('companies').update({is_active:newStatus} as never).eq('id',id);
+    // Sync all users of this company
+    // Sync ALL users (admin + managers + agents + etc.)
+    await sb.from('users').update({is_active:newStatus} as never).eq('company_id',id);
+    setC(prev => prev ? {...prev,is_active:newStatus} : prev);
+    toast.success(newStatus ? 'Entreprise activée — utilisateurs activés' : 'Entreprise suspendue — utilisateurs désactivés');
     setToggling(false);
   };
 
