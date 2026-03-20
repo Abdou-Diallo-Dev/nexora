@@ -128,7 +128,7 @@ export default function DriversPage() {
                       </div>
                     </div>
                     <Badge variant={sm.v}>{sm.l}</Badge>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                       <Link href={`/logistics/drivers/${d.id}/edit`} className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-blue-50 transition-colors"><Edit size={14}/></Link>
                       <button onClick={()=>setDeleteId(d.id)} className="p-1.5 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors"><Trash2 size={14}/></button>
                     </div>
