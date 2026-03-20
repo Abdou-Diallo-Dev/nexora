@@ -32,14 +32,14 @@ export async function POST(request: Request) {
       id:         uid,
       email,
       full_name,
-      role:       role       || 'agent',
+      role:       role       || 'driver',
       company_id: company_id || null,
       is_active:  is_active  ?? true,
     });
 
     // Force update au cas où le trigger aurait écrasé
     await admin.from('users').update({
-      role:       role       || 'agent',
+      role:       role       || 'driver',
       company_id: company_id || null,
       is_active:  is_active  ?? true,
     }).eq('id', uid);

@@ -7,6 +7,7 @@ export async function middleware(request: NextRequest) {
 
   const publicPaths = [
     '/auth/',
+    '/driver/',
     '/api/admin/register-company',
     '/api/payments/webhook',
     '/billing',
@@ -62,7 +63,6 @@ export async function middleware(request: NextRequest) {
   }
 
   // 🚧 MODE TEST — Vérification abonnement désactivée temporairement
-  // À réactiver quand PayTech sera en production
   /*
   const protectedRoutes = ['/real-estate', '/logistics', '/admin'];
   if (protectedRoutes.some(p => pathname.startsWith(p)) && userRow?.company_id) {
