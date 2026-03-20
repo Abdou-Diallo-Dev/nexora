@@ -230,18 +230,18 @@ export default function SuperAdminUsersPage() {
       )}
 
       {/* Filters */}
-      <div className="flex gap-3 mb-5 flex-wrap">
-        <div className="relative flex-1 min-w-48 max-w-sm">
+      <div className="flex flex-col sm:flex-row gap-3 mb-5">
+        <div className="relative flex-1">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/>
-          <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Nom, email..." className={inputCls+' pl-9'}/>
+          <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Nom, email..." className={inputCls+' pl-9 w-full'}/>
         </div>
         <div className="flex items-center gap-2">
-          <Filter size={14} className="text-muted-foreground"/>
-          <select value={filterRole} onChange={e=>{setFilterRole(e.target.value);setPage(1);}} className={selectCls+' w-36'}>
+          <Filter size={14} className="text-muted-foreground flex-shrink-0"/>
+          <select value={filterRole} onChange={e=>{setFilterRole(e.target.value);setPage(1);}} className={selectCls+' flex-1'}>
             <option value="">Tous les roles</option>
             {Object.entries(ROLE_MAP).map(([v,{l}])=><option key={v} value={v}>{l}</option>)}
           </select>
-          <select value={filterStatus} onChange={e=>{setFilterStatus(e.target.value);setPage(1);}} className={selectCls+' w-32'}>
+          <select value={filterStatus} onChange={e=>{setFilterStatus(e.target.value);setPage(1);}} className={selectCls+' flex-1'}>
             <option value="">Tous statuts</option>
             <option value="active">Actifs</option>
             <option value="inactive">Inactifs</option>

@@ -51,7 +51,7 @@ export default function LeaseDetailPage() {
         .eq('id', id).maybeSingle(),
       company?.id
         ? sb.from('companies')
-            .select('name,email,address,phone,logo_url,contract_template')
+            .select('name,email,address,phone,logo_url,primary_color,contract_template')
             .eq('id', company.id).maybeSingle()
         : Promise.resolve({ data: null }),
     ]).then(([{ data: lease }, { data: comp }]) => {
