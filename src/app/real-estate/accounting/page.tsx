@@ -38,7 +38,7 @@ export default function AccountingPage() {
       .then(({ data }) => { if (data?.commission_rate) setCommissionRate(data.commission_rate); });
 
     Promise.all([
-      sb.from('rent_payments').select('id,amount,status,period_month,period_year,paid_date,leases(tenant_id,properties(name)),tenants(first_name,last_name)').eq('company_id', cid).order('paid_date', { ascending: false }).limit(500),
+      sb.from('rent_payments').select('id,amount,status,period_month,period_year,paid_date,tenant_id,lease_id').eq('company_id', cid).order('paid_date', { ascending: false }).limit(500),
       sb.from('expenses').select('id,type,amount,description,date,category').eq('company_id', cid).order('date', { ascending: false }).limit(500),
       sb.from('disbursements').select('id,net_amount,status,paid_date,leases(properties(name))').eq('company_id', cid).order('created_at', { ascending: false }).limit(100),
     ]).then(([{ data: pays }, { data: exps }, { data: disbs }]) => {
@@ -73,7 +73,7 @@ export default function AccountingPage() {
       const txns: Transaction[] = [
         ...paid.map((p: any) => ({
           id: p.id, type: 'paiement' as const,
-          label: `Loyer — ${p.tenants?.first_name||''} ${p.tenants?.last_name||''} (${p.period_month}/${p.period_year})`,
+          label: `Loyer — ${p.period_month}/${p.period_year}`,
           amount: p.amount, date: p.paid_date || '', status: p.status,
         })),
         ...E.filter((e: any) => e.type === 'bailleur').map((e: any) => ({
