@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
+import { Camera,
   Home, Users, FileText, CreditCard, Wrench, BarChart3,
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, X,
   Truck, MapPin, ShoppingCart, Box, Car, Building2, Receipt, MessageSquare,

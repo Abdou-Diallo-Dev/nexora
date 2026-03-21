@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Users, Mail, Phone, Trash2, Edit, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { Plus, Search, Users, Mail, Phone, Trash2, Edit, AlertTriangle, CheckCircle, Clock, FileText } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store';
 import { PageHeader, Badge, LoadingSpinner, EmptyState, Pagination, ConfirmDialog, inputCls, btnPrimary, cardCls } from '@/components/ui';
