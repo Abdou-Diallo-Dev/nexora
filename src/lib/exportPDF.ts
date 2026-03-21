@@ -216,7 +216,7 @@ export async function exportReportPDF(data: any, company: string, logoUrl?: stri
   doc.roundedRect(10, y, 190, 16, 3, 3, 'F');
   doc.setTextColor(...PRIMARY);
   doc.setFontSize(8); doc.setFont('helvetica','normal');
-  const summary = `Ce mois-ci, la plateforme a généré ${formatCFA(data.currentMonthRevenue||0)} de revenus avec un taux de recouvrement de ${data.collectionRate||0}%, pour un bénéfice net de ${formatCFA(data.currentMonthNet||0)}. Parc : ${data.totalProperties||0} bien(s) · ${data.activeTenants||0} locataire(s) actif(s).`;
+  const summary = `Ce mois : ${formatCFA(data.currentMonthRevenue||0)} revenus, taux recouvrement ${data.collectionRate||0}%, benefice net ${formatCFA(data.currentMonthNet||0)}. Parc : ${data.totalProperties||0} bien(s), ${data.activeTenants||0} locataire(s).`;
   doc.text(summary, 15, y+7, { maxWidth: 180 });
   y += 22;
 
@@ -240,10 +240,10 @@ export async function exportReportPDF(data: any, company: string, logoUrl?: stri
   doc.text('Statut', revCols[3]+2, y+5);
   y += 8;
   [
-    { label:'Loyers collectés', value:data.collectedRents||0, var:`${(data.revenueGrowth||0)>=0?'+':''}${data.revenueGrowth||0}%`, status:'✓ Collectés', color:[22,163,74] },
-    { label:`Commissions (${data.commissionRate||10}%)`, value:data.totalCommissions||0, var:'Auto', status:'Générées', color:[59,130,246] },
-    { label:'En attente', value:data.pendingRents||0, var:'—', status:'À collecter', color:[161,98,7] },
-    { label:'En retard', value:data.overdueRents||0, var:'—', status:'Impayés', color:[220,38,38] },
+    { label:'Loyers collectes', value:data.collectedRents||0, var:`+${data.revenueGrowth||0}%`, status:'Collectes', color:[22,163,74] },
+    { label:`Commissions (${data.commissionRate||10}%)`, value:data.totalCommissions||0, var:'Auto', status:'Generees', color:[59,130,246] },
+    { label:'En attente', value:data.pendingRents||0, var:'-', status:'A collecter', color:[161,98,7] },
+    { label:'En retard', value:data.overdueRents||0, var:'-', status:'Impayes', color:[220,38,38] },
   ].forEach((row,i) => {
     if(i%2===0){doc.setFillColor(253,253,253);doc.rect(10,y,190,7,'F');}
     doc.setTextColor(60,60,60); doc.setFontSize(7); doc.setFont('helvetica','normal');
@@ -265,8 +265,11 @@ export async function exportReportPDF(data: any, company: string, logoUrl?: stri
   doc.setLineWidth(0.5);
   doc.roundedRect(10, y, 190, 20, 3, 3, 'S');
   doc.setTextColor(109, 40, 217);
-  doc.setFontSize(8); doc.setFont('helvetica','normal');
-  doc.text(`${formatCFA(data.currentMonthRevenue||0)} (revenus)  −  ${formatCFA((data.currentMonthRevenue||0)*((data.commissionRate||10)/100))} (commissions)  −  ${formatCFA(data.currentMonthExpenses||0)} (dépenses)  =`, 105, y+8, { align:'center' });
+  doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+  const rev = formatCFA(data.currentMonthRevenue||0);
+  const comm = formatCFA((data.currentMonthRevenue||0)*((data.commissionRate||10)/100));
+  const dep = formatCFA(data.currentMonthExpenses||0);
+  doc.text(`${rev} (revenus) - ${comm} (comm.) - ${dep} (dep.) =`, 105, y+8, { align:'center', maxWidth:185 });
   doc.setFontSize(16); doc.setFont('helvetica','bold');
   doc.text(formatCFA(data.currentMonthNet||0), 105, y+17, { align:'center' });
   y += 28;
