@@ -97,6 +97,86 @@ function sectionTitle(doc: jsPDF, y: number, title: string): number {
   return y + 10;
 }
 
+function drawLineChart(doc: jsPDF, x: number, y: number, w: number, h: number, data: any[], title: string) {
+  // Title
+  doc.setTextColor(60, 60, 60);
+  doc.setFontSize(8); doc.setFont('helvetica', 'bold');
+  doc.text(title, x, y - 2);
+
+  if (!data || data.length === 0) return;
+
+  const maxRev = Math.max(...data.map((d:any) => d.revenue||0), 1);
+  const padding = { left: 18, right: 5, top: 5, bottom: 14 };
+  const chartW = w - padding.left - padding.right;
+  const chartH = h - padding.top - padding.bottom;
+  const cx = x + padding.left;
+  const cy = y + padding.top;
+
+  // Background
+  doc.setFillColor(249, 250, 251);
+  doc.roundedRect(x, y, w, h, 2, 2, 'F');
+
+  // Grid lines
+  doc.setDrawColor(220, 220, 220);
+  doc.setLineWidth(0.2);
+  for (let i = 0; i <= 4; i++) {
+    const gy = cy + chartH - (i / 4) * chartH;
+    doc.line(cx, gy, cx + chartW, gy);
+    doc.setTextColor(150, 150, 150);
+    doc.setFontSize(5.5); doc.setFont('helvetica', 'normal');
+    const val = Math.round((maxRev * i) / 4);
+    const label = val >= 1000 ? `${Math.round(val/1000)}k` : String(val);
+    doc.text(label, cx - 2, gy + 1, { align: 'right' });
+  }
+
+  // Draw lines
+  const stepX = chartW / Math.max(data.length - 1, 1);
+  const colors = { revenue: PRIMARY, net: [168, 85, 247] as [number,number,number] };
+  
+  (['revenue', 'net'] as const).forEach((key, ki) => {
+    const color = ki === 0 ? PRIMARY : [168, 85, 247] as [number,number,number];
+    doc.setDrawColor(color[0], color[1], color[2]);
+    doc.setLineWidth(ki === 0 ? 1.2 : 0.8);
+    
+    for (let i = 0; i < data.length - 1; i++) {
+      const x1 = cx + i * stepX;
+      const x2 = cx + (i + 1) * stepX;
+      const v1 = data[i][key] || 0;
+      const v2 = data[i+1][key] || 0;
+      const y1 = cy + chartH - (v1 / maxRev) * chartH;
+      const y2 = cy + chartH - (v2 / maxRev) * chartH;
+      doc.line(x1, y1, x2, y2);
+    }
+
+    // Dots
+    data.forEach((d:any, i:number) => {
+      const px = cx + i * stepX;
+      const pv = d[key] || 0;
+      const py = cy + chartH - (pv / maxRev) * chartH;
+      doc.setFillColor(color[0], color[1], color[2]);
+      doc.circle(px, py, 1.2, 'F');
+    });
+  });
+
+  // X labels
+  doc.setTextColor(100, 100, 100);
+  doc.setFontSize(6); doc.setFont('helvetica', 'normal');
+  data.forEach((d:any, i:number) => {
+    const px = cx + i * stepX;
+    doc.text(d.month||'', px, cy + chartH + 8, { align: 'center' });
+  });
+
+  // Legend
+  const legendY = cy + chartH + 12;
+  doc.setFillColor(...PRIMARY);
+  doc.circle(cx, legendY, 1.5, 'F');
+  doc.setTextColor(60, 60, 60); doc.setFontSize(6.5);
+  doc.text('Revenus', cx + 3, legendY + 1);
+  doc.setFillColor(168, 85, 247);
+  doc.circle(cx + 30, legendY, 1.5, 'F');
+  doc.text('Benefice net', cx + 33, legendY + 1);
+}
+
 // ═══════════════════════════════════════════
 // EXPORT STATISTIQUES
 // ═══════════════════════════════════════════
@@ -151,6 +231,13 @@ export async function exportStatsPDF(data: any, company: string, logoUrl?: strin
       y += 7;
     });
     y += 8;
+  }
+
+  // Courbe de tendance
+  y = sectionTitle(doc, y, 'Courbe de tendance');
+  if (data.chart && data.chart.length > 0) {
+    drawLineChart(doc, 10, y, 190, 45, data.chart, '');
+    y += 52;
   }
 
   // Statut biens
