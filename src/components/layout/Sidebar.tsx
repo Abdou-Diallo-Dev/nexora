@@ -1,4 +1,4 @@
-'use client';
+'use client'; // v2
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -40,6 +40,7 @@ const ALL_RE_ITEMS: NavItem[] = [
   { key:'analytics',        href:'/real-estate/analytics',         label:'Analyse financière',  icon:<TrendingUp size={15}/> },
   { key:'stats',            href:'/real-estate/stats',             label:'Statistiques',        icon:<BarChart3 size={15}/> },
   { key:'reports',          href:'/real-estate/reports',           label:'Rapports financiers', icon:<PieChart size={15}/> },
+  { key:'reports-terrain',  href:'/real-estate/reports-terrain',   label:'Rapports terrain',    icon:<Camera size={15}/> },
   // Documents
   { key:'documents',        href:'/real-estate/documents',         label:'Documents PDF',       icon:<FileCheck size={15}/> },
   { key:'contractTemplate', href:'/admin/contract-template',       label:'Modèles de contrat',  icon:<ScrollText size={15}/> },
@@ -54,7 +55,7 @@ const RE_GROUP_MAP: { label: string; keys: string[]; adminOnly?: boolean }[] = [
   { label:'Biens',         keys:['properties','tenants','leases','inspections','terminations','convention'] },
   { label:'Paiements',     keys:['payments','onlinePayment','expenses','accounting','disbursements'] },
   { label:'Locataires',    keys:['maintenance','notifications'] },
-  { label:'Analyse',       keys:['analytics','stats','reports'] },
+  { label:'Analyse',       keys:['analytics','stats','reports','reports-terrain'] },
   { label:'Documents',     keys:['documents','contractTemplate'], adminOnly: true },
   { label:'Communication', keys:['messages'] },
   { label:'Paramètres',    keys:['settings'], adminOnly: true },
