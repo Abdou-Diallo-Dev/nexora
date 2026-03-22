@@ -42,9 +42,36 @@ export default function TenantProfilePage() {
       const W = doc.internal.pageSize.getWidth();
       const { tenant, leases, payments, tickets } = data;
 
+      // Load company logo and color
+      const sb2 = createClient();
+      const { data: compData2 } = await sb2.from('companies').select('logo_url,primary_color').eq('id', company!.id).maybeSingle();
+      const logoUrl2 = compData2?.logo_url || null;
+      const pColor2 = compData2?.primary_color || null;
+      let PRIMARY2: [number,number,number] = [30,64,175];
+      if (pColor2) {
+        const c2 = pColor2.replace(/^#/,'');
+        if (c2.length===6) PRIMARY2 = [parseInt(c2.slice(0,2),16), parseInt(c2.slice(2,4),16), parseInt(c2.slice(4,6),16)];
+      }
+
       // Header
-      doc.setFillColor(30,64,175);
+      doc.setFillColor(...PRIMARY2);
       doc.rect(0,0,W,32,'F');
+
+      // Logo
+      if (logoUrl2) {
+        try {
+          const res2 = await fetch(logoUrl2);
+          const blob2 = await res2.blob();
+          const fmt2 = blob2.type.includes('png')?'PNG':'JPEG';
+          const b642 = await new Promise<string>(resolve => {
+            const r2 = new FileReader();
+            r2.onload = () => resolve((r2.result as string).split(',')[1]);
+            r2.readAsDataURL(blob2);
+          });
+          doc.addImage(b642, fmt2, 6, 4, 24, 24);
+        } catch(e) {}
+      }
+
       doc.setTextColor(255,255,255);
       doc.setFontSize(14); doc.setFont('helvetica','bold');
       doc.text('Fiche de Renseignement', W-8, 12, { align:'right' });
@@ -56,8 +83,8 @@ export default function TenantProfilePage() {
 
       let y = 40;
       const section = (title: string) => {
-        doc.setFillColor(30,64,175); doc.rect(10, y, 3, 6, 'F');
-        doc.setTextColor(30,64,175); doc.setFontSize(10); doc.setFont('helvetica','bold');
+        doc.setFillColor(...PRIMARY2); doc.rect(10, y, 3, 6, 'F');
+        doc.setTextColor(...PRIMARY2); doc.setFontSize(10); doc.setFont('helvetica','bold');
         doc.text(title, 16, y+5); y += 12;
       };
       const row = (label: string, value: string, x=12) => {

@@ -121,9 +121,38 @@ export default function ReportDetailPage() {
       const W = doc.internal.pageSize.getWidth();
       const tm = TYPE_MAP[report.type]||{l:report.type,icon:'📄',color:''};
 
-      // Header
-      doc.setFillColor(30,64,175);
+      // Load company settings for logo and color
+      const sb = createClient();
+      const { data: compData } = await sb.from('companies').select('logo_url,primary_color').eq('id', company!.id).maybeSingle();
+      const logoUrl = compData?.logo_url || null;
+      const primaryColor = compData?.primary_color || null;
+
+      // Parse primary color
+      let PRIMARY: [number,number,number] = [30,64,175];
+      if (primaryColor) {
+        const c = primaryColor.replace(/^#/,'');
+        if (c.length===6) PRIMARY = [parseInt(c.slice(0,2),16), parseInt(c.slice(2,4),16), parseInt(c.slice(4,6),16)];
+      }
+
+      // Header with primary color
+      doc.setFillColor(...PRIMARY);
       doc.rect(0,0,W,32,'F');
+
+      // Logo
+      if (logoUrl) {
+        try {
+          const res = await fetch(logoUrl);
+          const blob = await res.blob();
+          const fmt = blob.type.includes('png')?'PNG':'JPEG';
+          const b64 = await new Promise<string>(resolve => {
+            const r = new FileReader();
+            r.onload = () => resolve((r.result as string).split(',')[1]);
+            r.readAsDataURL(blob);
+          });
+          doc.addImage(b64, fmt, 6, 4, 24, 24);
+        } catch(e) {}
+      }
+
       doc.setTextColor(255,255,255);
       doc.setFontSize(14); doc.setFont('helvetica','bold');
       doc.text('Rapport de Terrain', W-8, 12, { align:'right' });
@@ -131,11 +160,12 @@ export default function ReportDetailPage() {
       doc.text(`${tm.l} — ${form.title}`, W-8, 19, { align:'right' });
       doc.setFontSize(8);
       doc.text(company?.name||'Nexora', W-8, 25, { align:'right' });
-      doc.text(formatDate(form.inspection_date), 10, 25);
+      doc.text(formatDate(form.inspection_date), logoUrl ? 34 : 10, 25);
 
       let y = 40;
 
       // Info block
+      const INFO_BG: [number,number,number] = [Math.min(255,PRIMARY[0]+189), Math.min(255,PRIMARY[1]+182), Math.min(255,PRIMARY[2]+80)];
       doc.setFillColor(239,246,255);
       doc.roundedRect(10, y, W-20, 20, 3, 3, 'F');
       doc.setTextColor(30,64,175); doc.setFontSize(8); doc.setFont('helvetica','bold');
@@ -160,8 +190,8 @@ export default function ReportDetailPage() {
 
       // Observations
       if (form.content) {
-        doc.setFillColor(30,64,175); doc.rect(10, y, 3, 6, 'F');
-        doc.setTextColor(30,64,175); doc.setFontSize(10); doc.setFont('helvetica','bold');
+        doc.setFillColor(...PRIMARY); doc.rect(10, y, 3, 6, 'F');
+        doc.setTextColor(...PRIMARY); doc.setFontSize(10); doc.setFont('helvetica','bold');
         doc.text('Observations generales', 16, y+5);
         y += 12;
         doc.setTextColor(60,60,60); doc.setFontSize(8); doc.setFont('helvetica','normal');
@@ -172,8 +202,8 @@ export default function ReportDetailPage() {
 
       // Rooms
       if (rooms.filter((r:any)=>r.name).length > 0) {
-        doc.setFillColor(30,64,175); doc.rect(10, y, 3, 6, 'F');
-        doc.setTextColor(30,64,175); doc.setFontSize(10); doc.setFont('helvetica','bold');
+        doc.setFillColor(...PRIMARY); doc.rect(10, y, 3, 6, 'F');
+        doc.setTextColor(...PRIMARY); doc.setFontSize(10); doc.setFont('helvetica','bold');
         doc.text('Zones inspectees', 16, y+5);
         y += 12;
         rooms.filter((r:any)=>r.name).forEach((room:any, i:number) => {
