@@ -223,11 +223,56 @@ export default function ReportDetailPage() {
         y += 6;
       }
 
+      // Photos section
+      if (photos.length > 0) {
+        // Check if we need a new page
+        if (y > 200) { doc.addPage(); y = 15; }
+        
+        doc.setFillColor(...PRIMARY); doc.rect(10, y, 3, 6, 'F');
+        doc.setTextColor(...PRIMARY); doc.setFontSize(10); doc.setFont('helvetica','bold');
+        doc.text(`Photos (${photos.length})`, 16, y+5);
+        y += 12;
+
+        const photoW = 55; const photoH = 45; const gap = 5;
+        const cols = 3;
+        let col = 0;
+
+        for (const photoUrl of photos) {
+          try {
+            const res = await fetch(photoUrl);
+            const blob = await res.blob();
+            const fmt = blob.type.includes('png')?'PNG':'JPEG';
+            const b64 = await new Promise<string>((resolve, reject) => {
+              const r = new FileReader();
+              r.onload = () => resolve((r.result as string).split(',')[1]);
+              r.onerror = reject;
+              r.readAsDataURL(blob);
+            });
+            const px = 10 + col * (photoW + gap);
+            const py = y;
+            // Border
+            doc.setDrawColor(220,220,220); doc.setLineWidth(0.3);
+            doc.roundedRect(px, py, photoW, photoH, 2, 2, 'S');
+            doc.addImage(b64, fmt, px+0.5, py+0.5, photoW-1, photoH-1);
+            col++;
+            if (col >= cols) {
+              col = 0;
+              y += photoH + gap;
+              if (y > 250) { doc.addPage(); y = 15; }
+            }
+          } catch(e) {
+            // Skip failed photo
+          }
+        }
+        if (col > 0) y += photoH + gap;
+        y += 5;
+      }
+
       // Footer
       doc.setDrawColor(200,200,200); doc.line(10,287,W-10,287);
       doc.setTextColor(150,150,150); doc.setFontSize(7); doc.setFont('helvetica','normal');
       doc.text('Genere par Nexora', 10, 292);
-      doc.text(`${photos.length} photo(s) jointe(s)`, W-10, 292, { align:'right' });
+      doc.text(`${photos.length} photo(s) incluse(s)`, W-10, 292, { align:'right' });
 
       doc.save(`rapport-${report.type}-${form.inspection_date}.pdf`);
       toast.success('PDF exporté ✓');
