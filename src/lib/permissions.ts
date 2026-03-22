@@ -126,6 +126,7 @@ export const can = {
 export const getNavItems = (role: UserRole): string[] => {
   if (role === 'admin' || role === 'super_admin') {
     return ['properties','tenants','leases','payments','onlinePayment','expenses',
+      'accounting','disbursements','reports-terrain',
       'invoices','documents','contracts','maintenance','notifications',
       'analytics','stats','messages','reports','inspections','terminations','discharge','convention','contractTemplate','settings'];
   }
