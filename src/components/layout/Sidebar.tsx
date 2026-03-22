@@ -286,4 +286,5 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
       )}
     </AnimatePresence>
   );
-}
+}/ /   0 3 / 2 2 / 2 0 2 6   0 1 : 2 1 : 4 3  
+ 
