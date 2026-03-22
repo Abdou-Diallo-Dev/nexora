@@ -1,4 +1,4 @@
-'use client'; // v2
+'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -286,5 +286,4 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
       )}
     </AnimatePresence>
   );
-}/ /   0 3 / 2 2 / 2 0 2 6   0 1 : 2 1 : 4 3  
- 
+}
