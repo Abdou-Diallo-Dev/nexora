@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Home, Search, Building2, MapPin } from 'lucide-react';
+import { Plus, Edit, Home, Search, Building2, MapPin, } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store';
 import { PageHeader, Badge, LoadingSpinner, EmptyState, Pagination, inputCls, btnPrimary, cardCls, BadgeVariant } from '@/components/ui';
@@ -58,11 +58,11 @@ export default function PropertiesPage() {
               const st = STATUS[p.status] || { label: p.status, variant: 'default' as BadgeVariant };
               const firstImage = p.image_urls && p.image_urls.length > 0 ? p.image_urls[0] : null;
               return (
-                <Link key={p.id} href={'/real-estate/properties/' + p.id}
-                  className={'flex flex-col border-b border-border hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors overflow-hidden' +
+                <div key={p.id} className={'flex flex-col border-b border-border hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors overflow-hidden group' +
                     (idx % 3 !== 2 ? ' md:border-r' : '')}>
                   
                   {/* Image ou placeholder */}
+                  <Link href={'/real-estate/properties/' + p.id} className="block">
                   <div className="relative w-full h-44 bg-slate-100 dark:bg-slate-700 flex-shrink-0">
                     {firstImage ? (
                       <img src={firstImage} alt={p.name} className="w-full h-full object-cover" />
@@ -90,7 +90,20 @@ export default function PropertiesPage() {
                       <span className="font-semibold text-foreground">{formatCurrency(p.rent_amount)}/mois</span>
                     </div>
                   </div>
-                </Link>
+                  </Link>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 px-4 pb-3 border-t border-border pt-2">
+                    <Link href={`/real-estate/properties/${p.id}/apartments`}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors">
+                      <Home size={12}/>Appartements
+                    </Link>
+                    <Link href={`/real-estate/properties/${p.id}/edit`}
+                      className="flex items-center justify-center p-1.5 rounded-xl text-muted-foreground hover:text-primary hover:bg-blue-50 transition-colors">
+                      <Edit size={13}/>
+                    </Link>
+                  </div>
+                </div>
               );
             })}
           </div>
