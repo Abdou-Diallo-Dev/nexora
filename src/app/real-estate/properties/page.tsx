@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Building2, MapPin, Home } from 'lucide-react';
+import { Plus, Home, Search, Building2, MapPin } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store';
 import { PageHeader, Badge, LoadingSpinner, EmptyState, Pagination, inputCls, btnPrimary, cardCls, BadgeVariant } from '@/components/ui';
