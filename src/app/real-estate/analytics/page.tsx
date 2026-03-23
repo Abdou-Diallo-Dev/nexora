@@ -112,7 +112,7 @@ export default function AnalyticsPage() {
       };
       const allRaw = pay||[];
       const periodAll2 = allRaw.filter(periodFilter);
-      const paid = periodAll2.filter((p:any) => p.status === 'paid');
+      const paid = periodAll2.filter((p:any) => (p.status === 'paid' || p.status === 'partial'));
       const all = periodAll2;
       const overdue = periodAll2.filter((p:any) => p.status === 'late' || p.status === 'overdue');
 

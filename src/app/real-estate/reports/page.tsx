@@ -85,7 +85,7 @@ export default function ReportsPage() {
       const T = (tix||[]) as any[];
       const commRate = (comp as any)?.commission_rate ?? 10;
 
-      const paid = P.filter(p => p.status === 'paid');
+      const paid = P.filter(p => (p.status === 'paid' || p.status === 'partial'));
       const pending = P.filter(p => p.status === 'pending');
       const overdue = P.filter(p => p.status === 'late' || p.status === 'overdue');
 
