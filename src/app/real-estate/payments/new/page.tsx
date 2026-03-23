@@ -1,4 +1,5 @@
 'use client';
+import { Suspense } from 'react';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -14,7 +15,8 @@ type LeaseRow = { id: string; rent_amount: number; payment_day: number; tenants:
 
 const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
-export default function NewPaymentPage() {
+// ─── Composant principal extrait pour permettre le Suspense ───────────────────
+function NewPaymentForm() {
   const { company } = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -30,8 +32,8 @@ export default function NewPaymentPage() {
   const now = new Date();
   const [form, setForm] = useState({
     lease_id: '',
-    amount: '',           // loyer total attendu
-    paid_amount: '',      // montant versé (si partiel)
+    amount: '',
+    paid_amount: '',
     charges_amount: '0',
     period_month: String(now.getMonth() + 1),
     period_year: String(now.getFullYear()),
@@ -101,11 +103,9 @@ export default function NewPaymentPage() {
     setLoading(true);
     const sb = createClient();
 
-    // Get tenant_id from lease
     const { data: leaseData } = await sb.from('leases').select('tenant_id').eq('id', form.lease_id).maybeSingle();
     const tenantId = (leaseData as any)?.tenant_id;
 
-    // Block duplicate paid payment
     if (autoStatus === 'paid') {
       const { data: existing } = await sb.from('rent_payments')
         .select('id,status').eq('lease_id', form.lease_id)
@@ -119,7 +119,6 @@ export default function NewPaymentPage() {
       }
     }
 
-    // Check if partial payment exists for same period — update it
     const { data: existingPartial } = await sb.from('rent_payments')
       .select('id,paid_amount,total_amount').eq('lease_id', form.lease_id)
       .eq('period_month', Number(form.period_month))
@@ -127,7 +126,6 @@ export default function NewPaymentPage() {
       .eq('status', 'partial').maybeSingle();
 
     if (existingPartial && isPartial) {
-      // Add to existing partial payment
       const newPaid = Number((existingPartial as any).paid_amount) + paidAmount;
       const total = Number((existingPartial as any).total_amount) || totalAmount;
       const newRemaining = Math.max(0, total - newPaid);
@@ -146,7 +144,6 @@ export default function NewPaymentPage() {
       return;
     }
 
-    // New payment
     const { error } = await sb.from('rent_payments').insert({
       company_id:       company.id,
       lease_id:         form.lease_id,
@@ -195,7 +192,6 @@ export default function NewPaymentPage() {
       <form onSubmit={submit} className={cardCls+' p-6'}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-          {/* Bail */}
           <div className="md:col-span-2">
             <label className={labelCls}>Bail *</label>
             <select value={form.lease_id} onChange={e=>handleLeaseChange(e.target.value)} required className={selectCls}>
@@ -208,7 +204,6 @@ export default function NewPaymentPage() {
             </select>
           </div>
 
-          {/* Période */}
           <div>
             <label className={labelCls}>Mois *</label>
             <select value={form.period_month} onChange={e=>handlePeriod('period_month',e.target.value)} className={selectCls}>
@@ -222,7 +217,6 @@ export default function NewPaymentPage() {
             </select>
           </div>
 
-          {/* Montant loyer total */}
           <div>
             <label className={labelCls}>Montant loyer total (FCFA) *</label>
             <input type="number" value={form.amount} onChange={e=>{ set('amount',e.target.value); if(!isPartial) set('paid_amount',e.target.value); }} required className={inputCls}/>
@@ -232,7 +226,6 @@ export default function NewPaymentPage() {
             <input type="number" value={form.charges_amount} onChange={e=>set('charges_amount',e.target.value)} className={inputCls}/>
           </div>
 
-          {/* Toggle paiement partiel */}
           <div className="md:col-span-2">
             <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-xl">
               <Split size={18} className="text-amber-600 flex-shrink-0"/>
@@ -247,7 +240,6 @@ export default function NewPaymentPage() {
             </div>
           </div>
 
-          {/* Si partiel */}
           {isPartial && (
             <>
               <div>
@@ -268,7 +260,6 @@ export default function NewPaymentPage() {
             </>
           )}
 
-          {/* Date + mode */}
           <div>
             <label className={labelCls}>Date de paiement</label>
             <input type="date" value={form.paid_date} onChange={e=>set('paid_date',e.target.value)} className={inputCls}/>
@@ -307,7 +298,6 @@ export default function NewPaymentPage() {
           </div>
         </div>
 
-        {/* Résumé */}
         {totalAmount > 0 && (
           <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl grid grid-cols-3 gap-4 text-center">
             <div><p className="text-xs text-muted-foreground">Loyer total</p><p className="font-bold text-foreground">{formatCurrency(totalAmount)}</p></div>
@@ -325,5 +315,14 @@ export default function NewPaymentPage() {
         </div>
       </form>
     </div>
+  );
+}
+
+// ─── Page exportée avec Suspense boundary (requis par Next.js 14) ─────────────
+export default function NewPaymentPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center p-12"><LoadingSpinner size={24} /></div>}>
+      <NewPaymentForm />
+    </Suspense>
   );
 }
