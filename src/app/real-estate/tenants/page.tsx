@@ -183,7 +183,7 @@ export default function TenantsPage() {
                           className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" title="Modifier">
                           <Edit size={15}/>
                         </Link>
-                        <button onClick={() => setDeleteId(t.id)}
+                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeleteId(t.id); }}
                           className="p-1.5 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Supprimer">
                           <Trash2 size={15}/>
                         </button>
