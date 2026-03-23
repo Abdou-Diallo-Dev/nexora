@@ -118,14 +118,29 @@ export async function POST(request: Request) {
       user_metadata: { full_name, role: 'tenant', is_active: true },
     });
 
+    let uid: string;
+
     if (authError) {
-      if (authError.message.includes('already')) {
+      if (authError.message.toLowerCase().includes('already') || authError.message.toLowerCase().includes('exists')) {
+        // User auth exists - find their uid and still link tenant_account
+        const { data: existingUser } = await admin.auth.admin.listUsers();
+        const found = existingUser?.users?.find((u: any) => u.email === email);
+        if (!found) return NextResponse.json({ error: authError.message }, { status: 400 });
+        uid = found.id;
+        // Ensure public.users is correct
+        await admin.from('users').upsert({
+          id: uid, email, full_name, role: 'tenant', company_id: real_company_id, is_active: true,
+        });
+        // Link tenant_account if not already linked
+        await admin.from('tenant_accounts').upsert({
+          user_id: uid, tenant_id, company_id: real_company_id, email,
+        }, { onConflict: 'tenant_id' });
         return NextResponse.json({ success: true, already_exists: true });
       }
       return NextResponse.json({ error: authError.message }, { status: 400 });
     }
 
-    const uid = authData.user.id;
+    uid = authData.user.id;
 
     // Créer dans public.users avec le vrai company_id
     await admin.from('users').upsert({
@@ -134,7 +149,7 @@ export async function POST(request: Request) {
 
     // Lier tenant_account avec le vrai company_id
     await admin.from('tenant_accounts').insert({
-      user_id: uid, tenant_id, company_id: real_company_id,
+      user_id: uid, tenant_id, company_id: real_company_id, email,
     });
 
     // Envoyer email de bienvenue
