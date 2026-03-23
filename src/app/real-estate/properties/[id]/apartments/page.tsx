@@ -50,10 +50,11 @@ export default function ApartmentsPage() {
   useEffect(() => { load(); }, [propertyId]);
 
   const generateApartments = async () => {
-    if (!property || !company?.id) return;
+    if (!propertyId || !company?.id) return;
+    const propName = property?.name || 'APT';
     setGenerating(true);
     const sb = createClient();
-    const prefix = property.name.split(' ')[0].toUpperCase().slice(0, 6);
+    const prefix = propName.split(' ')[0].toUpperCase().slice(0, 6);
     const inserts: any[] = [];
     const letters = ['A','B','C','D','E','F','G','H'];
 
@@ -238,13 +239,13 @@ export default function ApartmentsPage() {
                 <div className="flex flex-wrap gap-1.5">
                   {genConfig.hasRDC && ['A','B','C','D'].slice(0,genConfig.rdcApts).map(l=>(
                     <span key={l} className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-lg font-medium">
-                      {property?.name.split(' ')[0].toUpperCase().slice(0,6)} R{l}
+                      {(property?.name||'APT').split(' ')[0].toUpperCase().slice(0,6)} R{l}
                     </span>
                   ))}
                   {Array.from({length:Math.min(genConfig.floors,3)},(_,f)=>f+1).map(f=>
                     ['A','B','C','D'].slice(0,genConfig.aptsPerFloor).map(l=>(
                       <span key={`${f}${l}`} className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-lg font-medium">
-                        {property?.name.split(' ')[0].toUpperCase().slice(0,6)} {f}{l}
+                        {(property?.name||'APT').split(' ')[0].toUpperCase().slice(0,6)} {f}{l}
                       </span>
                     ))
                   )}

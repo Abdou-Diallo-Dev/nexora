@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Users, Mail, Phone, Trash2, Edit, AlertTriangle, CheckCircle, Clock, FileText } from 'lucide-react';
+import { Plus, Search, Users, Mail, Phone, Trash2, Edit, AlertTriangle, CheckCircle, Clock, FileText, UserPlus, ShieldCheck } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store';
 import { PageHeader, Badge, LoadingSpinner, EmptyState, Pagination, ConfirmDialog, inputCls, btnPrimary, cardCls } from '@/components/ui';
@@ -27,6 +27,7 @@ export default function TenantsPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string|null>(null);
+  const [creatingAccount, setCreatingAccount] = useState<string|null>(null);
   const [deleting, setDeleting] = useState(false);
   const [paymentStatuses, setPaymentStatuses] = useState<Record<string, PaymentStatus>>({});
   const { query, setQuery, debounced } = useSearch();
@@ -37,7 +38,7 @@ export default function TenantsPage() {
     setLoading(true);
     let q = createClient()
       .from('tenants')
-      .select('id,first_name,last_name,email,phone,status', { count:'exact' })
+      .select('id,first_name,last_name,email,phone,status,tenant_accounts(user_id)', { count:'exact' })
       .eq('company_id', company.id)
       .order('created_at', { ascending:false })
       .range(offset, offset+pageSize-1);
@@ -85,6 +86,28 @@ export default function TenantsPage() {
 
   // Count alerts
   const lateCount = Object.values(paymentStatuses).filter(p => p.status === 'late').length;
+
+  const createPortalAccount = async (t: any) => {
+    if (!t.email) { toast.error('Email requis pour créer un compte'); return; }
+    setCreatingAccount(t.id);
+    const res = await fetch('/api/admin/create-tenant-account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tenant_id: t.id, email: t.email,
+        first_name: t.first_name, last_name: t.last_name,
+        company_id: company?.id, company_name: company?.name,
+      }),
+    });
+    const json = await res.json();
+    setCreatingAccount(null);
+    if (json.success) {
+      if (json.temp_password) toast.success(`Compte créé ! Mot de passe : ${json.temp_password}`, { duration:15000 });
+      else if (json.already_exists) toast.info('Compte déjà existant');
+      else toast.success('Compte créé — email envoyé ✓');
+      load();
+    } else { toast.error(json.error || 'Erreur création compte'); }
+  };
 
   return (
     <div>
@@ -156,7 +179,7 @@ export default function TenantsPage() {
 
                       {/* Actions */}
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Link href={`/real-estate/tenants/${t.id}/edit`}
+                        <Link href={`/real-estate/tenants/${t.id}/edit`} onClick={e=>e.stopPropagation()}
                           className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" title="Modifier">
                           <Edit size={15}/>
                         </Link>
