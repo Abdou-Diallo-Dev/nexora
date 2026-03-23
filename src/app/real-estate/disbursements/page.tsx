@@ -99,9 +99,12 @@ export default function DisbursementsPage() {
 
       const leaseExpenses = (expenses||[]).filter((e:any)=>e.lease_id===p.lease_id)
         .reduce((s:number,e:any)=>s+Number(e.amount),0);
-      const rentAmt = Number(p.amount);
-      const commAmt = rentAmt * (commissionRate/100);
-      const netAmt = Math.max(0, rentAmt - commAmt - leaseExpenses);
+      const rentAmt = Number(p.paid_amount || p.amount);
+      const commHT = rentAmt * (commissionRate/100);
+      const commTVA = commHT * 0.18; // TVA 18%
+      const commTTC = commHT + commTVA;
+      const commAmt = commTTC;
+      const netAmt = Math.max(0, rentAmt - commTTC - leaseExpenses);
 
       await sb.from('disbursements').insert({
         company_id: company.id,
@@ -211,7 +214,7 @@ export default function DisbursementsPage() {
                     </div>
                     <div className="text-sm text-muted-foreground">{period}</div>
                     <div className="text-sm font-medium">{formatCurrency(d.rent_amount)}</div>
-                    <div className="text-sm text-red-600">−{formatCurrency(d.commission_amount)}</div>
+                    <div className="text-sm text-red-600" title={`HT: ${formatCurrency(d.commission_amount/1.18)} + TVA: ${formatCurrency(d.commission_amount-d.commission_amount/1.18)}`}>−{formatCurrency(d.commission_amount)} TTC</div>
                     <div className="text-sm font-bold text-green-600">{formatCurrency(d.net_amount)}</div>
                     <div>
                       <Badge variant={d.status==='paid'?'success':'warning'}>

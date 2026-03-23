@@ -48,11 +48,16 @@ export default function AccountingPage() {
       const rate = commissionRate / 100;
 
       const paid = P.filter(p => p.status === 'paid');
-      const totalLoyers = paid.reduce((s: number, p: any) => s + p.amount, 0);
-      const totalCommissions = totalLoyers * rate;
+      // Paiements partiels: utiliser paid_amount si disponible
+      const totalLoyers = paid.reduce((s: number, p: any) => s + (p.paid_amount || p.amount), 0);
+      // Commission avec TVA 18%
+      const vatRate = 0.18;
+      const commHT = totalLoyers * rate;
+      const commTVA = commHT * vatRate;
+      const totalCommissions = commHT + commTVA; // Commission TTC
       const totalDepensesBailleur = E.filter((e: any) => e.type === 'bailleur').reduce((s: number, e: any) => s + e.amount, 0);
       const totalDepensesEntreprise = E.filter((e: any) => e.type === 'entreprise').reduce((s: number, e: any) => s + e.amount, 0);
-      const totalRestitue = totalLoyers - totalCommissions - totalDepensesBailleur;
+      const totalRestitue = totalLoyers - totalCommissions - totalDepensesBailleur; // Net bailleur après commission TTC
       const tauxRecouvrement = P.length > 0 ? Math.round((paid.length / P.length) * 100) : 0;
 
       setSummary({ totalLoyers, totalCommissions, totalDepensesBailleur, totalDepensesEntreprise, totalRestitue, tauxRecouvrement });
