@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Split } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -17,6 +17,14 @@ const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Aoû
 export default function NewPaymentPage() {
   const { company } = useAuthStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const completeId = searchParams?.get('complete');
+  const completeLease = searchParams?.get('lease');
+  const completeMonth = searchParams?.get('month');
+  const completeYear = searchParams?.get('year');
+  const completeRemaining = parseFloat(searchParams?.get('remaining')||'0');
+  const completeTotal = parseFloat(searchParams?.get('total')||'0');
+  const isCompletingPartial = !!completeId;
   const [leases, setLeases] = useState<LeaseRow[]>([]);
   const [isPartial, setIsPartial] = useState(false);
   const now = new Date();
@@ -58,7 +66,13 @@ export default function NewPaymentPage() {
       .then(({ data }) => {
         const rows = (data || []) as unknown as LeaseRow[];
         setLeases(rows);
-        if (rows[0]) {
+        if (isCompletingPartial && completeLease) {
+          const lease = rows.find(l=>l.id===completeLease)||rows[0];
+          if (lease) {
+            setForm(f=>({...f, lease_id:completeLease, amount:String(completeTotal||lease.rent_amount), paid_amount:String(completeRemaining), period_month:completeMonth||f.period_month, period_year:completeYear||f.period_year}));
+            setIsPartial(completeRemaining < (completeTotal||lease.rent_amount));
+          }
+        } else if (rows[0]) {
           const due = makeDueDate(form.period_month, form.period_year, rows[0].payment_day);
           setForm(f => ({ ...f, lease_id: rows[0].id, amount: String(rows[0].rent_amount), paid_amount: String(rows[0].rent_amount), due_date: due }));
         }
@@ -169,6 +183,15 @@ export default function NewPaymentPage() {
         <Link href="/real-estate/payments" className={btnSecondary+' !px-3'}><ArrowLeft size={16}/></Link>
         <PageHeader title="Enregistrer un paiement"/>
       </div>
+      {isCompletingPartial && (
+        <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-3">
+          <Split size={18} className="text-amber-600 flex-shrink-0"/>
+          <div>
+            <p className="text-sm font-semibold text-amber-700">Compléter un paiement partiel</p>
+            <p className="text-xs text-amber-600">Reste à payer : <strong>{formatCurrency(completeRemaining)}</strong> sur <strong>{formatCurrency(completeTotal)}</strong></p>
+          </div>
+        </div>
+      )}
       <form onSubmit={submit} className={cardCls+' p-6'}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 

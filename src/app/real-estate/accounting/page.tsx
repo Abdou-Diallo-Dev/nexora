@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 type Summary = {
-  totalLoyers: number; totalCommissions: number; totalDepensesBailleur: number;
+  totalLoyers: number; totalCommissions: number; commHT: number; commTVA: number; totalDepensesBailleur: number;
   totalDepensesEntreprise: number; totalRestitue: number; tauxRecouvrement: number;
 };
 type ChartData = { month: string; loyers: number; commissions: number; depenses: number; restitue: number };
@@ -22,7 +22,7 @@ type Transaction = {
 export default function AccountingPage() {
   const { company } = useAuthStore();
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState<Summary>({ totalLoyers:0, totalCommissions:0, totalDepensesBailleur:0, totalDepensesEntreprise:0, totalRestitue:0, tauxRecouvrement:0 });
+  const [summary, setSummary] = useState<Summary>({ totalLoyers:0, totalCommissions:0, commHT:0, commTVA:0, totalDepensesBailleur:0, totalDepensesEntreprise:0, totalRestitue:0, tauxRecouvrement:0 });
   const [chart, setChart] = useState<ChartData[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filterMonth, setFilterMonth] = useState('');
@@ -47,9 +47,9 @@ export default function AccountingPage() {
       const D = (disbs || []) as any[];
       const rate = commissionRate / 100;
 
-      const paid = P.filter(p => p.status === 'paid');
-      // Paiements partiels: utiliser paid_amount si disponible
-      const totalLoyers = paid.reduce((s: number, p: any) => s + (p.paid_amount || p.amount), 0);
+      // Inclure partiels dans les loyers perçus
+      const paid = P.filter(p => p.status === 'paid' || p.status === 'partial');
+      const totalLoyers = paid.reduce((s: number, p: any) => s + Number(p.paid_amount || p.amount), 0);
       // Commission avec TVA 18%
       const vatRate = 0.18;
       const commHT = totalLoyers * rate;
@@ -58,9 +58,10 @@ export default function AccountingPage() {
       const totalDepensesBailleur = E.filter((e: any) => e.type === 'bailleur').reduce((s: number, e: any) => s + e.amount, 0);
       const totalDepensesEntreprise = E.filter((e: any) => e.type === 'entreprise').reduce((s: number, e: any) => s + e.amount, 0);
       const totalRestitue = totalLoyers - totalCommissions - totalDepensesBailleur; // Net bailleur après commission TTC
-      const tauxRecouvrement = P.length > 0 ? Math.round((paid.length / P.length) * 100) : 0;
+      const paidFull = P.filter((p:any) => p.status === 'paid').length;
+      const tauxRecouvrement = P.length > 0 ? Math.round((paidFull / P.length) * 100) : 0;
 
-      setSummary({ totalLoyers, totalCommissions, totalDepensesBailleur, totalDepensesEntreprise, totalRestitue, tauxRecouvrement });
+      setSummary({ totalLoyers, totalCommissions, commHT, commTVA, totalDepensesBailleur, totalDepensesEntreprise, totalRestitue, tauxRecouvrement });
 
       // Chart 12 months
       const now = new Date();
@@ -114,7 +115,7 @@ export default function AccountingPage() {
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {[
           { label: 'Loyers perçus', value: formatCurrency(summary.totalLoyers), icon: <DollarSign size={18}/>, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800' },
-          { label: `Commissions (${commissionRate}%)`, value: formatCurrency(summary.totalCommissions), icon: <Percent size={18}/>, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800' },
+          { label: `Commission TTC (HT ${commissionRate}% + TVA 18%)`, value: formatCurrency(summary.totalCommissions), icon: <Percent size={18}/>, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800' },
           { label: 'Dépenses bailleur', value: formatCurrency(summary.totalDepensesBailleur), icon: <Building2 size={18}/>, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-800' },
           { label: 'Dépenses entreprise', value: formatCurrency(summary.totalDepensesEntreprise), icon: <TrendingDown size={18}/>, color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800' },
           { label: 'À reverser aux bailleurs', value: formatCurrency(Math.max(0, summary.totalRestitue)), icon: <TrendingUp size={18}/>, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800' },
@@ -133,7 +134,11 @@ export default function AccountingPage() {
         <div className="flex flex-wrap items-center gap-3 text-sm font-mono">
           <span className="bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 px-3 py-1.5 rounded-lg">{formatCurrency(summary.totalLoyers)} (loyers)</span>
           <span className="text-muted-foreground">−</span>
-          <span className="bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 px-3 py-1.5 rounded-lg">{formatCurrency(summary.totalCommissions)} (commission {commissionRate}%)</span>
+          <div className="flex flex-col gap-1">
+            <span className="bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 px-3 py-1.5 rounded-lg text-xs">
+              Comm. HT ({commissionRate}%) : {formatCurrency(summary.commHT)} + TVA 18% : {formatCurrency(summary.commTVA)} = <strong>{formatCurrency(summary.totalCommissions)} TTC</strong>
+            </span>
+          </div>
           <span className="text-muted-foreground">−</span>
           <span className="bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300 px-3 py-1.5 rounded-lg">{formatCurrency(summary.totalDepensesBailleur)} (dépenses bailleur)</span>
           <span className="text-muted-foreground">=</span>
