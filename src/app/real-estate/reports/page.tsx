@@ -13,10 +13,10 @@ import { fr } from 'date-fns/locale';
 const calcCommTTC = (revenue: number, rate: number) => revenue * (rate / 100) * 1.18;
 
 type ReportData = {
-  currentMonthRevenue: number; currentMonthExpenses: number; currentMonthNet: number;
+  currentMonthRevenue: number; currentMonthExpenses: number; currentMonthNet: number; currentMonthNetEntreprise: number; currentMonthNetBailleur: number;
   prevMonthRevenue: number; prevMonthExpenses: number;
   collectionRate: number; totalProperties: number; totalTenants: number;
-  commissionRate: number; totalCommissions: number;
+  commissionRate: number; totalCommissions: number; totalCommissionsHT: number; totalCommissionsTVA: number;
   collectedRents: number; pendingRents: number; overdueRents: number;
   revenueGrowth: number;
   expensesByCategory: { name: string; amount: number; color: string }[];
@@ -29,7 +29,7 @@ type ReportData = {
   openTickets: number; resolvedTickets: number; totalTickets: number;
   ticketsByCategory: { name: string; count: number }[];
   monthlyChart: { month: string; revenue: number; expenses: number; commissions: number; net: number }[];
-  forecastRevenue: number; forecastExpenses: number;
+  forecastRevenue: number; forecastExpenses: number; forecastRevenueEntreprise: number; forecastRevenueBailleur: number; forecastExpensesEntreprise: number; forecastExpensesBailleur: number;
 };
 
 const COLORS = ['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899'];
@@ -114,8 +114,14 @@ export default function ReportsPage() {
       const revenueGrowth        = prevMonthRevenue > 0 ? Math.round(((currentMonthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100) : 0;
 
       // ✅ Commission TTC avec TVA 18% (identique à la Comptabilité)
-      const currentMonthCommissions = calcCommTTC(currentMonthRevenue, commRate);
-      const currentMonthNet         = currentMonthRevenue - currentMonthCommissions - currentMonthExpenses;
+      const currentMonthCommissionsHT = currentMonthRevenue * (commRate / 100);
+      const currentMonthCommissionsTVA = currentMonthCommissionsHT * 0.18;
+      const currentMonthCommissions = currentMonthCommissionsHT + currentMonthCommissionsTVA;
+      const currentMonthBailleurExpenses = curExp.filter((e: any) => e.type === 'bailleur').reduce((s: number, e: any) => s + e.amount, 0);
+      const currentMonthEntrepriseExpenses = curExp.filter((e: any) => e.type === 'entreprise').reduce((s: number, e: any) => s + e.amount, 0);
+      const currentMonthNetBailleur = currentMonthRevenue - currentMonthCommissions - currentMonthBailleurExpenses;
+      const currentMonthNetEntreprise = currentMonthCommissionsHT - currentMonthEntrepriseExpenses;
+      const currentMonthNet         = currentMonthNetBailleur;
 
       const collectionRate = periodAll.length > 0
         ? Math.round((periodPaid.length / periodAll.length) * 100)
@@ -188,12 +194,16 @@ export default function ReportsPage() {
       const last3           = monthlyChart.slice(-3);
       const forecastRevenue  = Math.round(last3.reduce((s, m) => s + m.revenue,  0) / last3.length);
       const forecastExpenses = Math.round(last3.reduce((s, m) => s + m.expenses, 0) / last3.length);
+      const forecastRevenueEntreprise = Math.round(forecastRevenue * (commRate / 100));
+      const forecastRevenueBailleur = forecastRevenue;
+      const forecastExpensesBailleur = Math.round(totalBailleurExp / Math.max(1, months));
+      const forecastExpensesEntreprise = Math.round(totalEntrepriseExp / Math.max(1, months));
 
       setData({
-        currentMonthRevenue, currentMonthExpenses, currentMonthNet,
+        currentMonthRevenue, currentMonthExpenses, currentMonthNet, currentMonthNetEntreprise, currentMonthNetBailleur,
         prevMonthRevenue, prevMonthExpenses,
         collectionRate, totalProperties: PR.length, totalTenants: L.length,
-        commissionRate: commRate, totalCommissions: currentMonthCommissions,
+        commissionRate: commRate, totalCommissions: currentMonthCommissions, totalCommissionsHT: currentMonthCommissionsHT, totalCommissionsTVA: currentMonthCommissionsTVA,
         collectedRents: currentMonthRevenue,
         pendingRents:  periodAll.filter((p: any) => p.status === 'pending').reduce((s: number, p: any) => s + p.amount, 0),
         overdueRents:  periodAll.filter((p: any) => p.status === 'late' || p.status === 'overdue').reduce((s: number, p: any) => s + p.amount, 0),
@@ -204,7 +214,7 @@ export default function ReportsPage() {
         openTickets:     T.filter((t: any) => t.status === 'open' || t.status === 'in_progress').length,
         resolvedTickets: T.filter((t: any) => t.status === 'resolved' || t.status === 'closed').length,
         totalTickets: T.length, ticketsByCategory,
-        monthlyChart, forecastRevenue, forecastExpenses,
+        monthlyChart, forecastRevenue, forecastExpenses, forecastRevenueEntreprise, forecastRevenueBailleur, forecastExpensesEntreprise, forecastExpensesBailleur,
       });
       setLoading(false);
     });
@@ -252,9 +262,9 @@ export default function ReportsPage() {
         </h2>
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-2xl p-5 mb-4">
           <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
-            Ce mois-ci, la plateforme a généré <strong>{formatCurrency(data.currentMonthRevenue)}</strong> de revenus
+            Ce mois-ci, la plateforme a généré <strong>{formatCurrency(data.currentMonthRevenue)}</strong> de revenus bailleur
             avec un taux de recouvrement de <strong>{data.collectionRate}%</strong>,
-            pour un bénéfice net de <strong>{formatCurrency(data.currentMonthNet)}</strong>.
+            pour un net bailleur de <strong>{formatCurrency(data.currentMonthNetBailleur)}</strong> et un net entreprise de <strong>{formatCurrency(data.currentMonthNetEntreprise)}</strong>.
             {data.revenueGrowth !== 0 && (
               <> Les revenus ont {data.revenueGrowth >= 0 ? 'augmenté' : 'diminué'} de <strong>{Math.abs(data.revenueGrowth)}%</strong> par rapport au mois précédent.</>
             )}
@@ -262,9 +272,10 @@ export default function ReportsPage() {
           </p>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Kpi label="Revenus du mois"       value={formatCurrency(data.currentMonthRevenue)}  sub={`vs ${formatCurrency(data.prevMonthRevenue)} mois préc.`}  color="text-green-700 bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800"   icon={<DollarSign size={15} className="text-green-600"/>}/>
+          <Kpi label="Revenus bailleur"      value={formatCurrency(data.currentMonthRevenue)}  sub={`vs ${formatCurrency(data.prevMonthRevenue)} mois préc.`}  color="text-green-700 bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800"   icon={<DollarSign size={15} className="text-green-600"/>}/>
           <Kpi label="Dépenses du mois"      value={formatCurrency(data.currentMonthExpenses)} sub={`vs ${formatCurrency(data.prevMonthExpenses)} mois préc.`} color="text-red-700 bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800"         icon={<TrendingDown size={15} className="text-red-600"/>}/>
-          <Kpi label="Bénéfice net"          value={formatCurrency(data.currentMonthNet)}      color={data.currentMonthNet >= 0 ? "text-purple-700 bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800" : "text-red-700 bg-red-50 dark:bg-red-900/20 border-red-100"} icon={<TrendingUp size={15} className="text-purple-600"/>}/>
+          <Kpi label="Net bailleur"          value={formatCurrency(data.currentMonthNetBailleur)}      color={data.currentMonthNetBailleur >= 0 ? "text-purple-700 bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800" : "text-red-700 bg-red-50 dark:bg-red-900/20 border-red-100"} icon={<TrendingUp size={15} className="text-purple-600"/>}/>
+          <Kpi label="Net entreprise"        value={formatCurrency(data.currentMonthNetEntreprise)} color={data.currentMonthNetEntreprise >= 0 ? "text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800" : "text-red-700 bg-red-50 dark:bg-red-900/20 border-red-100"} icon={<TrendingUp size={15} className="text-emerald-600"/>}/>
           <Kpi label="Taux de recouvrement"  value={`${data.collectionRate}%`}                 sub={`${data.paidTenants} payés / ${data.activeTenants} locataires`} color={data.collectionRate >= 80 ? "text-green-700 bg-green-50 dark:bg-green-900/20 border-green-100" : "text-amber-700 bg-amber-50 dark:bg-amber-900/20 border-amber-100"} icon={<Percent size={15} className="text-green-600"/>}/>
         </div>
       </div>
@@ -283,9 +294,9 @@ export default function ReportsPage() {
             <p className="text-2xl font-bold text-green-700">{formatCurrency(data.collectedRents)}</p>
           </div>
           <div className={cardCls + ' p-4'}>
-            {/* ✅ Label mis à jour pour mentionner TVA */}
-            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Commissions TTC (HT {data.commissionRate}%+TVA 18%)</p>
-            <p className="text-2xl font-bold text-blue-700">{formatCurrency(data.totalCommissions)}</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Commission entreprise</p>
+            <p className="text-2xl font-bold text-blue-700">{formatCurrency(data.totalCommissionsHT)}</p>
+            <p className="text-xs text-muted-foreground mt-1">TVA: {formatCurrency(data.totalCommissionsTVA)} | TTC: {formatCurrency(data.totalCommissions)}</p>
           </div>
           <div className={cardCls + ' p-4'}>
             <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">En attente / Retard</p>
@@ -361,6 +372,23 @@ export default function ReportsPage() {
             <div className="text-right">
               <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Bénéfice net du mois</p>
               <p className={`text-4xl font-bold ${data.currentMonthNet >= 0 ? 'text-purple-700' : 'text-red-700'}`}>{formatCurrency(data.currentMonthNet)}</p>
+            </div>
+          </div>
+        </div>
+        <div className={`border-2 rounded-2xl p-6 mt-4 ${data.currentMonthNetEntreprise >= 0 ? 'border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20' : 'border-red-200 bg-red-50 dark:bg-red-900/20'}`}>
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Résultat net entreprise = Commission HT − Dépenses entreprise</p>
+              <div className="flex items-center gap-3 flex-wrap text-sm font-mono">
+                <span className="text-blue-700 font-semibold">{formatCurrency(data.totalCommissionsHT)}</span>
+                <span className="text-muted-foreground">−</span>
+                <span className="text-red-700 font-semibold">{formatCurrency(data.totalEntrepriseExp)}</span>
+                <span className="text-muted-foreground">=</span>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Net entreprise</p>
+              <p className={`text-4xl font-bold ${data.currentMonthNetEntreprise >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>{formatCurrency(data.currentMonthNetEntreprise)}</p>
             </div>
           </div>
         </div>
@@ -529,7 +557,7 @@ export default function ReportsPage() {
           Prévisions mois prochain
           <span className="text-xs font-normal text-muted-foreground">(basées sur la moyenne des {period} derniers mois)</span>
         </h2>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
           <div className="bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-800 rounded-2xl p-5">
             <p className="text-xs font-semibold text-teal-600 uppercase mb-1">Revenus estimés</p>
             <p className="text-2xl font-bold text-teal-700">{formatCurrency(data.forecastRevenue)}</p>
@@ -542,6 +570,35 @@ export default function ReportsPage() {
             <p className="text-xs font-semibold text-purple-600 uppercase mb-1">Bénéfice net prévu</p>
             {/* ✅ Utilise calcCommTTC pour la prévision aussi */}
             <p className="text-2xl font-bold text-purple-700">{formatCurrency(Math.max(0, data.forecastRevenue - calcCommTTC(data.forecastRevenue, data.commissionRate) - data.forecastExpenses))}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-slate-50 dark:bg-slate-800/50 border border-border rounded-2xl p-5">
+          <p className="text-xs font-semibold text-muted-foreground uppercase mb-3">Prévisions bailleur</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase mb-1">Revenus estimés</p>
+              <p className="text-xl font-bold text-green-700">{formatCurrency(data.forecastRevenueBailleur)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground uppercase mb-1">Dépenses prévues</p>
+              <p className="text-xl font-bold text-orange-700">{formatCurrency(data.forecastExpensesBailleur)}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-slate-50 dark:bg-slate-800/50 border border-border rounded-2xl p-5">
+          <p className="text-xs font-semibold text-muted-foreground uppercase mb-3">Prévisions entreprise</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase mb-1">Revenus estimés</p>
+              <p className="text-xl font-bold text-blue-700">{formatCurrency(data.forecastRevenueEntreprise)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground uppercase mb-1">Dépenses prévues</p>
+              <p className="text-xl font-bold text-rose-700">{formatCurrency(data.forecastExpensesEntreprise)}</p>
+            </div>
           </div>
         </div>
       </div>

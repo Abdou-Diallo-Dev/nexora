@@ -34,8 +34,10 @@ export default function AnalyticsPage() {
   const [totals, setTotals] = useState({
     revenue: 0, prevRevenue: 0,
     depenses: 0, prevDepenses: 0,
-    commissions: 0, restitue: 0,
-    recouvrement: 0, impayeRate: 0, cashFlow: 0,
+    commissions: 0, commissionHT: 0, commissionTVA: 0, restitue: 0,
+    depBailleur: 0, depEntreprise: 0,
+    recouvrement: 0, impayeRate: 0, cashFlow: 0, netEntreprise: 0, netBailleur: 0,
+    forecastRevenueBailleur: 0, forecastRevenueEntreprise: 0, forecastDepBailleur: 0, forecastDepEntreprise: 0,
   });
   const [chart, setChart]     = useState<ChartItem[]>([]);
   const [catData, setCatData] = useState<CatItem[]>([]);
@@ -104,7 +106,7 @@ export default function AnalyticsPage() {
 
       // Early-exit if property filter yields no leases
       if (filterProperty && leaseIdsForProperty.length === 0) {
-        setTotals({ revenue:0, prevRevenue:0, depenses:0, prevDepenses:0, commissions:0, restitue:0, recouvrement:0, impayeRate:0, cashFlow:0 });
+        setTotals({ revenue:0, prevRevenue:0, depenses:0, prevDepenses:0, commissions:0, commissionHT:0, commissionTVA:0, restitue:0, depBailleur:0, depEntreprise:0, recouvrement:0, impayeRate:0, cashFlow:0, netEntreprise:0, netBailleur:0, forecastRevenueBailleur:0, forecastRevenueEntreprise:0, forecastDepBailleur:0, forecastDepEntreprise:0 });
         setChart([]); setCatData([]); setLoading(false);
         return;
       }
@@ -160,11 +162,20 @@ export default function AnalyticsPage() {
 
       const totalRevenue  = paid.reduce((s: number, p: any) => s + p.amount, 0);
       const totalDep      = periodExp.reduce((s: number, e: any) => s + e.amount, 0);
-      const totalComm     = totalRevenue * rateWithTVA;
-      const bailleurDep   = (exp || []).filter((e: any) => e.type === 'bailleur').reduce((s: number, e: any) => s + e.amount, 0);
+      const commissionHT  = totalRevenue * rate;
+      const commissionTVA = commissionHT * 0.18;
+      const totalComm     = commissionHT + commissionTVA;
+      const bailleurDep   = periodExp.filter((e: any) => e.type === 'bailleur').reduce((s: number, e: any) => s + e.amount, 0);
+      const entrepriseDep = periodExp.filter((e: any) => e.type === 'entreprise').reduce((s: number, e: any) => s + e.amount, 0);
       const cashFlow      = totalRevenue - totalDep;
       const recouvrement  = allPeriod.length > 0 ? Math.round((paid.length   / allPeriod.length) * 100) : 0;
       const impayeRate    = allPeriod.length > 0 ? Math.round((overdue.length / allPeriod.length) * 100) : 0;
+
+      const monthsForForecast = Math.max(1, months);
+      const forecastRevenueBailleur = Math.round(totalRevenue / monthsForForecast);
+      const forecastRevenueEntreprise = Math.round(forecastRevenueBailleur * rate);
+      const forecastDepBailleur = Math.round(bailleurDep / monthsForForecast);
+      const forecastDepEntreprise = Math.round(entrepriseDep / monthsForForecast);
 
       setTotals({
         revenue:      sumRev(curMo),
@@ -172,10 +183,20 @@ export default function AnalyticsPage() {
         depenses:     sumExp(curMo),
         prevDepenses: sumExp(prevMo),
         commissions:  totalComm,
+        commissionHT,
+        commissionTVA,
         restitue:     Math.max(0, totalRevenue - totalComm - bailleurDep),
+        depBailleur:  bailleurDep,
+        depEntreprise: entrepriseDep,
         recouvrement,
         impayeRate,
         cashFlow,
+        netEntreprise: commissionHT - entrepriseDep,
+        netBailleur: Math.max(0, totalRevenue - totalComm - bailleurDep),
+        forecastRevenueBailleur,
+        forecastRevenueEntreprise,
+        forecastDepBailleur,
+        forecastDepEntreprise,
       });
 
       // ── Chart ──────────────────────────────────────────────────────────────
@@ -183,8 +204,8 @@ export default function AnalyticsPage() {
         const d   = new Date(now.getFullYear(), now.getMonth() - (months - 1) + i, 1);
         const moK = moKey(d);
         const revenue     = sumRev(moK);
-        const expenses    = sumExp(moK);
-        const commissions = revenue * rateWithTVA;
+        const expenses    = periodExp.filter((e: any) => moKey(new Date(e.date)) === moK && e.type === 'entreprise').reduce((s: number, e: any) => s + e.amount, 0);
+        const commissions = revenue * rate;
         return {
           month: format(d, 'MMM yy', { locale: fr }),
           revenue,
@@ -277,7 +298,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-1 text-green-600"><CreditCard size={14}/><p className="text-xs font-semibold uppercase">Revenus du mois</p></div>
           <p className="text-2xl font-bold text-green-700">{formatCurrency(totals.revenue)}</p>
@@ -289,13 +310,27 @@ export default function AnalyticsPage() {
           <GrowthBadge val={-depGrowth}/>
         </div>
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-2xl p-4">
-          <div className="flex items-center gap-2 mb-1 text-blue-600"><Percent size={14}/><p className="text-xs font-semibold uppercase">Commission TTC (HT {commissionRate}%+TVA 18%)</p></div>
-          <p className="text-2xl font-bold text-blue-700">{formatCurrency(totals.commissions)}</p>
+          <div className="flex items-center gap-2 mb-1 text-blue-600"><Percent size={14}/><p className="text-xs font-semibold uppercase">Commission HT entreprise</p></div>
+          <p className="text-2xl font-bold text-blue-700">{formatCurrency(totals.commissionHT)}</p>
+          <p className="text-xs text-muted-foreground">TVA: {formatCurrency(totals.commissionTVA)}</p>
         </div>
         <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 rounded-2xl p-4">
-          <div className="flex items-center gap-2 mb-1 text-purple-600"><Building2 size={14}/><p className="text-xs font-semibold uppercase">Cash flow net</p></div>
-          <p className={`text-2xl font-bold ${totals.cashFlow >= 0 ? 'text-purple-700' : 'text-red-700'}`}>{formatCurrency(totals.cashFlow)}</p>
-          <p className="text-xs text-muted-foreground">Revenus − Dépenses</p>
+          <div className="flex items-center gap-2 mb-1 text-purple-600"><Building2 size={14}/><p className="text-xs font-semibold uppercase">Net bailleur</p></div>
+          <p className="text-2xl font-bold text-purple-700">{formatCurrency(totals.netBailleur)}</p>
+          <p className="text-xs text-muted-foreground">Revenus bailleur - commission TTC - dépenses bailleur</p>
+        </div>
+        <div className={`border rounded-2xl p-4 ${totals.netEntreprise >= 0 ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100' : 'bg-red-50 dark:bg-red-900/20 border-red-100'}`}>
+          <div className={`flex items-center gap-2 mb-1 ${totals.netEntreprise >= 0 ? 'text-emerald-600' : 'text-red-600'}`}><Building2 size={14}/><p className="text-xs font-semibold uppercase">Net entreprise</p></div>
+          <p className={`text-2xl font-bold ${totals.netEntreprise >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>{formatCurrency(totals.netEntreprise)}</p>
+          <p className="text-xs text-muted-foreground">Commission HT - dépenses entreprise</p>
+        </div>
+        <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-1 text-orange-600"><TrendingDown size={14}/><p className="text-xs font-semibold uppercase">Dépenses bailleur</p></div>
+          <p className="text-2xl font-bold text-orange-700">{formatCurrency(totals.depBailleur)}</p>
+        </div>
+        <div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-1 text-rose-600"><TrendingDown size={14}/><p className="text-xs font-semibold uppercase">Dépenses entreprise</p></div>
+          <p className="text-2xl font-bold text-rose-700">{formatCurrency(totals.depEntreprise)}</p>
         </div>
         <div className={`border rounded-2xl p-4 ${totals.recouvrement >= 80 ? 'bg-green-50 dark:bg-green-900/20 border-green-100' : 'bg-amber-50 dark:bg-amber-900/20 border-amber-100'}`}>
           <div className={`flex items-center gap-2 mb-1 ${totals.recouvrement >= 80 ? 'text-green-600' : 'text-amber-600'}`}><TrendingUp size={14}/><p className="text-xs font-semibold uppercase">Taux de recouvrement</p></div>
@@ -304,6 +339,35 @@ export default function AnalyticsPage() {
         <div className={`border rounded-2xl p-4 ${totals.impayeRate === 0 ? 'bg-green-50 dark:bg-green-900/20 border-green-100' : 'bg-red-50 dark:bg-red-900/20 border-red-100'}`}>
           <div className={`flex items-center gap-2 mb-1 ${totals.impayeRate === 0 ? 'text-green-600' : 'text-red-600'}`}><AlertTriangle size={14}/><p className="text-xs font-semibold uppercase">Taux d'impayés</p></div>
           <p className={`text-2xl font-bold ${totals.impayeRate === 0 ? 'text-green-700' : 'text-red-700'}`}>{totals.impayeRate}%</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-slate-50 dark:bg-slate-800/50 border border-border rounded-2xl p-5">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Prévisions bailleur</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase mb-1">Revenus estimés</p>
+              <p className="text-xl font-bold text-green-700">{formatCurrency(totals.forecastRevenueBailleur)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground uppercase mb-1">Dépenses prévues</p>
+              <p className="text-xl font-bold text-orange-700">{formatCurrency(totals.forecastDepBailleur)}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-slate-50 dark:bg-slate-800/50 border border-border rounded-2xl p-5">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Prévisions entreprise</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase mb-1">Revenus estimés</p>
+              <p className="text-xl font-bold text-blue-700">{formatCurrency(totals.forecastRevenueEntreprise)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground uppercase mb-1">Dépenses prévues</p>
+              <p className="text-xl font-bold text-rose-700">{formatCurrency(totals.forecastDepEntreprise)}</p>
+            </div>
+          </div>
         </div>
       </div>
 

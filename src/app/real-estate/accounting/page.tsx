@@ -11,9 +11,9 @@ import { fr } from 'date-fns/locale';
 
 type Summary = {
   totalLoyers: number; totalCommissions: number; commHT: number; commTVA: number; totalDepensesBailleur: number;
-  totalDepensesEntreprise: number; totalRestitue: number; tauxRecouvrement: number;
+  totalDepensesEntreprise: number; totalRestitue: number; tauxRecouvrement: number; netEntreprise: number; netBailleur: number;
 };
-type ChartData = { month: string; loyers: number; commissions: number; depenses: number; restitue: number };
+type ChartData = { month: string; loyers: number; commissionsHT: number; depBailleur: number; depEntreprise: number; netEntreprise: number; netBailleur: number };
 type Transaction = {
   id: string; type: 'paiement'|'depense_bailleur'|'depense_entreprise'|'reversement';
   label: string; amount: number; date: string; status?: string;
@@ -22,7 +22,7 @@ type Transaction = {
 export default function AccountingPage() {
   const { company } = useAuthStore();
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState<Summary>({ totalLoyers:0, totalCommissions:0, commHT:0, commTVA:0, totalDepensesBailleur:0, totalDepensesEntreprise:0, totalRestitue:0, tauxRecouvrement:0 });
+  const [summary, setSummary] = useState<Summary>({ totalLoyers:0, totalCommissions:0, commHT:0, commTVA:0, totalDepensesBailleur:0, totalDepensesEntreprise:0, totalRestitue:0, tauxRecouvrement:0, netEntreprise:0, netBailleur:0 });
   const [chart, setChart] = useState<ChartData[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filterMonth, setFilterMonth] = useState('');
@@ -58,10 +58,12 @@ export default function AccountingPage() {
       const totalDepensesBailleur = E.filter((e: any) => e.type === 'bailleur').reduce((s: number, e: any) => s + e.amount, 0);
       const totalDepensesEntreprise = E.filter((e: any) => e.type === 'entreprise').reduce((s: number, e: any) => s + e.amount, 0);
       const totalRestitue = totalLoyers - totalCommissions - totalDepensesBailleur; // Net bailleur après commission TTC
+      const netEntreprise = commHT - totalDepensesEntreprise;
+      const netBailleur = totalRestitue;
       const paidFull = P.filter((p:any) => p.status === 'paid').length;
       const tauxRecouvrement = P.length > 0 ? Math.round((paidFull / P.length) * 100) : 0;
 
-      setSummary({ totalLoyers, totalCommissions, commHT, commTVA, totalDepensesBailleur, totalDepensesEntreprise, totalRestitue, tauxRecouvrement });
+      setSummary({ totalLoyers, totalCommissions, commHT, commTVA, totalDepensesBailleur, totalDepensesEntreprise, totalRestitue, tauxRecouvrement, netEntreprise, netBailleur });
 
       // Chart 12 months
       const now = new Date();
@@ -69,9 +71,10 @@ export default function AccountingPage() {
         const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
         const mo = String(d.getMonth() + 1) + '/' + String(d.getFullYear());
         const loyers = paid.filter((p: any) => String(p.period_month) + '/' + String(p.period_year) === mo).reduce((s: number, p: any) => s + p.amount, 0);
-        const commissions = loyers * rate;
-        const depenses = E.filter((e: any) => { const ed = new Date(e.date); return String(ed.getMonth()+1)+'/'+String(ed.getFullYear())===mo; }).reduce((s: number, e: any) => s + e.amount, 0);
-        return { month: format(d, 'MMM yy', { locale: fr }), loyers, commissions, depenses, restitue: loyers - commissions - depenses };
+        const commissionsHT = loyers * rate;
+        const depBailleur = E.filter((e: any) => { const ed = new Date(e.date); return e.type === 'bailleur' && String(ed.getMonth()+1)+'/'+String(ed.getFullYear())===mo; }).reduce((s: number, e: any) => s + e.amount, 0);
+        const depEntreprise = E.filter((e: any) => { const ed = new Date(e.date); return e.type === 'entreprise' && String(ed.getMonth()+1)+'/'+String(ed.getFullYear())===mo; }).reduce((s: number, e: any) => s + e.amount, 0);
+        return { month: format(d, 'MMM yy', { locale: fr }), loyers, commissionsHT, depBailleur, depEntreprise, netEntreprise: commissionsHT - depEntreprise, netBailleur: loyers - (commissionsHT * 1.18) - depBailleur };
       });
       setChart(months);
 
@@ -112,13 +115,15 @@ export default function AccountingPage() {
       <PageHeader title="Comptabilité" subtitle="Vue détaillée — Calculs automatiques"/>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Loyers perçus', value: formatCurrency(summary.totalLoyers), icon: <DollarSign size={18}/>, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800' },
-          { label: `Commission TTC (HT ${commissionRate}% + TVA 18%)`, value: formatCurrency(summary.totalCommissions), icon: <Percent size={18}/>, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800' },
+          { label: `Commission HT (${commissionRate}%)`, value: formatCurrency(summary.commHT), icon: <Percent size={18}/>, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800' },
+          { label: 'TVA commission (18%)', value: formatCurrency(summary.commTVA), icon: <Percent size={18}/>, color: 'text-cyan-600', bg: 'bg-cyan-50 dark:bg-cyan-900/20 border-cyan-100 dark:border-cyan-800' },
           { label: 'Dépenses bailleur', value: formatCurrency(summary.totalDepensesBailleur), icon: <Building2 size={18}/>, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-800' },
           { label: 'Dépenses entreprise', value: formatCurrency(summary.totalDepensesEntreprise), icon: <TrendingDown size={18}/>, color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800' },
-          { label: 'À reverser aux bailleurs', value: formatCurrency(Math.max(0, summary.totalRestitue)), icon: <TrendingUp size={18}/>, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800' },
+          { label: 'Net bailleur', value: formatCurrency(Math.max(0, summary.netBailleur)), icon: <TrendingUp size={18}/>, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800' },
+          { label: 'Net entreprise', value: formatCurrency(summary.netEntreprise), icon: <TrendingUp size={18}/>, color: summary.netEntreprise >= 0 ? 'text-emerald-600' : 'text-red-600', bg: summary.netEntreprise >= 0 ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800' },
           { label: 'Taux de recouvrement', value: `${summary.tauxRecouvrement}%`, icon: <CheckCircle size={18}/>, color: summary.tauxRecouvrement >= 80 ? 'text-green-600' : 'text-amber-600', bg: summary.tauxRecouvrement >= 80 ? 'bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800' : 'bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800' },
         ].map((k, i) => (
           <div key={i} className={`border rounded-2xl p-4 ${k.bg}`}>
@@ -129,20 +134,28 @@ export default function AccountingPage() {
       </div>
 
       {/* Formule de calcul */}
-      <div className="bg-slate-50 dark:bg-slate-800/50 border border-border rounded-2xl p-5">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Formule de calcul automatique</p>
-        <div className="flex flex-wrap items-center gap-3 text-sm font-mono">
-          <span className="bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 px-3 py-1.5 rounded-lg">{formatCurrency(summary.totalLoyers)} (loyers)</span>
-          <span className="text-muted-foreground">−</span>
-          <div className="flex flex-col gap-1">
-            <span className="bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 px-3 py-1.5 rounded-lg text-xs">
-              Comm. HT ({commissionRate}%) : {formatCurrency(summary.commHT)} + TVA 18% : {formatCurrency(summary.commTVA)} = <strong>{formatCurrency(summary.totalCommissions)} TTC</strong>
-            </span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-slate-50 dark:bg-slate-800/50 border border-border rounded-2xl p-5">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Aperçu bailleur</p>
+          <div className="flex flex-wrap items-center gap-3 text-sm font-mono">
+            <span className="bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 px-3 py-1.5 rounded-lg">{formatCurrency(summary.totalLoyers)} (loyers)</span>
+            <span className="text-muted-foreground">−</span>
+            <span className="bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 px-3 py-1.5 rounded-lg text-xs">Commission TTC {formatCurrency(summary.totalCommissions)}</span>
+            <span className="text-muted-foreground">−</span>
+            <span className="bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300 px-3 py-1.5 rounded-lg">{formatCurrency(summary.totalDepensesBailleur)} (dépenses bailleur)</span>
+            <span className="text-muted-foreground">=</span>
+            <span className="bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 px-3 py-1.5 rounded-lg font-bold">{formatCurrency(Math.max(0, summary.netBailleur))} net bailleur</span>
           </div>
-          <span className="text-muted-foreground">−</span>
-          <span className="bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300 px-3 py-1.5 rounded-lg">{formatCurrency(summary.totalDepensesBailleur)} (dépenses bailleur)</span>
-          <span className="text-muted-foreground">=</span>
-          <span className="bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 px-3 py-1.5 rounded-lg font-bold">{formatCurrency(Math.max(0, summary.totalRestitue))} à reverser</span>
+        </div>
+        <div className="bg-slate-50 dark:bg-slate-800/50 border border-border rounded-2xl p-5">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Aperçu entreprise</p>
+          <div className="flex flex-wrap items-center gap-3 text-sm font-mono">
+            <span className="bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 px-3 py-1.5 rounded-lg">Commission HT {formatCurrency(summary.commHT)}</span>
+            <span className="text-muted-foreground">−</span>
+            <span className="bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 px-3 py-1.5 rounded-lg">{formatCurrency(summary.totalDepensesEntreprise)} (dépenses entreprise)</span>
+            <span className="text-muted-foreground">=</span>
+            <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 px-3 py-1.5 rounded-lg font-bold">{formatCurrency(summary.netEntreprise)} net entreprise</span>
+          </div>
         </div>
       </div>
 
@@ -155,10 +168,12 @@ export default function AccountingPage() {
             <YAxis tickFormatter={v => (v/1000).toFixed(0)+'k'} tick={{ fontSize:10 }} axisLine={false} tickLine={false}/>
             <Tooltip formatter={(v: number) => formatCurrency(v)}/>
             <Legend iconSize={10} wrapperStyle={{ fontSize:12 }}/>
-            <Bar dataKey="loyers" fill="#22c55e" radius={[3,3,0,0]} name="Loyers"/>
-            <Bar dataKey="commissions" fill="#3b82f6" radius={[3,3,0,0]} name="Commissions"/>
-            <Bar dataKey="depenses" fill="#f97316" radius={[3,3,0,0]} name="Dépenses"/>
-            <Bar dataKey="restitue" fill="#a855f7" radius={[3,3,0,0]} name="À reverser"/>
+            <Bar dataKey="loyers" fill="#22c55e" radius={[3,3,0,0]} name="Revenus bailleur"/>
+            <Bar dataKey="commissionsHT" fill="#3b82f6" radius={[3,3,0,0]} name="Commission HT entreprise"/>
+            <Bar dataKey="depBailleur" fill="#f97316" radius={[3,3,0,0]} name="Dépenses bailleur"/>
+            <Bar dataKey="depEntreprise" fill="#ef4444" radius={[3,3,0,0]} name="Dépenses entreprise"/>
+            <Bar dataKey="netEntreprise" fill="#10b981" radius={[3,3,0,0]} name="Net entreprise"/>
+            <Bar dataKey="netBailleur" fill="#a855f7" radius={[3,3,0,0]} name="Net bailleur"/>
           </BarChart>
         </ResponsiveContainer>
       </div>
