@@ -24,6 +24,7 @@ const ALL_RE_ITEMS: NavItem[] = [
   { key:'properties',       href:'/real-estate/properties',        label:'Biens immobiliers',   icon:<Building2 size={15}/> },
   { key:'apartments',       href:'/real-estate/properties',        label:'Appartements',        icon:<Home size={15}/> },
   { key:'tenants',          href:'/real-estate/tenants',           label:'Locataires',          icon:<Users size={15}/> },
+  { key:'notices',          href:'/real-estate/notices',           label:'Préavis & Sorties',   icon:<Bell size={15}/> },
   { key:'leases',           href:'/real-estate/leases',            label:'Contrats de bail',    icon:<FileText size={15}/> },
   { key:'inspections',      href:'/real-estate/inspections',       label:'États des lieux',     icon:<ClipboardCheck size={15}/> },
   { key:'terminations',     href:'/real-estate/terminations',      label:'Résiliations',        icon:<ScrollText size={15}/> },
@@ -53,7 +54,7 @@ const ALL_RE_ITEMS: NavItem[] = [
 
 const RE_GROUP_MAP: { label: string; keys: string[]; adminOnly?: boolean }[] = [
   { label:'Dashboard',     keys:['dashboard'] },
-  { label:'Biens',         keys:['properties','apartments','tenants','leases','inspections','terminations','convention'] },
+  { label:'Biens',         keys:['properties','apartments','tenants','notices','leases','inspections','terminations','convention'] },
   { label:'Paiements',     keys:['payments','onlinePayment','expenses','accounting','disbursements'] },
   { label:'Locataires',    keys:['maintenance','notifications'] },
   { label:'Analyse',       keys:['analytics','stats','reports','reports-terrain'] },
