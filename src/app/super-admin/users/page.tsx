@@ -90,26 +90,65 @@ export default function SuperAdminUsersPage() {
       .then(({ data }) => setCompanies((data||[]) as Company[]));
   }, [user?.role]);
 
+  const upsertListItem = (updatedUser?: FullUser | null) => {
+    if (!updatedUser) return;
+    setItems((prev) => {
+      const exists = prev.some((item) => item.id === updatedUser.id);
+      if (!exists) return [updatedUser, ...prev].slice(0, pageSize);
+      return prev.map((item) => item.id === updatedUser.id ? updatedUser : item);
+    });
+  };
+
   const approveTenant = async (u: FullUser) => {
-    await createClient().from('users').update({ is_active:true } as never).eq('id', u.id);
-    setItems(prev => prev.map(x => x.id===u.id ? {...x, is_active:true} : x));
-    toast.success(u.full_name+' approuve !');
+    try {
+      const res = await fetch('/api/admin/update-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: u.id, is_active: true }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Erreur activation');
+      upsertListItem((json.user || null) as FullUser | null);
+      toast.success(u.full_name+' approuve !');
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur activation');
+    }
   };
 
   const toggleActive = async (u: FullUser) => {
     setTogglingId(u.id);
-    await createClient().from('users').update({ is_active:!u.is_active } as never).eq('id', u.id);
-    setItems(prev => prev.map(x => x.id===u.id ? {...x, is_active:!x.is_active} : x));
-    toast.success(u.is_active ? 'Utilisateur desactive' : 'Utilisateur active');
+    try {
+      const res = await fetch('/api/admin/update-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: u.id, is_active: !u.is_active }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Erreur mise a jour');
+      upsertListItem((json.user || null) as FullUser | null);
+      toast.success(u.is_active ? 'Utilisateur desactive' : 'Utilisateur active');
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur mise a jour');
+    }
     setTogglingId(null);
   };
 
   const saveRole = async () => {
     if (!editingUser) return;
     setSaving(true);
-    await createClient().from('users').update({ role:editRole } as never).eq('id', editingUser.id);
-    setItems(prev => prev.map(x => x.id===editingUser.id ? {...x, role:editRole} : x));
-    toast.success('Role mis a jour');
+    try {
+      const res = await fetch('/api/admin/update-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: editingUser.id, role: editRole }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Erreur role');
+      upsertListItem((json.user || null) as FullUser | null);
+      toast.success('Role mis a jour');
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur role');
+    }
     setSaving(false);
     setEditingUser(null);
   };
@@ -153,9 +192,19 @@ export default function SuperAdminUsersPage() {
   const promoteToSuperAdmin = async () => {
     if (!promotingUser) return;
     setPromoting(true);
-    await createClient().from('users').update({ role: 'super_admin' } as never).eq('id', promotingUser.id);
-    setItems(prev => prev.map(x => x.id===promotingUser.id ? {...x, role:'super_admin' as UserRole} : x));
-    toast.success(promotingUser.full_name + ' est maintenant Super Admin !');
+    try {
+      const res = await fetch('/api/admin/update-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: promotingUser.id, role: 'super_admin' }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Erreur promotion');
+      upsertListItem((json.user || null) as FullUser | null);
+      toast.success(promotingUser.full_name + ' est maintenant Super Admin !');
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur promotion');
+    }
     setPromotingUser(null);
     setPromoting(false);
   };
@@ -180,6 +229,10 @@ export default function SuperAdminUsersPage() {
       const json = await res.json();
       if (!res.ok) { toast.error(json.error || 'Erreur création'); setCreating(false); return; }
       toast.success('Compte créé avec succès !');
+      if (json.user) {
+        upsertListItem(json.user as FullUser);
+        setTotal((t) => t + 1);
+      }
       setShowCreate(false);
       setNewUser({ full_name:'', email:'', password:'', role:'agent', company_id:'' });
       load();
