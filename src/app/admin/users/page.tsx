@@ -36,7 +36,7 @@ const ROLE_DESC: Record<string,string> = {
 };
 
 export default function SuperAdminUsersPage() {
-  const { user } = useAuthStore();
+  const { user, company } = useAuthStore();
   const [items, setItems] = useState<FullUser[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [total, setTotal] = useState(0);
@@ -56,13 +56,14 @@ export default function SuperAdminUsersPage() {
   const [creating, setCreating] = useState(false);
   const [newUser, setNewUser] = useState({ full_name:'', email:'', password:'', role:'agent' as UserRole, company_id:'' });
 
-  const isSA = user?.role === 'super_admin';
+  const isAdmin = user?.role === 'admin';
 
   const load = () => {
-    if (!isSA) return;
+    if (!isAdmin || !company?.id) return;
     setLoading(true);
     let q = createClient().from('users')
       .select('*,companies(name)', { count:'exact' })
+      .eq('company_id', company.id)
       .order('created_at', { ascending:false })
       .range(offset, offset+pageSize-1);
     if (filterRole)                q = q.eq('role', filterRole);
@@ -72,34 +73,72 @@ export default function SuperAdminUsersPage() {
     q.then(({ data, count }) => { setItems((data||[]) as FullUser[]); setTotal(count||0); setLoading(false); });
   };
 
-  useEffect(() => { load(); }, [user?.role, debounced, filterRole, filterStatus, offset, pageSize]);
+  useEffect(() => { load(); }, [user?.role, company?.id, debounced, filterRole, filterStatus, offset, pageSize]);
 
   useEffect(() => {
-    if (user?.role !== 'super_admin') return;
-    createClient().from('companies').select('id,name').eq('is_active', true).order('name')
-      .then(({ data }) => setCompanies((data||[]) as Company[]));
-  }, [user?.role]);
+    if (!company?.id || !company?.name) return;
+    setCompanies([{ id: company.id, name: company.name }]);
+  }, [company?.id, company?.name]);
+
+  const upsertListItem = (updatedUser?: FullUser | null) => {
+    if (!updatedUser) return;
+    setItems((prev) => {
+      const exists = prev.some((item) => item.id === updatedUser.id);
+      if (!exists) return [updatedUser, ...prev].slice(0, pageSize);
+      return prev.map((item) => item.id === updatedUser.id ? updatedUser : item);
+    });
+  };
 
   const approveTenant = async (u: FullUser) => {
-    await createClient().from('users').update({ is_active:true } as never).eq('id', u.id);
-    setItems(prev => prev.map(x => x.id===u.id ? {...x, is_active:true} : x));
-    toast.success(u.full_name+' approuve !');
+    try {
+      const res = await fetch('/api/admin/update-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: u.id, is_active: true }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Erreur activation');
+      upsertListItem((json.user || null) as FullUser | null);
+      toast.success(u.full_name+' approuve !');
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur activation');
+    }
   };
 
   const toggleActive = async (u: FullUser) => {
     setTogglingId(u.id);
-    await createClient().from('users').update({ is_active:!u.is_active } as never).eq('id', u.id);
-    setItems(prev => prev.map(x => x.id===u.id ? {...x, is_active:!x.is_active} : x));
-    toast.success(u.is_active ? 'Utilisateur desactive' : 'Utilisateur active');
+    try {
+      const res = await fetch('/api/admin/update-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: u.id, is_active: !u.is_active }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Erreur mise a jour');
+      upsertListItem((json.user || null) as FullUser | null);
+      toast.success(u.is_active ? 'Utilisateur desactive' : 'Utilisateur active');
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur mise a jour');
+    }
     setTogglingId(null);
   };
 
   const saveRole = async () => {
     if (!editingUser) return;
     setSaving(true);
-    await createClient().from('users').update({ role:editRole } as never).eq('id', editingUser.id);
-    setItems(prev => prev.map(x => x.id===editingUser.id ? {...x, role:editRole} : x));
-    toast.success('Role mis a jour');
+    try {
+      const res = await fetch('/api/admin/update-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: editingUser.id, role: editRole }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Erreur role');
+      upsertListItem((json.user || null) as FullUser | null);
+      toast.success('Role mis a jour');
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur role');
+    }
     setSaving(false);
     setEditingUser(null);
   };
@@ -131,33 +170,34 @@ export default function SuperAdminUsersPage() {
     if (newUser.password.length < 6) { toast.error('Mot de passe minimum 6 caracteres'); return; }
     setCreating(true);
     try {
-      const { data: signUpData, error: signUpError } = await createClient().auth.signUp({
-        email: newUser.email,
-        password: newUser.password,
-        options: { data: { full_name: newUser.full_name }, emailRedirectTo: window.location.origin + '/auth/login' },
+      const res = await fetch('/api/admin/create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: newUser.email,
+          password: newUser.password,
+          full_name: newUser.full_name,
+          role: newUser.role,
+          company_id: company?.id || null,
+          is_active: true,
+        }),
       });
-      if (signUpError) { toast.error(signUpError.message); setCreating(false); return; }
-      const uid = signUpData.user?.id;
-      if (!uid) { toast.error('Erreur creation compte'); setCreating(false); return; }
-
-      await createClient().from('users').upsert({
-        id: uid, email: newUser.email, full_name: newUser.full_name,
-        role: newUser.role, company_id: newUser.company_id || null, is_active: true,
-      } as never);
-
-      await createClient().from('users')
-        .update({ role: newUser.role, company_id: newUser.company_id || null, full_name: newUser.full_name, is_active: true } as never)
-        .eq('id', uid);
-
+      const json = await res.json();
+      if (!res.ok) { toast.error(json.error || 'Erreur creation'); setCreating(false); return; }
       toast.success('Compte cree !');
+      if (json.user) {
+        upsertListItem(json.user as FullUser);
+        setTotal((t) => t + 1);
+      } else {
+        load();
+      }
       setShowCreate(false);
-      setNewUser({ full_name:'', email:'', password:'', role:'agent', company_id:'' });
-      load();
+      setNewUser({ full_name:'', email:'', password:'', role:'agent', company_id:company?.id || '' });
     } catch (e: any) { toast.error(e.message || 'Erreur'); }
     setCreating(false);
   };
 
-  if (!isSA) return <div className="text-center py-16 text-muted-foreground">Acces refuse</div>;
+  if (!isAdmin) return <div className="text-center py-16 text-muted-foreground">Acces refuse</div>;
 
   return (
     <div>
