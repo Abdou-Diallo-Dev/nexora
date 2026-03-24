@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Home, Users, CreditCard, Wrench, AlertTriangle, Clock, FileText, ChevronLeft, ChevronRight, MapPin, CalendarRange } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { calculateCommission, computeLandlordNet } from '@/lib/commission';
 import { useAuthStore, UserRole } from '@/lib/store';
 import { StatCard, LoadingSpinner, Badge, cardCls, btnPrimary } from '@/components/ui';
 import { formatCurrency, formatDate, getPropertyTypeLabel } from '@/lib/utils';
@@ -79,7 +80,7 @@ export default function REDashboard() {
       sb.from('rent_payments').select('id,amount,status,period_month,period_year,tenant_id').eq('company_id', cid).limit(500),
       sb.from('tenant_tickets').select('id,status').eq('company_id', cid),
       sb.from('expenses').select('id,type,amount').eq('company_id', cid).limit(500),
-      sb.from('companies').select('commission_rate').eq('id', cid).maybeSingle(),
+      sb.from('companies').select('commission_rate,commission_mode,vat_rate').eq('id', cid).maybeSingle(),
       sb.from('tenant_tickets').select('id,title,category,priority,status,created_at,tenants(first_name,last_name)').eq('company_id', cid).eq('status','open').order('created_at',{ascending:false}).limit(5),
       sb.from('field_activities').select('id,activity_date,role_label').eq('company_id', cid).limit(300),
     ]).then(([{data:propsD},{data:leases},{data:payments},{data:tickets},{data:exps},{data:compD},{data:tenantTix},{data:outingsD,error:outingsErr}]) => {
@@ -91,7 +92,7 @@ export default function REDashboard() {
       const TX  = (tenantTix||[]) as any[];
       const OUT = outingsErr ? [] : ((outingsD||[]) as any[]);
 
-      const commRate = Number((compD as any)?.commission_rate ?? 10);
+      const companyCommission = compD as any;
       const now = new Date();
       const thisMonth = `${now.getMonth()+1}/${now.getFullYear()}`;
       const weekStart = new Date(now);
@@ -105,10 +106,10 @@ export default function REDashboard() {
 
       const monthlyRevenue = thisMonthPaid.reduce((s:number,p:any) => s+Number(p.amount), 0);
       const totalLoyers    = allPaid.reduce((s:number,p:any) => s+Number(p.amount), 0);
-      const totalComm      = totalLoyers * (commRate/100);
+      const totalComm      = calculateCommission(totalLoyers, companyCommission).landlordCommission;
       const totalDep       = E.reduce((s:number,e:any) => s+Number(e.amount), 0);
       const bailleurDep    = E.filter((e:any)=>e.type==='bailleur').reduce((s:number,e:any) => s+Number(e.amount), 0);
-      const totalRestitue  = Math.max(0, totalLoyers - totalComm - bailleurDep);
+      const totalRestitue  = computeLandlordNet(totalLoyers, bailleurDep, companyCommission);
       const tauxRecouvrement = PAY.length > 0 ? Math.round((allPaid.length/PAY.length)*100) : 0;
 
       const activeLeases = L.filter((l:any) => l.status==='active');

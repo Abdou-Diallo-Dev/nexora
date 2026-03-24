@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, Home, Users, Wrench, AlertTriangle, CheckCircle, Clock, Percent, ArrowUp, ArrowDown, Download } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { calculateCommission, computeCompanyNet, computeLandlordNet, getCommissionSummaryLabel } from '@/lib/commission';
 import { useAuthStore } from '@/lib/store';
 import { LoadingSpinner, cardCls, selectCls, PageHeader } from '@/components/ui';
 import { formatCurrency, formatDate } from '@/lib/utils';
@@ -10,13 +11,12 @@ import { format, subMonths, startOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 // ── Formule centralisée (identique à la Comptabilité) ─────────────────────────
-const calcCommTTC = (revenue: number, rate: number) => revenue * (rate / 100) * 1.18;
-
 type ReportData = {
   currentMonthRevenue: number; currentMonthExpenses: number; currentMonthNet: number; currentMonthNetEntreprise: number; currentMonthNetBailleur: number;
   prevMonthRevenue: number; prevMonthExpenses: number;
   collectionRate: number; totalProperties: number; totalTenants: number;
   commissionRate: number; totalCommissions: number; totalCommissionsHT: number; totalCommissionsTVA: number;
+  commissionMode: string; vatRate: number;
   collectedRents: number; pendingRents: number; overdueRents: number;
   revenueGrowth: number;
   expensesByCategory: { name: string; amount: number; color: string }[];
@@ -74,14 +74,15 @@ export default function ReportsPage() {
       sb.from('properties').select('id,name,status,rent_amount').eq('company_id', cid),
       sb.from('leases').select('id,status,tenant_id,tenants(first_name,last_name)').eq('company_id', cid).eq('status', 'active'),
       sb.from('tenant_tickets').select('id,status,category').eq('company_id', cid),
-      sb.from('companies').select('commission_rate').eq('id', cid).maybeSingle(),
+      sb.from('companies').select('commission_rate,commission_mode,vat_rate').eq('id', cid).maybeSingle(),
     ]).then(([{ data: pays }, { data: exps }, { data: props }, { data: leas }, { data: tix }, { data: comp }]) => {
       const P   = (pays  || []) as any[];
       const E   = (exps  || []) as any[];
       const PR  = (props || []) as any[];
       const L   = (leas  || []) as any[];
       const T   = (tix   || []) as any[];
-      const commRate = (comp as any)?.commission_rate ?? 10;
+      const commissionConfig = (comp as any) || {};
+      const commRate = commissionConfig?.commission_rate ?? 10;
 
       // ✅ Inclure les partiels (identique à la Comptabilité)
       const paid    = P.filter((p: any) => p.status === 'paid' || p.status === 'partial');
@@ -114,13 +115,14 @@ export default function ReportsPage() {
       const revenueGrowth        = prevMonthRevenue > 0 ? Math.round(((currentMonthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100) : 0;
 
       // ✅ Commission TTC avec TVA 18% (identique à la Comptabilité)
-      const currentMonthCommissionsHT = currentMonthRevenue * (commRate / 100);
-      const currentMonthCommissionsTVA = currentMonthCommissionsHT * 0.18;
-      const currentMonthCommissions = currentMonthCommissionsHT + currentMonthCommissionsTVA;
+      const currentMonthCommission = calculateCommission(currentMonthRevenue, commissionConfig);
+      const currentMonthCommissionsHT = currentMonthCommission.companyRevenue;
+      const currentMonthCommissionsTVA = currentMonthCommission.commissionTVA;
+      const currentMonthCommissions = currentMonthCommission.landlordCommission;
       const currentMonthBailleurExpenses = curExp.filter((e: any) => e.type === 'bailleur').reduce((s: number, e: any) => s + e.amount, 0);
       const currentMonthEntrepriseExpenses = curExp.filter((e: any) => e.type === 'entreprise').reduce((s: number, e: any) => s + e.amount, 0);
-      const currentMonthNetBailleur = currentMonthRevenue - currentMonthCommissions - currentMonthBailleurExpenses;
-      const currentMonthNetEntreprise = currentMonthCommissionsHT - currentMonthEntrepriseExpenses;
+      const currentMonthNetBailleur = computeLandlordNet(currentMonthRevenue, currentMonthBailleurExpenses, commissionConfig);
+      const currentMonthNetEntreprise = computeCompanyNet(currentMonthRevenue, currentMonthEntrepriseExpenses, commissionConfig);
       const currentMonthNet         = currentMonthNetBailleur;
 
       const collectionRate = periodAll.length > 0
@@ -187,14 +189,14 @@ export default function ReportsPage() {
         const revenue  = paid.filter((p: any) => moKey(new Date(p.period_year, p.period_month - 1, 1)) === moK).reduce((s: number, p: any) => s + p.amount, 0);
         const expenses = E.filter((e: any) => moKey(new Date(e.date)) === moK).reduce((s: number, e: any) => s + e.amount, 0);
         // ✅ Commission TTC
-        const commissions = calcCommTTC(revenue, commRate);
-        return { month: format(d, 'MMM yy', { locale: fr }), revenue, expenses, commissions, net: revenue - commissions - expenses };
+        const commissions = calculateCommission(revenue, commissionConfig).landlordCommission;
+        return { month: format(d, 'MMM yy', { locale: fr }), revenue, expenses, commissions, net: computeLandlordNet(revenue, expenses, commissionConfig) };
       });
 
       const last3           = monthlyChart.slice(-3);
       const forecastRevenue  = Math.round(last3.reduce((s, m) => s + m.revenue,  0) / last3.length);
       const forecastExpenses = Math.round(last3.reduce((s, m) => s + m.expenses, 0) / last3.length);
-      const forecastRevenueEntreprise = Math.round(forecastRevenue * (commRate / 100));
+      const forecastRevenueEntreprise = Math.round(calculateCommission(forecastRevenue, commissionConfig).companyRevenue);
       const forecastRevenueBailleur = forecastRevenue;
       const forecastExpensesBailleur = Math.round(totalBailleurExp / Math.max(1, months));
       const forecastExpensesEntreprise = Math.round(totalEntrepriseExp / Math.max(1, months));
@@ -203,7 +205,7 @@ export default function ReportsPage() {
         currentMonthRevenue, currentMonthExpenses, currentMonthNet, currentMonthNetEntreprise, currentMonthNetBailleur,
         prevMonthRevenue, prevMonthExpenses,
         collectionRate, totalProperties: PR.length, totalTenants: L.length,
-        commissionRate: commRate, totalCommissions: currentMonthCommissions, totalCommissionsHT: currentMonthCommissionsHT, totalCommissionsTVA: currentMonthCommissionsTVA,
+        commissionRate: commRate, totalCommissions: currentMonthCommissions, totalCommissionsHT: currentMonthCommissionsHT, totalCommissionsTVA: currentMonthCommissionsTVA, commissionMode: commissionConfig.commission_mode ?? 'ttc', vatRate: commissionConfig.vat_rate ?? 18,
         collectedRents: currentMonthRevenue,
         pendingRents:  periodAll.filter((p: any) => p.status === 'pending').reduce((s: number, p: any) => s + p.amount, 0),
         overdueRents:  periodAll.filter((p: any) => p.status === 'late' || p.status === 'overdue').reduce((s: number, p: any) => s + p.amount, 0),
@@ -222,6 +224,11 @@ export default function ReportsPage() {
 
   if (loading) return <div className="flex items-center justify-center h-64"><LoadingSpinner size={36}/></div>;
   if (!data) return null;
+  const commissionLabel = getCommissionSummaryLabel({
+    commission_rate: data.commissionRate,
+    commission_mode: data.commissionMode,
+    vat_rate: data.vatRate,
+  });
 
   const Kpi = ({ label, value, sub, color, icon }: { label: string; value: string; sub?: string; color: string; icon: React.ReactNode }) => (
     <div className={`border rounded-2xl p-4 ${color}`}>
@@ -294,9 +301,9 @@ export default function ReportsPage() {
             <p className="text-2xl font-bold text-green-700">{formatCurrency(data.collectedRents)}</p>
           </div>
           <div className={cardCls + ' p-4'}>
-            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Commission entreprise</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">{commissionLabel}</p>
             <p className="text-2xl font-bold text-blue-700">{formatCurrency(data.totalCommissionsHT)}</p>
-            <p className="text-xs text-muted-foreground mt-1">TVA: {formatCurrency(data.totalCommissionsTVA)} | TTC: {formatCurrency(data.totalCommissions)}</p>
+            <p className="text-xs text-muted-foreground mt-1">TVA: {formatCurrency(data.totalCommissionsTVA)} ({data.vatRate}%) | Preleve bailleur: {formatCurrency(data.totalCommissions)}</p>
           </div>
           <div className={cardCls + ' p-4'}>
             <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">En attente / Retard</p>
@@ -568,8 +575,7 @@ export default function ReportsPage() {
           </div>
           <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 rounded-2xl p-5">
             <p className="text-xs font-semibold text-purple-600 uppercase mb-1">Bénéfice net prévu</p>
-            {/* ✅ Utilise calcCommTTC pour la prévision aussi */}
-            <p className="text-2xl font-bold text-purple-700">{formatCurrency(Math.max(0, data.forecastRevenue - calcCommTTC(data.forecastRevenue, data.commissionRate) - data.forecastExpenses))}</p>
+            <p className="text-2xl font-bold text-purple-700">{formatCurrency(computeLandlordNet(data.forecastRevenue, data.forecastExpenses, { commission_rate: data.commissionRate, commission_mode: data.commissionMode, vat_rate: data.vatRate }))}</p>
           </div>
         </div>
       </div>

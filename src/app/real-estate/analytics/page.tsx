@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { calculateCommission, computeCompanyNet, computeLandlordNet, getCommissionSummaryLabel, normalizeCommissionSettings } from '@/lib/commission';
 import { useAuthStore } from '@/lib/store';
 import { PageHeader, LoadingSpinner, selectCls } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
@@ -28,7 +29,7 @@ export default function AnalyticsPage() {
   const [filterTenant, setFilterTenant]     = useState('');
   const [properties, setProperties]         = useState<{ id: string; name: string }[]>([]);
   const [tenants, setTenants]               = useState<{ id: string; name: string }[]>([]);
-  const [commissionRate, setCommissionRate] = useState(10);
+  const [commission, setCommission] = useState<any>({ commission_rate: 10, commission_mode: 'ttc', vat_rate: 18 });
   const [exporting, setExporting]           = useState(false);
 
   const [totals, setTotals] = useState({
@@ -55,7 +56,7 @@ export default function AnalyticsPage() {
           expenses: totals.depenses, commissions: totals.commissions,
           net: totals.cashFlow, collectionRate: totals.recouvrement,
           impayeRate: totals.impayeRate, chart, expCats: catData,
-          commissionRate, period: quick === 'month' ? 1 : parseInt(quick),
+          commissionRate: normalizeCommissionSettings(commission).commissionRate, period: quick === 'month' ? 1 : parseInt(quick),
         },
         company?.name || 'Nexora',
         (company as any)?.logo_url   || null,
@@ -75,8 +76,8 @@ export default function AnalyticsPage() {
       .then(({ data }) =>
         setTenants(((data || []) as any[]).map(t => ({ id: t.id, name: `${t.first_name} ${t.last_name}` })))
       );
-    sb.from('companies').select('commission_rate').eq('id', company.id).maybeSingle()
-      .then(({ data }) => setCommissionRate((data as any)?.commission_rate ?? 10));
+    sb.from('companies').select('commission_rate,commission_mode,vat_rate').eq('id', company.id).maybeSingle()
+      .then(({ data }) => setCommission((data as any) || { commission_rate: 10, commission_mode: 'ttc', vat_rate: 18 }));
   }, [company?.id]);
 
   // ── Analytics data ───────────────────────────────────────────────────────────
@@ -90,8 +91,6 @@ export default function AnalyticsPage() {
       const now     = new Date();
       const months  = quick === 'month' ? 1 : parseInt(quick);
       const start   = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
-      const rate        = commissionRate / 100;
-      const rateWithTVA = rate * 1.18; // TTC
 
       // ── Lease IDs for property filter ──────────────────────────────────────
       const leaseIdsForProperty: string[] = [];
@@ -162,9 +161,10 @@ export default function AnalyticsPage() {
 
       const totalRevenue  = paid.reduce((s: number, p: any) => s + p.amount, 0);
       const totalDep      = periodExp.reduce((s: number, e: any) => s + e.amount, 0);
-      const commissionHT  = totalRevenue * rate;
-      const commissionTVA = commissionHT * 0.18;
-      const totalComm     = commissionHT + commissionTVA;
+      const commissionTotals = calculateCommission(totalRevenue, commission);
+      const commissionHT  = commissionTotals.companyRevenue;
+      const commissionTVA = commissionTotals.commissionTVA;
+      const totalComm     = commissionTotals.landlordCommission;
       const bailleurDep   = periodExp.filter((e: any) => e.type === 'bailleur').reduce((s: number, e: any) => s + e.amount, 0);
       const entrepriseDep = periodExp.filter((e: any) => e.type === 'entreprise').reduce((s: number, e: any) => s + e.amount, 0);
       const cashFlow      = totalRevenue - totalDep;
@@ -173,7 +173,7 @@ export default function AnalyticsPage() {
 
       const monthsForForecast = Math.max(1, months);
       const forecastRevenueBailleur = Math.round(totalRevenue / monthsForForecast);
-      const forecastRevenueEntreprise = Math.round(forecastRevenueBailleur * rate);
+      const forecastRevenueEntreprise = Math.round(calculateCommission(forecastRevenueBailleur, commission).companyRevenue);
       const forecastDepBailleur = Math.round(bailleurDep / monthsForForecast);
       const forecastDepEntreprise = Math.round(entrepriseDep / monthsForForecast);
 
@@ -185,14 +185,14 @@ export default function AnalyticsPage() {
         commissions:  totalComm,
         commissionHT,
         commissionTVA,
-        restitue:     Math.max(0, totalRevenue - totalComm - bailleurDep),
+        restitue:     computeLandlordNet(totalRevenue, bailleurDep, commission),
         depBailleur:  bailleurDep,
         depEntreprise: entrepriseDep,
         recouvrement,
         impayeRate,
         cashFlow,
-        netEntreprise: commissionHT - entrepriseDep,
-        netBailleur: Math.max(0, totalRevenue - totalComm - bailleurDep),
+        netEntreprise: computeCompanyNet(totalRevenue, entrepriseDep, commission),
+        netBailleur: computeLandlordNet(totalRevenue, bailleurDep, commission),
         forecastRevenueBailleur,
         forecastRevenueEntreprise,
         forecastDepBailleur,
@@ -205,13 +205,13 @@ export default function AnalyticsPage() {
         const moK = moKey(d);
         const revenue     = sumRev(moK);
         const expenses    = periodExp.filter((e: any) => moKey(new Date(e.date)) === moK && e.type === 'entreprise').reduce((s: number, e: any) => s + e.amount, 0);
-        const commissions = revenue * rate;
+        const commissions = calculateCommission(revenue, commission).landlordCommission;
         return {
           month: format(d, 'MMM yy', { locale: fr }),
           revenue,
           expenses,
           commissions,
-          net: revenue - commissions - expenses,
+          net: computeCompanyNet(revenue, expenses, commission),
         };
       });
       setChart(monthsArr);
@@ -232,11 +232,13 @@ export default function AnalyticsPage() {
     };
 
     run();
-  }, [company?.id, quick, filterProperty, filterTenant, commissionRate]);
+  }, [company?.id, quick, filterProperty, filterTenant, commission]);
 
   // ── Derived ──────────────────────────────────────────────────────────────────
   const revenueGrowth = totals.prevRevenue  > 0 ? Math.round(((totals.revenue   - totals.prevRevenue)  / totals.prevRevenue)  * 100) : 0;
   const depGrowth     = totals.prevDepenses > 0 ? Math.round(((totals.depenses  - totals.prevDepenses) / totals.prevDepenses) * 100) : 0;
+  const commissionLabel = getCommissionSummaryLabel(commission);
+  const commissionSettings = normalizeCommissionSettings(commission);
 
   const GrowthBadge = ({ val }: { val: number }) => (
     <span className={`inline-flex items-center gap-0.5 text-xs font-semibold ${val >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -310,14 +312,14 @@ export default function AnalyticsPage() {
           <GrowthBadge val={-depGrowth}/>
         </div>
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-2xl p-4">
-          <div className="flex items-center gap-2 mb-1 text-blue-600"><Percent size={14}/><p className="text-xs font-semibold uppercase">Commission HT entreprise</p></div>
+          <div className="flex items-center gap-2 mb-1 text-blue-600"><Percent size={14}/><p className="text-xs font-semibold uppercase">{commissionLabel}</p></div>
           <p className="text-2xl font-bold text-blue-700">{formatCurrency(totals.commissionHT)}</p>
-          <p className="text-xs text-muted-foreground">TVA: {formatCurrency(totals.commissionTVA)}</p>
+          <p className="text-xs text-muted-foreground">TVA: {formatCurrency(totals.commissionTVA)} ({commissionSettings.vatRate}%)</p>
         </div>
         <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-1 text-purple-600"><Building2 size={14}/><p className="text-xs font-semibold uppercase">Net bailleur</p></div>
           <p className="text-2xl font-bold text-purple-700">{formatCurrency(totals.netBailleur)}</p>
-          <p className="text-xs text-muted-foreground">Revenus bailleur - commission TTC - dépenses bailleur</p>
+          <p className="text-xs text-muted-foreground">Revenus bailleur - commission appliquee - depenses bailleur</p>
         </div>
         <div className={`border rounded-2xl p-4 ${totals.netEntreprise >= 0 ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100' : 'bg-red-50 dark:bg-red-900/20 border-red-100'}`}>
           <div className={`flex items-center gap-2 mb-1 ${totals.netEntreprise >= 0 ? 'text-emerald-600' : 'text-red-600'}`}><Building2 size={14}/><p className="text-xs font-semibold uppercase">Net entreprise</p></div>

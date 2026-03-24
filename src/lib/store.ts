@@ -22,6 +22,9 @@ export interface AppCompany {
   email?: string | null;
   phone?: string | null;
   address?: string | null;
+  commission_rate?: number | null;
+  commission_mode?: 'none' | 'ht' | 'ttc' | null;
+  vat_rate?: number | null;
   modules: string[];
   plan: string;
   is_active: boolean;

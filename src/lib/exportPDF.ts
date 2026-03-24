@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { calculateCommission, computeLandlordNet, getCommissionSummaryLabel } from '@/lib/commission';
 
 function formatCFA(n: number): string {
   return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
@@ -192,7 +193,7 @@ export async function exportStatsPDF(data: any, company: string, logoUrl?: strin
   kpiBox(doc, 10+(kpiW+gap)*3, y, kpiW, kpiH, 'Bénéfice net', formatCFA(data.net||0), [233, 213, 255]);
   y += kpiH + gap;
 
-  kpiBox(doc, 10, y, kpiW, kpiH, `Commissions (${data.commissionRate||10}%)`, formatCFA(data.commissions||0), [219, 234, 254]);
+  kpiBox(doc, 10, y, kpiW, kpiH, getCommissionSummaryLabel({ commission_rate: data.commissionRate, commission_mode: data.commissionMode, vat_rate: data.vatRate }), formatCFA(data.commissions||0), [219, 234, 254]);
   kpiBox(doc, 10+kpiW+gap, y, kpiW, kpiH, 'Total dépenses', formatCFA(data.expenses||0), [254, 226, 226]);
   kpiBox(doc, 10+(kpiW+gap)*2, y, kpiW, kpiH, 'Taux recouvrement', `${data.collectionRate||0}%`, [220, 252, 231]);
   kpiBox(doc, 10+(kpiW+gap)*3, y, kpiW, kpiH, "Taux d'impayés", `${data.impayeRate||0}%`, (data.impayeRate||0)===0?[220,252,231]:[254,226,226]);
@@ -328,7 +329,7 @@ export async function exportReportPDF(data: any, company: string, logoUrl?: stri
   y += 8;
   [
     { label:'Loyers collectes', value:data.collectedRents||0, var:`+${data.revenueGrowth||0}%`, status:'Collectes', color:[22,163,74] },
-    { label:`Commissions (${data.commissionRate||10}%)`, value:data.totalCommissions||0, var:'Auto', status:'Generees', color:[59,130,246] },
+    { label:getCommissionSummaryLabel({ commission_rate: data.commissionRate, commission_mode: data.commissionMode, vat_rate: data.vatRate }), value:data.totalCommissions||0, var:'Auto', status:'Generees', color:[59,130,246] },
     { label:'En attente', value:data.pendingRents||0, var:'-', status:'A collecter', color:[161,98,7] },
     { label:'En retard', value:data.overdueRents||0, var:'-', status:'Impayes', color:[220,38,38] },
   ].forEach((row,i) => {
@@ -354,7 +355,7 @@ export async function exportReportPDF(data: any, company: string, logoUrl?: stri
   doc.setTextColor(109, 40, 217);
   doc.setFontSize(7.5); doc.setFont('helvetica','normal');
   const rev = formatCFA(data.currentMonthRevenue||0);
-  const comm = formatCFA((data.currentMonthRevenue||0)*((data.commissionRate||10)/100));
+  const comm = formatCFA(calculateCommission(data.currentMonthRevenue || 0, { commission_rate: data.commissionRate, commission_mode: data.commissionMode, vat_rate: data.vatRate }).landlordCommission);
   const dep = formatCFA(data.currentMonthExpenses||0);
   doc.text(`${rev} (revenus) - ${comm} (comm.) - ${dep} (dep.) =`, 105, y+8, { align:'center', maxWidth:185 });
   doc.setFontSize(16); doc.setFont('helvetica','bold');
@@ -482,7 +483,7 @@ export async function exportReportPDF(data: any, company: string, logoUrl?: stri
   y = sectionTitle(doc, y, 'Prévisions mois prochain');
   kpiBox(doc, 10, y, 55, 18, 'Revenus estimés', formatCFA(data.forecastRevenue||0), [204,251,241]);
   kpiBox(doc, 70, y, 55, 18, 'Dépenses prévues', formatCFA(data.forecastExpenses||0), [254,243,199]);
-  kpiBox(doc, 130, y, 70, 18, 'Bénéfice net prévu', formatCFA(Math.max(0,(data.forecastRevenue||0)-(data.forecastRevenue||0)*((data.commissionRate||10)/100)-(data.forecastExpenses||0))), [233,213,255]);
+  kpiBox(doc, 130, y, 70, 18, 'Bénéfice net prévu', formatCFA(computeLandlordNet(data.forecastRevenue || 0, data.forecastExpenses || 0, { commission_rate: data.commissionRate, commission_mode: data.commissionMode, vat_rate: data.vatRate })), [233,213,255]);
 
   addFooter(doc, 1, 2);
   doc.setPage(2);
