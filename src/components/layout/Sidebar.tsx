@@ -312,7 +312,7 @@ export default function Sidebar() {
   const isSuperAdmin = user?.role === 'super_admin';
   const companyName = isSuperAdmin ? 'Nexora' : getCompanyDisplayName(company);
   const companyInitial = isSuperAdmin ? 'N' : getCompanyInitial(company);
-  const colors = getBrandingColors(company);
+  const colors = isSuperAdmin ? getBrandingColors(null) : getBrandingColors(company);
 
   return (
     <motion.aside
@@ -348,7 +348,7 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
   const isSuperAdmin = user?.role === 'super_admin';
   const companyName = isSuperAdmin ? 'Nexora' : getCompanyDisplayName(company);
   const companyInitial = isSuperAdmin ? 'N' : getCompanyInitial(company);
-  const colors = getBrandingColors(company);
+  const colors = isSuperAdmin ? getBrandingColors(null) : getBrandingColors(company);
 
   useEffect(() => {
     if (open) document.body.style.overflow = 'hidden';
