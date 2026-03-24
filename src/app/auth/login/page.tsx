@@ -33,11 +33,22 @@ export default function LoginPage() {
     }
 
     // 2. Vérifier is_active dans public.users
-    const { data: userRow, error: userError } = await sb
+    let { data: userRow, error: userError } = await sb
       .from('users')
       .select('id, email, full_name, role, company_id, is_active')
       .eq('id', data.user.id)
       .maybeSingle();
+
+    if (!userRow) {
+      try {
+        const repairRes = await fetch('/api/auth/ensure-profile', { method: 'POST' });
+        const repairJson = await repairRes.json();
+        if (repairRes.ok && repairJson.user) {
+          userRow = repairJson.user;
+          userError = null;
+        }
+      } catch {}
+    }
 
     if (userError || !userRow) {
       await sb.auth.signOut();

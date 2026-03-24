@@ -90,6 +90,23 @@ export default function SuperAdminUsersPage() {
       .then(({ data }) => setCompanies((data||[]) as Company[]));
   }, [user?.role]);
 
+  useEffect(() => {
+    if (user?.role !== 'super_admin') return;
+    fetch('/api/admin/reconcile-users', { method: 'POST' })
+      .then(async (res) => {
+        const json = await res.json();
+        if (!res.ok) return;
+        if (json.repaired > 0) {
+          toast.success(`${json.repaired} compte(s) repare(s) automatiquement`);
+          load();
+        }
+        if (json.unresolved?.length > 0) {
+          toast.warning(`${json.unresolved.length} compte(s) fantome(s) restent a verifier`);
+        }
+      })
+      .catch(() => {});
+  }, [user?.role]);
+
   const upsertListItem = (updatedUser?: FullUser | null) => {
     if (!updatedUser) return;
     setItems((prev) => {
