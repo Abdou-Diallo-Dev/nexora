@@ -2,18 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createServerSupabase } from '@/lib/supabase/server';
 import type { UserRole } from '@/lib/store';
-
-const ALLOWED_ROLES: UserRole[] = [
-  'super_admin',
-  'admin',
-  'manager',
-  'agent',
-  'viewer',
-  'comptable',
-  'pdg',
-  'responsable_operations',
-  'tenant',
-];
+import { USER_ROLES, buildAuthUserMetadata } from '@/lib/user-profiles';
 
 async function getActor() {
   const server = createServerSupabase();
@@ -57,7 +46,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Nom, email et mot de passe requis' }, { status: 400 });
     }
 
-    if (!role || !ALLOWED_ROLES.includes(role)) {
+    if (!role || !USER_ROLES.includes(role)) {
       return NextResponse.json({ error: 'Role invalide' }, { status: 400 });
     }
 
@@ -82,7 +71,7 @@ export async function POST(request: Request) {
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name, role, company_id },
+      user_metadata: buildAuthUserMetadata({ full_name, role, company_id, is_active: Boolean(is_active) }),
     });
 
     if (error) {

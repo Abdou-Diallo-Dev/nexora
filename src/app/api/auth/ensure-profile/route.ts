@@ -1,19 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createServerSupabase } from '@/lib/supabase/server';
-import type { UserRole } from '@/lib/store';
-
-const ALLOWED_ROLES: UserRole[] = [
-  'super_admin',
-  'admin',
-  'manager',
-  'agent',
-  'viewer',
-  'comptable',
-  'pdg',
-  'responsable_operations',
-  'tenant',
-];
+import { getProfileSeedFromAuthUser, shouldRepairUserProfile } from '@/lib/user-profiles';
 
 export async function POST() {
   try {
@@ -32,33 +20,22 @@ export async function POST() {
       .eq('id', authUser.id)
       .maybeSingle();
 
-    if (existing) {
-      return NextResponse.json({ success: true, user: existing, repaired: false });
-    }
-
-    const meta = (authUser.user_metadata || {}) as Record<string, unknown>;
-    const role = typeof meta.role === 'string' ? meta.role as UserRole : undefined;
-    const company_id = typeof meta.company_id === 'string' ? meta.company_id : null;
-    const full_name =
-      typeof meta.full_name === 'string' && meta.full_name.trim()
-        ? meta.full_name.trim()
-        : authUser.email?.split('@')[0] || 'Utilisateur';
-
-    if (!role || !ALLOWED_ROLES.includes(role)) {
+    const targetProfile = getProfileSeedFromAuthUser(authUser);
+    if (!targetProfile) {
       return NextResponse.json({ error: 'Profil incomplet' }, { status: 409 });
     }
 
-    if (role !== 'super_admin' && role !== 'tenant' && !company_id) {
-      return NextResponse.json({ error: 'Entreprise manquante' }, { status: 409 });
+    if (!shouldRepairUserProfile(existing, targetProfile)) {
+      return NextResponse.json({ success: true, user: existing, repaired: false });
     }
 
     const { error: upsertError } = await admin.from('users').upsert({
       id: authUser.id,
-      email: authUser.email || '',
-      full_name,
-      role,
-      company_id,
-      is_active: true,
+      email: targetProfile.email,
+      full_name: targetProfile.full_name,
+      role: targetProfile.role,
+      company_id: targetProfile.company_id,
+      is_active: existing?.is_active ?? targetProfile.is_active,
     });
 
     if (upsertError) {

@@ -39,7 +39,18 @@ export default function LoginPage() {
       .eq('id', data.user.id)
       .maybeSingle();
 
-    if (!userRow) {
+    const metadataRole = typeof data.user.user_metadata?.role === 'string' ? data.user.user_metadata.role : null;
+    const metadataCompanyId =
+      typeof data.user.user_metadata?.company_id === 'string' && data.user.user_metadata.company_id.trim()
+        ? data.user.user_metadata.company_id
+        : null;
+    const needsRepair =
+      !userRow ||
+      (metadataRole && userRow.role !== metadataRole) ||
+      (metadataCompanyId && userRow.company_id !== metadataCompanyId) ||
+      (!userRow?.full_name?.trim());
+
+    if (needsRepair) {
       try {
         const repairRes = await fetch('/api/auth/ensure-profile', { method: 'POST' });
         const repairJson = await repairRes.json();

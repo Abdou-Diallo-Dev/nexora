@@ -2,18 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createServerSupabase } from '@/lib/supabase/server';
 import type { UserRole } from '@/lib/store';
-
-const ALLOWED_ROLES: UserRole[] = [
-  'super_admin',
-  'admin',
-  'manager',
-  'agent',
-  'viewer',
-  'comptable',
-  'pdg',
-  'responsable_operations',
-  'tenant',
-];
+import { USER_ROLES, buildAuthUserMetadata } from '@/lib/user-profiles';
 
 async function getActor() {
   const server = createServerSupabase();
@@ -62,7 +51,7 @@ export async function POST(request: Request) {
     const admin = createAdminClient();
     const { data: targetUser, error: targetError } = await admin
       .from('users')
-      .select('id, role, company_id')
+      .select('id, full_name, role, company_id, is_active')
       .eq('id', userId)
       .maybeSingle();
 
@@ -79,7 +68,7 @@ export async function POST(request: Request) {
       }
     }
 
-    if (role && !ALLOWED_ROLES.includes(role)) {
+    if (role && !USER_ROLES.includes(role)) {
       return NextResponse.json({ error: 'Role invalide' }, { status: 400 });
     }
 
@@ -94,9 +83,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: updateError.message }, { status: 400 });
     }
 
-    if (full_name !== undefined) {
-      await admin.auth.admin.updateUserById(userId, { user_metadata: { full_name } });
-    }
+    const nextProfile = {
+      full_name: full_name ?? targetUser.full_name ?? targetUser.id,
+      role: role ?? targetUser.role,
+      company_id:
+        company_id !== undefined
+          ? (actor.role === 'super_admin' ? company_id : actor.company_id)
+          : targetUser.company_id,
+      is_active: is_active ?? targetUser.is_active ?? true,
+    };
+
+    await admin.auth.admin.updateUserById(userId, {
+      user_metadata: buildAuthUserMetadata(nextProfile),
+    });
 
     const { data: updatedUser, error: selectError } = await admin
       .from('users')

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { buildAuthUserMetadata } from '@/lib/user-profiles';
 
 export async function POST(request: Request) {
   const admin = createAdminClient();
@@ -8,7 +9,14 @@ export async function POST(request: Request) {
   let companyId: string | null = null;
 
   try {
-    const { email, password, full_name, company_name, company_email, company_phone, modules } = await request.json();
+    const body = await request.json();
+    const email = String(body.email || '').trim().toLowerCase();
+    const password = String(body.password || '');
+    const full_name = String(body.full_name || '').trim();
+    const company_name = String(body.company_name || '').trim();
+    const company_email = body.company_email ? String(body.company_email).trim().toLowerCase() : null;
+    const company_phone = body.company_phone ? String(body.company_phone).trim() : null;
+    const modules = body.modules;
 
     if (!email || !password || !full_name || !company_name) {
       return NextResponse.json({ error: 'Champs obligatoires manquants' }, { status: 400 });
@@ -38,7 +46,12 @@ export async function POST(request: Request) {
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name },
+      user_metadata: buildAuthUserMetadata({
+        full_name,
+        role: 'admin',
+        company_id: companyId,
+        is_active: false,
+      }),
     });
 
     if (authError || !authData?.user) {
@@ -63,6 +76,15 @@ export async function POST(request: Request) {
       company_id: companyId,
       is_active:  false,
     }).eq('id', uid);
+
+    await admin.auth.admin.updateUserById(uid, {
+      user_metadata: buildAuthUserMetadata({
+        full_name,
+        role: 'admin',
+        company_id: companyId,
+        is_active: false,
+      }),
+    });
 
     // 4. Notifier super admin
     const RESEND_KEY  = process.env.RESEND_API_KEY;

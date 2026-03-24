@@ -23,7 +23,7 @@ export default function TenantRegisterPage() {
         email: form.email,
         password: form.password,
         options: {
-          data: { full_name: form.full_name },
+          data: { full_name: form.full_name, role: 'tenant', is_active: false },
           emailRedirectTo: window.location.origin + '/auth/login',
         },
       });

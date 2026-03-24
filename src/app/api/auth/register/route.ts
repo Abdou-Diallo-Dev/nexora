@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { buildAuthUserMetadata } from '@/lib/user-profiles';
 
 function slugify(str: string) {
   return str.toLowerCase().normalize('NFD')
@@ -27,7 +28,11 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { email, password, full_name, company_name, modules } = body;
+    const email = String(body.email || '').trim().toLowerCase();
+    const password = String(body.password || '');
+    const full_name = String(body.full_name || '').trim();
+    const company_name = String(body.company_name || '').trim();
+    const modules = body.modules;
 
     if (!email || !password || !full_name || !company_name || !modules?.length) {
       return NextResponse.json({ error: 'Tous les champs sont requis' }, { status: 400 });
@@ -38,7 +43,12 @@ export async function POST(request: Request) {
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name },
+      user_metadata: buildAuthUserMetadata({
+        full_name,
+        role: 'admin',
+        company_id: null,
+        is_active: true,
+      }),
     });
 
     if (signUpError) {
@@ -82,6 +92,15 @@ export async function POST(request: Request) {
     }
 
     companyId = company.id;
+
+    await supabase.auth.admin.updateUserById(userId, {
+      user_metadata: buildAuthUserMetadata({
+        full_name,
+        role: 'admin',
+        company_id: companyId,
+        is_active: true,
+      }),
+    });
 
     // 3. Créer le profil utilisateur
     const { error: userError } = await supabase

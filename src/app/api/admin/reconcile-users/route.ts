@@ -1,19 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createServerSupabase } from '@/lib/supabase/server';
-import type { UserRole } from '@/lib/store';
-
-const ALLOWED_ROLES: UserRole[] = [
-  'super_admin',
-  'admin',
-  'manager',
-  'agent',
-  'viewer',
-  'comptable',
-  'pdg',
-  'responsable_operations',
-  'tenant',
-];
+import { getProfileSeedFromAuthUser, shouldRepairUserProfile } from '@/lib/user-profiles';
 
 async function getActor() {
   const server = createServerSupabase();
@@ -50,40 +38,38 @@ export async function POST() {
     const admin = createAdminClient();
     const [{ data: authUsers }, { data: dbUsers }] = await Promise.all([
       admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
-      admin.from('users').select('id'),
+      admin.from('users').select('id, email, full_name, role, company_id, is_active'),
     ]);
 
-    const existingIds = new Set((dbUsers || []).map((u: any) => u.id));
+    const existingUsers = new Map((dbUsers || []).map((u: any) => [u.id, u]));
     let repaired = 0;
-    const unresolved: { id: string; email: string }[] = [];
+    const unresolved: { id: string; email: string; reason: string }[] = [];
 
     for (const authUser of authUsers.users || []) {
-      if (!authUser.id || existingIds.has(authUser.id)) continue;
+      if (!authUser.id) continue;
 
-      const meta = (authUser.user_metadata || {}) as Record<string, unknown>;
-      const role = typeof meta.role === 'string' ? meta.role as UserRole : undefined;
-      const company_id = typeof meta.company_id === 'string' ? meta.company_id : null;
-      const full_name =
-        typeof meta.full_name === 'string' && meta.full_name.trim()
-          ? meta.full_name.trim()
-          : authUser.email?.split('@')[0] || 'Utilisateur';
+      const targetProfile = getProfileSeedFromAuthUser(authUser);
+      if (!targetProfile) {
+        unresolved.push({ id: authUser.id, email: authUser.email || '-', reason: 'metadata_incomplete' });
+        continue;
+      }
 
-      if (!role || !ALLOWED_ROLES.includes(role) || (role !== 'super_admin' && role !== 'tenant' && !company_id)) {
-        unresolved.push({ id: authUser.id, email: authUser.email || '-' });
+      const existingUser = existingUsers.get(authUser.id);
+      if (!shouldRepairUserProfile(existingUser, targetProfile)) {
         continue;
       }
 
       const { error } = await admin.from('users').upsert({
         id: authUser.id,
-        email: authUser.email || '',
-        full_name,
-        role,
-        company_id,
-        is_active: true,
+        email: targetProfile.email,
+        full_name: targetProfile.full_name,
+        role: targetProfile.role,
+        company_id: targetProfile.company_id,
+        is_active: existingUser?.is_active ?? targetProfile.is_active,
       });
 
       if (error) {
-        unresolved.push({ id: authUser.id, email: authUser.email || '-' });
+        unresolved.push({ id: authUser.id, email: authUser.email || '-', reason: error.message });
         continue;
       }
 

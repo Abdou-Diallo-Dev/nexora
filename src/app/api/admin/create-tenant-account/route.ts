@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { buildAuthUserMetadata } from '@/lib/user-profiles';
 
 function generatePassword(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#';
@@ -82,7 +83,13 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
 
   try {
-    const { tenant_id, email, first_name, last_name, company_id, company_name } = await request.json();
+    const body = await request.json();
+    const tenant_id = String(body.tenant_id || '').trim();
+    const email = String(body.email || '').trim().toLowerCase();
+    const first_name = String(body.first_name || '').trim();
+    const last_name = String(body.last_name || '').trim();
+    const company_id = String(body.company_id || '').trim();
+    const company_name = body.company_name ? String(body.company_name).trim() : '';
     if (!tenant_id || !email || !company_id) {
       return NextResponse.json({ error: 'Données manquantes' }, { status: 400 });
     }
@@ -111,7 +118,12 @@ export async function POST(request: Request) {
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name, role: 'tenant', is_active: true },
+      user_metadata: buildAuthUserMetadata({
+        full_name,
+        role: 'tenant',
+        company_id: real_company_id,
+        is_active: true,
+      }),
     });
 
     let uid: string;
@@ -123,6 +135,14 @@ export async function POST(request: Request) {
         const found = existingUser?.users?.find((u: any) => u.email === email);
         if (!found) return NextResponse.json({ error: authError.message }, { status: 400 });
         uid = found.id;
+        await admin.auth.admin.updateUserById(uid, {
+          user_metadata: buildAuthUserMetadata({
+            full_name,
+            role: 'tenant',
+            company_id: real_company_id,
+            is_active: true,
+          }),
+        });
         // Ensure public.users is correct
         await admin.from('users').upsert({
           id: uid, email, full_name, role: 'tenant', company_id: real_company_id, is_active: true,
@@ -141,6 +161,15 @@ export async function POST(request: Request) {
     // Créer dans public.users avec le vrai company_id
     await admin.from('users').upsert({
       id: uid, email, full_name, role: 'tenant', company_id: real_company_id, is_active: true,
+    });
+
+    await admin.auth.admin.updateUserById(uid, {
+      user_metadata: buildAuthUserMetadata({
+        full_name,
+        role: 'tenant',
+        company_id: real_company_id,
+        is_active: true,
+      }),
     });
 
     // Lier tenant_account avec le vrai company_id
