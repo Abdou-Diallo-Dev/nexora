@@ -1,16 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function POST(request: Request) {
   try {
     const { companyId } = await request.json();
     if (!companyId) return NextResponse.json({ error: 'companyId requis' }, { status: 400 });
 
-    const adminClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    );
+    const adminClient = createAdminClient();
 
     // 1. Récupérer tous les users de cette company
     const { data: users } = await adminClient

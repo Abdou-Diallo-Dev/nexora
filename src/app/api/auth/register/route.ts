@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 function slugify(str: string) {
   return str.toLowerCase().normalize('NFD')
@@ -19,11 +20,7 @@ async function rollback(supabase: SupabaseClient<any>, userId: string | null, co
 }
 
 export async function POST(request: Request) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
+  const supabase = createAdminClient();
 
   let userId: string | null = null;
   let companyId: string | null = null;

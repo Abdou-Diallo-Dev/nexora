@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function POST(request: Request) {
   try {
@@ -9,11 +9,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Nom, email et mot de passe requis' }, { status: 400 });
     }
 
-    const admin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    );
+    const admin = createAdminClient();
 
     // Créer dans auth.users directement avec service role
     const { data, error } = await admin.auth.admin.createUser({
