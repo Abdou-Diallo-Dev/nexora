@@ -329,7 +329,17 @@ export default function Sidebar() {
       animate={{ width: collapsed ? 60 : 236 }}
       transition={{ duration: 0.2, ease: 'easeInOut' }}
       className="hidden md:flex h-screen flex-shrink-0 border-r flex-col overflow-hidden z-40"
-      style={{ backgroundColor: colors.sidebarBg, borderColor: 'var(--sidebar-border)' }}
+      style={{
+        backgroundColor: colors.sidebarBg,
+        borderColor: colors.sidebarBorder,
+        ['--sidebar-bg' as any]: colors.sidebarBg,
+        ['--sidebar-text' as any]: colors.sidebarText,
+        ['--sidebar-muted' as any]: colors.sidebarMuted,
+        ['--sidebar-border' as any]: colors.sidebarBorder,
+        ['--sidebar-hover' as any]: colors.sidebarHover,
+        ['--sidebar-active' as any]: colors.sidebarActive,
+        ['--sidebar-active-text' as any]: colors.sidebarActiveText,
+      }}
     >
       <div className="flex items-center justify-between px-3 py-4 border-b flex-shrink-0" style={{ borderColor: 'var(--sidebar-border)' }}>
         {!collapsed ? (
@@ -387,7 +397,17 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
             exit={{ x: '-100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
             className="fixed left-0 top-0 bottom-0 w-72 border-r z-50 flex flex-col md:hidden"
-            style={{ backgroundColor: colors.sidebarBg, borderColor: 'var(--sidebar-border)' }}
+            style={{
+              backgroundColor: colors.sidebarBg,
+              borderColor: colors.sidebarBorder,
+              ['--sidebar-bg' as any]: colors.sidebarBg,
+              ['--sidebar-text' as any]: colors.sidebarText,
+              ['--sidebar-muted' as any]: colors.sidebarMuted,
+              ['--sidebar-border' as any]: colors.sidebarBorder,
+              ['--sidebar-hover' as any]: colors.sidebarHover,
+              ['--sidebar-active' as any]: colors.sidebarActive,
+              ['--sidebar-active-text' as any]: colors.sidebarActiveText,
+            }}
           >
             <div className="flex items-center justify-between px-4 py-4 border-b flex-shrink-0" style={{ borderColor: 'var(--sidebar-border)' }}>
               <div className="flex items-center gap-2.5 min-w-0">
