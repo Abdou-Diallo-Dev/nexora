@@ -13,8 +13,8 @@ import { cn } from '@/lib/utils';
 // ─── COLOR MAP ────────────────────────────────────────────────────────────────
 const COLOR_MAP = {
   blue: {
-    bg: 'bg-blue-50 dark:bg-blue-900/20',
-    text: 'text-blue-600 dark:text-blue-400',
+    bg: 'bg-primary/10',
+    text: 'text-primary',
   },
   green: {
     bg: 'bg-green-50 dark:bg-green-900/20',
@@ -74,6 +74,7 @@ export function StatCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className="bg-white dark:bg-slate-800 rounded-2xl border border-border p-5 shadow-card hover:shadow-md transition-shadow"
+      style={{ boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.07), inset 0 1px 0 var(--card-accent)' }}
     >
       <div className="flex items-start justify-between mb-4">
         <div

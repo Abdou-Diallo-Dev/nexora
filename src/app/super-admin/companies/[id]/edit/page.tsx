@@ -27,6 +27,8 @@ export default function EditCompanyPage() {
     plan: 'starter',
     modules: [] as string[],
     is_active: true,
+    primary_color: '#1e40af',
+    secondary_color: '#0f766e',
     commission_rate: 10,
     commission_mode: 'ttc' as CommissionMode,
     vat_rate: 18,
@@ -44,6 +46,8 @@ export default function EditCompanyPage() {
             plan: data.plan || 'starter',
             modules: data.modules || [],
             is_active: data.is_active ?? true,
+            primary_color: data.primary_color || '#1e40af',
+            secondary_color: data.secondary_color || '#0f766e',
             commission_rate: data.commission_rate ?? 10,
             commission_mode: data.commission_mode ?? 'ttc',
             vat_rate: data.vat_rate ?? 18,
@@ -75,6 +79,8 @@ export default function EditCompanyPage() {
         plan: form.plan,
         modules: form.modules,
         is_active: form.is_active,
+        primary_color: form.primary_color,
+        secondary_color: form.secondary_color,
         commission_rate: form.commission_rate,
         commission_mode: form.commission_mode,
         vat_rate: form.vat_rate,
@@ -118,6 +124,14 @@ export default function EditCompanyPage() {
           <div className="md:col-span-2">
             <label className={labelCls}>Adresse</label>
             <input value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Couleur principale</label>
+            <input value={form.primary_color} onChange={(e) => setForm((f) => ({ ...f, primary_color: e.target.value }))} className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Couleur secondaire</label>
+            <input value={form.secondary_color} onChange={(e) => setForm((f) => ({ ...f, secondary_color: e.target.value }))} className={inputCls} />
           </div>
         </div>
       </div>

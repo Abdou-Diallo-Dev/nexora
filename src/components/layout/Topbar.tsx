@@ -1,8 +1,9 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { Bell, Sun, Moon, LogOut, Settings, Menu, Zap } from 'lucide-react';
+import { Bell, Sun, Moon, LogOut, Settings, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
+import { getBrandingColors, getCompanyDisplayName, getCompanyInitial } from '@/lib/branding';
 import { useAuthStore } from '@/lib/store';
 import { useRouter } from 'next/navigation';
 import { formatDateRelative, getInitials } from '@/lib/utils';
@@ -15,7 +16,7 @@ type Notif = {
 };
 
 export function Topbar() {
-  const { user } = useAuthStore();
+  const { user, company } = useAuthStore();
   const [notifs, setNotifs]   = useState<Notif[]>([]);
   const [unread, setUnread]   = useState(0);
   const [showN, setShowN]     = useState(false);
@@ -58,6 +59,9 @@ export function Topbar() {
 
   const initials = getInitials(user?.full_name || user?.email || '?');
   const displayName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Utilisateur';
+  const companyName = user?.role === 'super_admin' ? 'Nexora' : getCompanyDisplayName(company);
+  const companyInitial = user?.role === 'super_admin' ? 'N' : getCompanyInitial(company);
+  const colors = getBrandingColors(company);
 
   return (
     <>
@@ -71,10 +75,14 @@ export function Topbar() {
 
         {/* Logo mobile uniquement */}
         <div className="flex items-center gap-2 md:hidden">
-          <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-            <Zap size={14} className="text-white"/>
-          </div>
-          <span className="font-bold text-foreground text-sm">Nexora</span>
+          {company?.logo_url && user?.role !== 'super_admin' ? (
+            <img src={company.logo_url} alt={companyName} className="w-7 h-7 rounded-lg object-cover bg-primary/10 p-1 flex-shrink-0" />
+          ) : (
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 font-bold text-xs" style={{ backgroundColor: colors.primary, color: colors.primaryText }}>
+              {companyInitial}
+            </div>
+          )}
+          <span className="font-bold text-foreground text-sm truncate max-w-[130px]">{companyName}</span>
         </div>
 
         <div className="flex-1"/>

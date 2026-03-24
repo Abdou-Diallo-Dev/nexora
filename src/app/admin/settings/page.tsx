@@ -25,6 +25,7 @@ type CompanyForm = {
   phone: string;
   address: string;
   primary_color: string;
+  secondary_color: string;
   commission_rate: number;
   commission_mode: CommissionMode;
   vat_rate: number;
@@ -39,6 +40,7 @@ export default function SettingsPage() {
     phone: '',
     address: '',
     primary_color: '#1e40af',
+    secondary_color: '#0f766e',
     commission_rate: 10,
     commission_mode: 'ttc',
     vat_rate: 18,
@@ -59,6 +61,7 @@ export default function SettingsPage() {
         phone: company.phone || '',
         address: (company as any).address || '',
         primary_color: (company as any).primary_color || '#1e40af',
+        secondary_color: (company as any).secondary_color || '#0f766e',
         commission_rate: (company as any).commission_rate ?? 10,
         commission_mode: (company as any).commission_mode ?? 'ttc',
         vat_rate: (company as any).vat_rate ?? 18,
@@ -83,6 +86,7 @@ export default function SettingsPage() {
       address: form.address || null,
       logo_url: logoUrl,
       primary_color: form.primary_color,
+      secondary_color: form.secondary_color,
       commission_rate: form.commission_rate,
       commission_mode: form.commission_mode,
       vat_rate: form.vat_rate,
@@ -223,8 +227,8 @@ export default function SettingsPage() {
       {tab === 'appearance' && (
         <div className={cardCls + ' p-6 max-w-2xl space-y-6'}>
           <div>
-            <h3 className="font-semibold text-foreground mb-1">Couleur principale</h3>
-            <p className="text-sm text-muted-foreground mb-4">Cette couleur sera utilisee dans vos documents PDF generes.</p>
+            <h3 className="font-semibold text-foreground mb-1">Couleurs de marque</h3>
+            <p className="text-sm text-muted-foreground mb-4">Ces couleurs seront appliquees au menu, aux boutons, aux etats actifs et aux accents visuels.</p>
             <div className="grid grid-cols-4 gap-3 mb-4">
               {PRESET_COLORS.map((c) => (
                 <button
@@ -248,6 +252,13 @@ export default function SettingsPage() {
                 <input value={form.primary_color} onChange={(e) => set('primary_color', e.target.value)} placeholder="#1e40af" className={inputCls + ' flex-1'} />
               </div>
             </div>
+            <div>
+              <label className={labelCls}>Couleur secondaire</label>
+              <div className="flex items-center gap-3">
+                <input type="color" value={form.secondary_color} onChange={(e) => set('secondary_color', e.target.value)} className="w-12 h-10 rounded-lg cursor-pointer border border-border" />
+                <input value={form.secondary_color} onChange={(e) => set('secondary_color', e.target.value)} placeholder="#0f766e" className={inputCls + ' flex-1'} />
+              </div>
+            </div>
           </div>
 
           <div>
@@ -268,7 +279,7 @@ export default function SettingsPage() {
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-800">
                 <div className="h-2 rounded w-3/4 mb-2" style={{ background: form.primary_color, opacity: 0.2 }} />
-                <div className="h-2 rounded w-1/2 bg-slate-200 dark:bg-slate-700" />
+                <div className="h-2 rounded w-1/2" style={{ background: form.secondary_color, opacity: 0.35 }} />
               </div>
             </div>
           </div>
