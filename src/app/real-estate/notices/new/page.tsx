@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Bell } from 'lucide-react';
@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 type Tenant = { id:string; first_name:string; last_name:string };
 type Lease = { id:string; tenant_id:string; properties:{name:string}|null };
 
-export default function NewNoticePage() {
+function NewNoticePageContent() {
   const { company, user } = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -209,5 +209,13 @@ export default function NewNoticePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function NewNoticePage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-64"><LoadingSpinner size={36}/></div>}>
+      <NewNoticePageContent />
+    </Suspense>
   );
 }
