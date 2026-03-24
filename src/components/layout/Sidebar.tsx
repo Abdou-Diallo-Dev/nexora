@@ -8,7 +8,7 @@ import { Camera,
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, X,
   Truck, MapPin, ShoppingCart, Box, Car, Building2, Receipt, MessageSquare,
   FileCheck, Bell, TrendingUp, Globe, Package,
-  Shield, Crown, Lock, LayoutDashboard, Zap, Settings, ScrollText, ClipboardCheck,
+  Shield, Crown, Lock, LayoutDashboard, Zap, Settings, ScrollText, ClipboardCheck, CalendarRange,
   PieChart, DollarSign, FileSignature, Calculator,
 } from 'lucide-react';
 import { useAuthStore, UserRole } from '@/lib/store';
@@ -38,6 +38,7 @@ const ALL_RE_ITEMS: NavItem[] = [
   // Locataires
   { key:'maintenance',      href:'/real-estate/messages',          label:'Signalements',        icon:<Wrench size={15}/> },
   { key:'notifications',    href:'/real-estate/messages',          label:'Messagerie locataires', icon:<MessageSquare size={15}/> },
+  { key:'weeklyOutings',    href:'/real-estate/weekly-outings',    label:'Sorties hebdomadaires', icon:<CalendarRange size={15}/> },
   // Analyse
   { key:'analytics',        href:'/real-estate/analytics',         label:'Analyse financière',  icon:<TrendingUp size={15}/> },
   { key:'stats',            href:'/real-estate/stats',             label:'Statistiques',        icon:<BarChart3 size={15}/> },
@@ -57,6 +58,7 @@ const RE_GROUP_MAP: { label: string; keys: string[]; adminOnly?: boolean }[] = [
   { label:'Biens',         keys:['properties','apartments','tenants','notices','leases','inspections','terminations','convention'] },
   { label:'Paiements',     keys:['payments','onlinePayment','expenses','accounting','disbursements'] },
   { label:'Locataires',    keys:['maintenance','notifications'] },
+  { label:'ActivitÃ©s',     keys:['weeklyOutings'] },
   { label:'Analyse',       keys:['analytics','stats','reports','reports-terrain'] },
   { label:'Documents',     keys:['documents','contractTemplate'], adminOnly: true },
   { label:'Communication', keys:['messages'] },

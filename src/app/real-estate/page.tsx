@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Home, Users, CreditCard, Wrench, AlertTriangle, Clock, FileText, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
+import { Home, Users, CreditCard, Wrench, AlertTriangle, Clock, FileText, ChevronLeft, ChevronRight, MapPin, CalendarRange } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore, UserRole } from '@/lib/store';
 import { StatCard, LoadingSpinner, Badge, cardCls, btnPrimary } from '@/components/ui';
@@ -21,6 +21,8 @@ type KPIs = {
   tenantTickets: { id:string; title:string; category:string; priority:string; tenant:string; created_at:string }[];
   expiringLeases: { id:string; tenant:string; property:string; end_date:string }[];
   overdueRents: { id:string; tenant:string; amount:number; period_month:number; period_year:number }[];
+  weeklyOutingsCount: number;
+  outingsByRole: { role:string; count:number }[];
   chart: { month:string; revenue:number }[];
 };
 
@@ -79,17 +81,22 @@ export default function REDashboard() {
       sb.from('expenses').select('id,type,amount').eq('company_id', cid).limit(500),
       sb.from('companies').select('commission_rate').eq('id', cid).maybeSingle(),
       sb.from('tenant_tickets').select('id,title,category,priority,status,created_at,tenants(first_name,last_name)').eq('company_id', cid).eq('status','open').order('created_at',{ascending:false}).limit(5),
-    ]).then(([{data:propsD},{data:leases},{data:payments},{data:tickets},{data:exps},{data:compD},{data:tenantTix}]) => {
+      sb.from('field_activities').select('id,activity_date,role_label').eq('company_id', cid).limit(300),
+    ]).then(([{data:propsD},{data:leases},{data:payments},{data:tickets},{data:exps},{data:compD},{data:tenantTix},{data:outingsD,error:outingsErr}]) => {
       const P   = (propsD  ||[]) as any[];
       const L   = (leases  ||[]) as any[];
       const PAY = (payments||[]) as any[];
       const T   = (tickets ||[]) as any[];
       const E   = (exps    ||[]) as any[];
       const TX  = (tenantTix||[]) as any[];
+      const OUT = outingsErr ? [] : ((outingsD||[]) as any[]);
 
       const commRate = Number((compD as any)?.commission_rate ?? 10);
       const now = new Date();
       const thisMonth = `${now.getMonth()+1}/${now.getFullYear()}`;
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+      weekStart.setHours(0,0,0,0);
 
       const allPaid    = PAY.filter((p:any) => p.status==='paid');
       const allPending = PAY.filter((p:any) => p.status==='pending');
@@ -111,6 +118,14 @@ export default function REDashboard() {
         const mo = `${d.getMonth()+1}/${d.getFullYear()}`;
         return { month:format(d,'MMM',{locale:fr}), revenue:allPaid.filter((p:any)=>`${p.period_month}/${p.period_year}`===mo).reduce((s:number,p:any)=>s+Number(p.amount),0) };
       });
+
+      const outingsByRole = Object.entries(
+        OUT.reduce((acc: Record<string, number>, outing: any) => {
+          const key = outing.role_label || 'Autre';
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {})
+      ).map(([role, count]) => ({ role, count }));
 
       const result: KPIs = {
         totalProps:    P.length,
@@ -139,6 +154,8 @@ export default function REDashboard() {
           const t = (lease as any)?.tenants;
           return { id:r.id, tenant:t?`${t.first_name||''} ${t.last_name||''}`.trim():'Locataire', amount:Number(r.amount), period_month:r.period_month, period_year:r.period_year };
         }),
+        weeklyOutingsCount: OUT.filter((outing:any) => new Date(outing.activity_date) >= weekStart).length,
+        outingsByRole,
         chart,
       };
 
@@ -194,6 +211,35 @@ export default function REDashboard() {
           </motion.div>
         ))}
       </div>
+
+      {(role==='agent' || role==='manager' || role==='comptable' || role==='admin' || role==='super_admin') && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px,1fr]">
+          <Link href="/real-estate/weekly-outings">
+            <StatCard title="Sorties cette semaine" value={data.weeklyOutingsCount} subtitle="Visites, prospections et dépôts" icon={<CalendarRange size={20}/>} color="cyan"/>
+          </Link>
+          <div className={cardCls+' p-5'}>
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div>
+                <h3 className="font-semibold text-foreground">Statistiques des sorties</h3>
+                <p className="text-xs text-muted-foreground">Répartition par rôle</p>
+              </div>
+              <Link href="/real-estate/weekly-outings" className="text-xs text-primary hover:underline">Voir le module</Link>
+            </div>
+            {data.outingsByRole.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Aucune sortie enregistrée pour le moment.</p>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {data.outingsByRole.map((item) => (
+                  <div key={item.role} className="rounded-xl border border-border bg-slate-50 dark:bg-slate-700/20 px-4 py-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">{item.role}</p>
+                    <p className="text-xl font-bold text-foreground mt-1">{item.count}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Accounting KPIs */}
       {sections.showRevenue && (
