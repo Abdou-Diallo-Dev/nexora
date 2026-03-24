@@ -62,6 +62,36 @@ export const DEFAULT_PERMISSIONS: Record<string, Record<string, boolean>> = {
     viewDocuments: true, editContracts: false,
     viewMessages: false, manageTenantPortal: false,
   },
+  pdg: {
+    createProperty: false, editProperty: false, deleteProperty: false,
+    createTenant: false, editTenant: false, deleteTenant: false,
+    createLease: false, editLease: false, deleteLease: false,
+    createPayment: false, editPayment: false, deletePayment: false, viewPayments: false,
+    onlinePayment: false,
+    createTicket: false, editTicket: false, deleteTicket: false,
+    viewExpenses: false, createExpense: false, deleteExpense: false,
+    viewInvoices: false, createInvoice: false, deleteInvoice: false,
+    viewReports: true, createReport: false,
+    viewAnalytics: true, viewStats: true,
+    manageUsers: false,
+    viewDocuments: false, editContracts: false,
+    viewMessages: false, manageTenantPortal: false,
+  },
+  responsable_operations: {
+    createProperty: false, editProperty: false, deleteProperty: false,
+    createTenant: false, editTenant: false, deleteTenant: false,
+    createLease: false, editLease: false, deleteLease: false,
+    createPayment: false, editPayment: false, deletePayment: false, viewPayments: false,
+    onlinePayment: false,
+    createTicket: false, editTicket: false, deleteTicket: false,
+    viewExpenses: false, createExpense: false, deleteExpense: false,
+    viewInvoices: false, createInvoice: false, deleteInvoice: false,
+    viewReports: true, createReport: false,
+    viewAnalytics: true, viewStats: true,
+    manageUsers: false,
+    viewDocuments: false, editContracts: false,
+    viewMessages: false, manageTenantPortal: false,
+  },
 };
 
 // Admin a toujours tout
@@ -79,6 +109,13 @@ export function setCachedPermissions(companyId: string, perms: Record<string, Re
 
 export function getCachedPermissions() {
   return _cachedPermissions;
+}
+
+export const EXECUTIVE_ROLES: UserRole[] = ['pdg', 'responsable_operations'];
+export const EXECUTIVE_ALLOWED_ROUTES = ['/real-estate', '/real-estate/analytics', '/real-estate/stats', '/real-estate/reports'];
+
+export function isExecutiveRole(role: UserRole) {
+  return EXECUTIVE_ROLES.includes(role);
 }
 
 function getPerms(role: UserRole): Record<string, boolean> {
@@ -130,6 +167,9 @@ export const getNavItems = (role: UserRole): string[] => {
       'invoices','documents','contracts','maintenance','notifications',
       'analytics','stats','messages','reports','inspections','terminations','discharge','convention','weeklyOutings','contractTemplate','settings'];
   }
+  if (isExecutiveRole(role)) {
+    return ['analytics', 'stats', 'reports'];
+  }
   const p = getPerms(role);
   const map: Record<string, boolean> = {
     properties:    true,
@@ -159,6 +199,18 @@ export const getNavItems = (role: UserRole): string[] => {
 
 export const getDashboardSections = (role: UserRole) => {
   const p = getPerms(role);
+  if (isExecutiveRole(role)) {
+    return {
+      showRevenue: true,
+      showFullStats: true,
+      showPendingRents: true,
+      showMaintenance: true,
+      showExpiring: true,
+      showCharts: true,
+      showQuickActions: false,
+      showFinance: true,
+    };
+  }
   return {
     showRevenue:      role === 'admin' || !!p.viewPayments,
     showFullStats:    role === 'admin' || !!p.viewAnalytics,
@@ -256,5 +308,7 @@ export const ROLES_CONFIGURABLE: { role: UserRole; label: string; color: string;
   { role: 'manager',   label: 'Manager',    color: 'blue',   desc: 'Gestion opérationnelle quotidienne' },
   { role: 'agent',     label: 'Agent',      color: 'green',  desc: 'Terrain — paiements et tickets' },
   { role: 'comptable', label: 'Comptable',  color: 'purple', desc: 'Finance, factures et rapports' },
+  { role: 'pdg',       label: 'PDG',        color: 'amber',  desc: 'Vision executive lecture seule' },
+  { role: 'responsable_operations', label: 'Responsable operations', color: 'cyan', desc: 'Suivi operationnel lecture seule' },
   { role: 'viewer',    label: 'Lecteur',    color: 'gray',   desc: 'Consultation uniquement' },
 ];

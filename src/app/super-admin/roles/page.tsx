@@ -1,7 +1,7 @@
 'use client';
 import { useAuthStore } from '@/lib/store';
 import { PageHeader, Badge, cardCls, BadgeVariant } from '@/components/ui';
-import { Shield, Crown, Star, Zap, Eye, CheckCircle, XCircle } from 'lucide-react';
+import { Shield, Crown, Star, Zap, Eye, CheckCircle, XCircle, Briefcase, LineChart } from 'lucide-react';
 
 type Role = {
   id: string; label: string; description: string;
@@ -44,6 +44,20 @@ const ROLES: Role[] = [
     icon: <Eye size={20} className="text-slate-600"/>,
     description: 'Acces en lecture seule. Peut consulter toutes les donnees sans pouvoir les modifier.',
     permissions: ['properties.read','tenants.read','leases.read','payments.read','maintenance.read','reports.read'],
+  },
+  {
+    id: 'pdg', label: 'PDG', variant: 'warning',
+    color: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800',
+    icon: <Briefcase size={20} className="text-amber-600"/>,
+    description: 'Vue executive lecture seule. Acces limite au tableau de bord, aux statistiques, aux analyses et aux rapports financiers.',
+    permissions: ['reports.read'],
+  },
+  {
+    id: 'responsable_operations', label: 'Responsable operations', variant: 'info',
+    color: 'bg-cyan-50 dark:bg-cyan-900/20 border-cyan-200 dark:border-cyan-800',
+    icon: <LineChart size={20} className="text-cyan-600"/>,
+    description: 'Suivi operationnel lecture seule. Consulte les indicateurs, les analyses et les rapports sans modification possible.',
+    permissions: ['reports.read'],
   },
 ];
 

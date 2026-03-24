@@ -2,7 +2,16 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type UserRole = 'super_admin' | 'admin' | 'manager' | 'agent' | 'viewer' | 'comptable' | 'tenant';
+export type UserRole =
+  | 'super_admin'
+  | 'admin'
+  | 'manager'
+  | 'agent'
+  | 'viewer'
+  | 'comptable'
+  | 'pdg'
+  | 'responsable_operations'
+  | 'tenant';
 
 export interface AppUser {
   id: string;

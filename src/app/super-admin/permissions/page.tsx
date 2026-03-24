@@ -14,6 +14,8 @@ const ROLE_COLORS: Record<string, string> = {
   manager:   'info',
   agent:     'success',
   comptable: 'purple',
+  pdg:       'warning',
+  responsable_operations: 'info',
   viewer:    'default',
 };
 

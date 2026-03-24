@@ -8,7 +8,7 @@ import { calculateCommission, computeLandlordNet } from '@/lib/commission';
 import { useAuthStore, UserRole } from '@/lib/store';
 import { StatCard, LoadingSpinner, Badge, cardCls, btnPrimary } from '@/components/ui';
 import { formatCurrency, formatDate, getPropertyTypeLabel } from '@/lib/utils';
-import { getDashboardSections, can } from '@/lib/permissions';
+import { getDashboardSections, can, isExecutiveRole } from '@/lib/permissions';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -46,6 +46,11 @@ const ROLE_WELCOME: Record<string,string> = {
   viewer:  'Mode lecture — consultation uniquement, aucune modification',
 };
 
+const EXECUTIVE_WELCOME: Record<string, string> = {
+  pdg: 'Vue executive - synthese, statistiques et rapports financiers uniquement',
+  responsable_operations: 'Vue operationnelle - indicateurs et rapports en lecture seule',
+};
+
 export default function REDashboard() {
   const { company, user } = useAuthStore();
   const [data, setData] = useState<KPIs|null>(null);
@@ -56,7 +61,9 @@ export default function REDashboard() {
   const autoRef = useRef<NodeJS.Timeout|null>(null);
 
   const role = (user?.role || 'viewer') as UserRole;
+  const executiveView = isExecutiveRole(role);
   const sections = getDashboardSections(role);
+  const roleWelcome = ROLE_WELCOME[role] || EXECUTIVE_WELCOME[role] || 'Tableau de bord Nexora Immo';
 
   useEffect(() => {
     if (properties.length <= 1) return;
@@ -185,7 +192,7 @@ export default function REDashboard() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Bonjour, {user?.full_name?.split(' ')[0]||'Utilisateur'} 👋</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{ROLE_WELCOME[role]||'Tableau de bord Nexora Immo'}</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{roleWelcome}</p>
         </div>
         {can.createPayment(role) && (
           <Link href="/real-estate/payments/new" className={btnPrimary}><CreditCard size={16}/> Enregistrer paiement</Link>
@@ -193,9 +200,15 @@ export default function REDashboard() {
       </div>
 
       {/* Role banner */}
-      {(role==='agent'||role==='viewer') && (
-        <div className={`px-4 py-3 rounded-2xl border text-sm flex items-center gap-2 ${role==='viewer'?'bg-slate-50 dark:bg-slate-700/30 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300':'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300'}`}>
-          {role==='viewer'?'👁 ':'⚡ '}<span>{ROLE_WELCOME[role]}</span>
+      {(role==='agent'||role==='viewer'||executiveView) && (
+        <div className={`px-4 py-3 rounded-2xl border text-sm flex items-center gap-2 ${
+          executiveView
+            ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300'
+            : role==='viewer'
+              ? 'bg-slate-50 dark:bg-slate-700/30 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300'
+              : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300'
+        }`}>
+          {executiveView ? '📊 ' : role==='viewer' ? '👁 ' : '⚡ '}<span>{roleWelcome}</span>
         </div>
       )}
 
@@ -473,6 +486,24 @@ export default function REDashboard() {
             <Link href="/real-estate/maintenance/new" className="flex items-center gap-2.5 p-4 rounded-2xl border border-orange-100 bg-orange-50 hover:bg-orange-100 transition-colors text-orange-700"><Wrench size={16}/><span className="text-sm font-medium">Nouveau ticket</span></Link>
             <Link href="/real-estate/payments" className="flex items-center gap-2.5 p-4 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100 transition-colors text-slate-700"><CreditCard size={16}/><span className="text-sm font-medium">Voir paiements</span></Link>
             <Link href="/real-estate/maintenance" className="flex items-center gap-2.5 p-4 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100 transition-colors text-slate-700"><Wrench size={16}/><span className="text-sm font-medium">Voir maintenance</span></Link>
+          </div>
+        </div>
+      )}
+
+      {/* Executive */}
+      {executiveView && (
+        <div className={cardCls+' p-5'}>
+          <h3 className="font-semibold text-foreground mb-3">Acces direction</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { href:'/real-estate/analytics', label:'Analyse financiere', icon:<CreditCard size={16}/>, cls:'text-blue-700 bg-blue-50 border-blue-100' },
+              { href:'/real-estate/stats', label:'Statistiques', icon:<Home size={16}/>, cls:'text-emerald-700 bg-emerald-50 border-emerald-100' },
+              { href:'/real-estate/reports', label:'Rapports financiers', icon:<FileText size={16}/>, cls:'text-purple-700 bg-purple-50 border-purple-100' },
+            ].map(item=>(
+              <Link key={item.href} href={item.href} className={'flex items-center gap-2.5 p-4 rounded-2xl border transition-colors '+item.cls}>
+                {item.icon}<span className="text-sm font-medium">{item.label}</span>
+              </Link>
+            ))}
           </div>
         </div>
       )}

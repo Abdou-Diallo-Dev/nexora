@@ -18,11 +18,13 @@ const ROLE_MAP: Record<string,{l:string;v:BadgeVariant}> = {
   agent:       { l:'Agent',       v:'warning' },
   viewer:      { l:'Viewer',      v:'default' },
   comptable:   { l:'Comptable',   v:'purple'  },
+  pdg:         { l:'PDG',         v:'warning' },
+  responsable_operations: { l:'Resp. operations', v:'info' },
   tenant:      { l:'Locataire',   v:'default' },
 };
 
-const ROLES: UserRole[] = ['admin','manager','agent','viewer','comptable'];
-const ROLES_WITH_SA: UserRole[] = ['super_admin','admin','manager','agent','viewer','comptable'];
+const ROLES: UserRole[] = ['admin','manager','agent','viewer','comptable','pdg','responsable_operations'];
+const ROLES_WITH_SA: UserRole[] = ['super_admin','admin','manager','agent','viewer','comptable','pdg','responsable_operations'];
 
 const ROLE_DESC: Record<string,string> = {
   admin:     'Acces complet a son entreprise',
@@ -30,6 +32,8 @@ const ROLE_DESC: Record<string,string> = {
   agent:     'Paiements et maintenance',
   viewer:    'Lecture seule',
   comptable: 'Gestion financiere et comptabilite',
+  pdg:       'Vision executive en lecture seule',
+  responsable_operations: 'Suivi operationnel en lecture seule',
 };
 
 export default function SuperAdminUsersPage() {
