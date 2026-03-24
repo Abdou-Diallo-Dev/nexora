@@ -9,7 +9,7 @@ import { ImageUpload } from '@/components/ui/ImageUpload';
 import { toast } from 'sonner';
 
 export default function TenantProfilePage() {
-  const { user } = useAuthStore();
+  const { user, reset } = useAuthStore();
   const router = useRouter();
   const [tenantId, setTenantId] = useState<string|null>(null);
   const [form, setForm] = useState({ first_name:'', last_name:'', phone:'' });
@@ -60,6 +60,7 @@ export default function TenantProfilePage() {
 
   const logout = async () => {
     await createClient().auth.signOut();
+    reset();
     router.push('/auth/login');
   };
 

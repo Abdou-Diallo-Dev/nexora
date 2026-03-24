@@ -42,7 +42,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         const { data } = await sb.from('users').select('*, companies(*)').eq('id', session.user.id).maybeSingle();
         if (data) {
           setUser(data as never);
-          if (data.companies) setCompany(data.companies as never);
+          setCompany((data.companies || null) as never);
           // Redirect based on role — don't stay on /dashboard
           const modules = (data.companies as any)?.modules || [];
           router.replace(getRedirectPath(data.role, modules));
@@ -58,7 +58,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     };
     run();
     const { data: { subscription } } = sb.auth.onAuthStateChange((ev) => {
-      if (ev === 'SIGNED_OUT') router.push('/auth/login');
+      if (ev === 'SIGNED_OUT') {
+        setCompany(null);
+        setUser(null);
+        router.push('/auth/login');
+      }
     });
     return () => subscription.unsubscribe();
   }, [user]);

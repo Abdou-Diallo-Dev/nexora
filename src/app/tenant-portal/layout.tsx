@@ -25,7 +25,7 @@ const NOTIF_ICONS: Record<string, string> = {
 };
 
 export default function TenantPortalLayout({ children }: { children: React.ReactNode }) {
-  const { user } = useAuthStore();
+  const { user, reset } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -87,6 +87,7 @@ export default function TenantPortalLayout({ children }: { children: React.React
 
   const logout = async () => {
     await createClient().auth.signOut();
+    reset();
     router.push('/auth/login');
   };
 

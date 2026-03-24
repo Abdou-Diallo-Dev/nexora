@@ -16,7 +16,7 @@ type Notif = {
 };
 
 export function Topbar() {
-  const { user, company } = useAuthStore();
+  const { user, company, reset } = useAuthStore();
   const [notifs, setNotifs]   = useState<Notif[]>([]);
   const [unread, setUnread]   = useState(0);
   const [showN, setShowN]     = useState(false);
@@ -55,7 +55,11 @@ export function Topbar() {
     setNotifs(n => n.map(x => ({ ...x, is_read: true }))); setUnread(0);
   };
 
-  const logout = async () => { await createClient().auth.signOut(); router.push('/auth/login'); };
+  const logout = async () => {
+    await createClient().auth.signOut();
+    reset();
+    router.push('/auth/login');
+  };
 
   const initials = getInitials(user?.full_name || user?.email || '?');
   const displayName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Utilisateur';

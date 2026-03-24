@@ -81,7 +81,7 @@ export default function LoginPage() {
 
     // 4. Stocker et rediriger
     setUser(userRow as any);
-    if (company) setCompany(company);
+    setCompany(company as any);
 
     const role = userRow.role;
     if (role === 'super_admin') {
