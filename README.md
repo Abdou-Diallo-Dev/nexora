@@ -1,4 +1,4 @@
-# ImmoGest Pro — SaaS Platform
+# Nexora — SaaS Platform
 
 Multi-tenant SaaS for real estate and logistics management built with Next.js 14, Supabase, TypeScript, and Tailwind CSS.
 

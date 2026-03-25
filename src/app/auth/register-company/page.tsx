@@ -75,16 +75,7 @@ export default function RegisterCompanyPage() {
       setOtpSent(true);
       setOtp(['', '', '', '', '', '']);
       startResendTimer();
-
-      // Si pas d'email configuré, le code est retourné directement
-      if (data.dev_code) {
-        toast.success(`Code de test : ${data.dev_code}`, { duration: 30000 });
-        // Auto-remplir les cases OTP
-        const digits = data.dev_code.split('');
-        setOtp(digits);
-      } else {
-        toast.success('Code envoyé ! Vérifiez votre boîte mail.');
-      }
+      toast.success('Code envoyé ! Vérifiez votre boîte mail.');
       setTimeout(() => otpRefs.current[0]?.focus(), 100);
     } catch { toast.error('Erreur envoi OTP'); }
     finally { setOtpLoading(false); }

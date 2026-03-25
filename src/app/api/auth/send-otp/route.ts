@@ -75,10 +75,14 @@ export async function POST(request: Request) {
     const emailSent = await sendOTPEmail(email, code, company_name);
     notifySuperAdmin(company_name, email, modules || []).catch(console.error);
 
-    // Si pas de RESEND configuré, on renvoie le code dans la réponse pour dev/test
+    // If email is not configured, only return code in development
     if (!emailSent) {
-      console.log(`[OTP DEV] ${email} → ${code}`);
-      return NextResponse.json({ success: true, dev_code: code });
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[OTP DEV] ${email} → ${code}`);
+        return NextResponse.json({ success: true, dev_code: code });
+      }
+      // In production, still allow user to proceed but don't expose code
+      return NextResponse.json({ success: true });
     }
 
     return NextResponse.json({ success: true });

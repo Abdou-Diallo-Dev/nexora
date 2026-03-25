@@ -422,6 +422,7 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
           </motion.div>
         </>
       )}
+ 
     </AnimatePresence>
   );
 }

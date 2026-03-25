@@ -67,88 +67,97 @@ export default function AccountingPage() {
     const cid = company.id;
 
     sb.from('companies').select('commission_rate,commission_mode,vat_rate').eq('id', cid).maybeSingle()
-      .then(({ data }) => setCommission(data || { commission_rate: 10, commission_mode: 'ttc', vat_rate: 18 }));
+      .then(({ data }) => setCommission(data || { commission_rate: 10, commission_mode: 'ttc', vat_rate: 18 }))
+      .catch(err => console.error('Error loading commission settings:', err));
 
     Promise.all([
       sb.from('rent_payments').select('id,amount,paid_amount,status,period_month,period_year,paid_date,tenant_id,lease_id').eq('company_id', cid).order('paid_date', { ascending: false }).limit(500),
       sb.from('expenses').select('id,type,amount,description,date,category').eq('company_id', cid).order('date', { ascending: false }).limit(500),
     ]).then(([{ data: pays }, { data: exps }]) => {
-      const P = (pays || []) as any[];
-      const E = (exps || []) as any[];
+      try {
+        const P = (pays || []) as any[];
+        const E = (exps || []) as any[];
 
-      const paid = P.filter((p) => p.status === 'paid' || p.status === 'partial');
-      const totalLoyers = paid.reduce((s: number, p: any) => s + Number(p.paid_amount || p.amount), 0);
-      const commissionTotals = calculateCommission(totalLoyers, commission);
-      const totalDepensesBailleur = E.filter((e: any) => e.type === 'bailleur').reduce((s: number, e: any) => s + Number(e.amount), 0);
-      const totalDepensesEntreprise = E.filter((e: any) => e.type === 'entreprise').reduce((s: number, e: any) => s + Number(e.amount), 0);
-      const paidFull = P.filter((p: any) => p.status === 'paid').length;
+        const paid = P.filter((p) => p.status === 'paid' || p.status === 'partial');
+        const totalLoyers = paid.reduce((s: number, p: any) => s + Number(p.paid_amount || p.amount), 0);
+        const commissionTotals = calculateCommission(totalLoyers, commission);
+        const totalDepensesBailleur = E.filter((e: any) => e.type === 'bailleur').reduce((s: number, e: any) => s + Number(e.amount), 0);
+        const totalDepensesEntreprise = E.filter((e: any) => e.type === 'entreprise').reduce((s: number, e: any) => s + Number(e.amount), 0);
+        const paidFull = P.filter((p: any) => p.status === 'paid').length;
 
-      setSummary({
-        totalLoyers,
-        totalCommissions: commissionTotals.landlordCommission,
-        commHT: commissionTotals.commissionHT,
-        commTVA: commissionTotals.commissionTVA,
-        totalDepensesBailleur,
-        totalDepensesEntreprise,
-        totalRestitue: computeLandlordNet(totalLoyers, totalDepensesBailleur, commission),
-        tauxRecouvrement: P.length > 0 ? Math.round((paidFull / P.length) * 100) : 0,
-        netEntreprise: computeCompanyNet(totalLoyers, totalDepensesEntreprise, commission),
-        netBailleur: computeLandlordNet(totalLoyers, totalDepensesBailleur, commission),
-      });
+        setSummary({
+          totalLoyers,
+          totalCommissions: commissionTotals.landlordCommission,
+          commHT: commissionTotals.commissionHT,
+          commTVA: commissionTotals.commissionTVA,
+          totalDepensesBailleur,
+          totalDepensesEntreprise,
+          totalRestitue: computeLandlordNet(totalLoyers, totalDepensesBailleur, commission),
+          tauxRecouvrement: P.length > 0 ? Math.round((paidFull / P.length) * 100) : 0,
+          netEntreprise: computeCompanyNet(totalLoyers, totalDepensesEntreprise, commission),
+          netBailleur: computeLandlordNet(totalLoyers, totalDepensesBailleur, commission),
+        });
 
-      const now = new Date();
-      const months = Array.from({ length: 6 }, (_, i) => {
-        const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
-        const mo = String(d.getMonth() + 1) + '/' + String(d.getFullYear());
-        const loyers = paid.filter((p: any) => String(p.period_month) + '/' + String(p.period_year) === mo).reduce((s: number, p: any) => s + Number(p.paid_amount || p.amount), 0);
-        const monthCommission = calculateCommission(loyers, commission);
-        const depBailleur = E.filter((e: any) => {
-          const ed = new Date(e.date);
-          return e.type === 'bailleur' && String(ed.getMonth() + 1) + '/' + String(ed.getFullYear()) === mo;
-        }).reduce((s: number, e: any) => s + Number(e.amount), 0);
-        const depEntreprise = E.filter((e: any) => {
-          const ed = new Date(e.date);
-          return e.type === 'entreprise' && String(ed.getMonth() + 1) + '/' + String(ed.getFullYear()) === mo;
-        }).reduce((s: number, e: any) => s + Number(e.amount), 0);
+        const now = new Date();
+        const months = Array.from({ length: 6 }, (_, i) => {
+          const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+          const mo = String(d.getMonth() + 1) + '/' + String(d.getFullYear());
+          const loyers = paid.filter((p: any) => String(p.period_month) + '/' + String(p.period_year) === mo).reduce((s: number, p: any) => s + Number(p.paid_amount || p.amount), 0);
+          const monthCommission = calculateCommission(loyers, commission);
+          const depBailleur = E.filter((e: any) => {
+            const ed = new Date(e.date);
+            return e.type === 'bailleur' && String(ed.getMonth() + 1) + '/' + String(ed.getFullYear()) === mo;
+          }).reduce((s: number, e: any) => s + Number(e.amount), 0);
+          const depEntreprise = E.filter((e: any) => {
+            const ed = new Date(e.date);
+            return e.type === 'entreprise' && String(ed.getMonth() + 1) + '/' + String(ed.getFullYear()) === mo;
+          }).reduce((s: number, e: any) => s + Number(e.amount), 0);
 
-        return {
-          month: format(d, 'MMM yy', { locale: fr }),
-          loyers,
-          commissionsHT: monthCommission.companyRevenue,
-          depBailleur,
-          depEntreprise,
-          netEntreprise: computeCompanyNet(loyers, depEntreprise, commission),
-          netBailleur: computeLandlordNet(loyers, depBailleur, commission),
-        };
-      });
-      setChart(months);
+          return {
+            month: format(d, 'MMM yy', { locale: fr }),
+            loyers,
+            commissionsHT: monthCommission.companyRevenue,
+            depBailleur,
+            depEntreprise,
+            netEntreprise: computeCompanyNet(loyers, depEntreprise, commission),
+            netBailleur: computeLandlordNet(loyers, depBailleur, commission),
+          };
+        });
+        setChart(months);
 
-      const txns: Transaction[] = [
-        ...paid.map((p: any) => ({
-          id: p.id,
-          type: 'paiement' as const,
-          label: `Loyer - ${p.period_month}/${p.period_year}`,
-          amount: Number(p.paid_amount || p.amount),
-          date: p.paid_date || '',
-          status: p.status,
-        })),
-        ...E.filter((e: any) => e.type === 'bailleur').map((e: any) => ({
-          id: e.id,
-          type: 'depense_bailleur' as const,
-          label: `Depense bailleur - ${e.description || e.category || '-'}`,
-          amount: -Number(e.amount),
-          date: e.date,
-        })),
-        ...E.filter((e: any) => e.type === 'entreprise').map((e: any) => ({
-          id: e.id,
-          type: 'depense_entreprise' as const,
-          label: `Depense entreprise - ${e.description || e.category || '-'}`,
-          amount: -Number(e.amount),
-          date: e.date,
-        })),
-      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 50);
+        const txns: Transaction[] = [
+          ...paid.map((p: any) => ({
+            id: p.id,
+            type: 'paiement' as const,
+            label: `Loyer - ${p.period_month}/${p.period_year}`,
+            amount: Number(p.paid_amount || p.amount),
+            date: p.paid_date || '',
+            status: p.status,
+          })),
+          ...E.filter((e: any) => e.type === 'bailleur').map((e: any) => ({
+            id: e.id,
+            type: 'depense_bailleur' as const,
+            label: `Depense bailleur - ${e.description || e.category || '-'}`,
+            amount: -Number(e.amount),
+            date: e.date,
+          })),
+          ...E.filter((e: any) => e.type === 'entreprise').map((e: any) => ({
+            id: e.id,
+            type: 'depense_entreprise' as const,
+            label: `Depense entreprise - ${e.description || e.category || '-'}`,
+            amount: -Number(e.amount),
+            date: e.date,
+          })),
+        ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 50);
 
-      setTransactions(txns);
+        setTransactions(txns);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error processing accounting data:', error);
+        setLoading(false);
+      }
+    }).catch(err => {
+      console.error('Error fetching accounting data:', err);
       setLoading(false);
     });
   }, [company?.id, commission]);

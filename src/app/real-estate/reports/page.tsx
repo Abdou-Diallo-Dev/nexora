@@ -76,148 +76,156 @@ export default function ReportsPage() {
       sb.from('tenant_tickets').select('id,status,category').eq('company_id', cid),
       sb.from('companies').select('commission_rate,commission_mode,vat_rate').eq('id', cid).maybeSingle(),
     ]).then(([{ data: pays }, { data: exps }, { data: props }, { data: leas }, { data: tix }, { data: comp }]) => {
-      const P   = (pays  || []) as any[];
-      const E   = (exps  || []) as any[];
-      const PR  = (props || []) as any[];
-      const L   = (leas  || []) as any[];
-      const T   = (tix   || []) as any[];
-      const commissionConfig = (comp as any) || {};
-      const commRate = commissionConfig?.commission_rate ?? 10;
+      try {
+        const P   = (pays  || []) as any[];
+        const E   = (exps  || []) as any[];
+        const PR  = (props || []) as any[];
+        const L   = (leas  || []) as any[];
+        const T   = (tix   || []) as any[];
+        const commissionConfig = (comp as any) || {};
+        const commRate = commissionConfig?.commission_rate ?? 10;
 
-      // ✅ Inclure les partiels (identique à la Comptabilité)
-      const paid    = P.filter((p: any) => p.status === 'paid' || p.status === 'partial');
-      const pending = P.filter((p: any) => p.status === 'pending');
-      const overdue = P.filter((p: any) => p.status === 'late'  || p.status === 'overdue');
+        // ✅ Inclure les partiels (identique à la Comptabilité)
+        const paid    = P.filter((p: any) => p.status === 'paid' || p.status === 'partial');
+        const pending = P.filter((p: any) => p.status === 'pending');
+        const overdue = P.filter((p: any) => p.status === 'late'  || p.status === 'overdue');
 
-      const inPeriod = (p: any) => {
-        const d = new Date(p.period_year, p.period_month - 1, 1);
-        return months === 1
-          ? moKey(d) === curMo
-          : d >= startDate && d <= now;
-      };
-      const inPeriodExp = (e: any) => {
-        const d = new Date(e.date);
-        return months === 1
-          ? moKey(d) === curMo
-          : d >= startDate && d <= now;
-      };
+        const inPeriod = (p: any) => {
+          const d = new Date(p.period_year, p.period_month - 1, 1);
+          return months === 1
+            ? moKey(d) === curMo
+            : d >= startDate && d <= now;
+        };
+        const inPeriodExp = (e: any) => {
+          const d = new Date(e.date);
+          return months === 1
+            ? moKey(d) === curMo
+            : d >= startDate && d <= now;
+        };
 
-      const periodPaid = paid.filter(inPeriod);
-      const periodAll  = P.filter(inPeriod);
-      const prevPaid   = paid.filter((p: any) => moKey(new Date(p.period_year, p.period_month - 1, 1)) === prevMo);
-      const curExp     = E.filter(inPeriodExp);
-      const prevExp    = E.filter((e: any) => moKey(new Date(e.date)) === prevMo);
+        const periodPaid = paid.filter(inPeriod);
+        const periodAll  = P.filter(inPeriod);
+        const prevPaid   = paid.filter((p: any) => moKey(new Date(p.period_year, p.period_month - 1, 1)) === prevMo);
+        const curExp     = E.filter(inPeriodExp);
+        const prevExp    = E.filter((e: any) => moKey(new Date(e.date)) === prevMo);
 
-      const currentMonthRevenue  = periodPaid.reduce((s: number, p: any) => s + p.amount, 0);
-      const prevMonthRevenue     = prevPaid.reduce((s: number, p: any) => s + p.amount, 0);
-      const currentMonthExpenses = curExp.reduce((s: number, e: any) => s + e.amount, 0);
-      const prevMonthExpenses    = prevExp.reduce((s: number, e: any) => s + e.amount, 0);
-      const revenueGrowth        = prevMonthRevenue > 0 ? Math.round(((currentMonthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100) : 0;
+        const currentMonthRevenue  = periodPaid.reduce((s: number, p: any) => s + p.amount, 0);
+        const prevMonthRevenue     = prevPaid.reduce((s: number, p: any) => s + p.amount, 0);
+        const currentMonthExpenses = curExp.reduce((s: number, e: any) => s + e.amount, 0);
+        const prevMonthExpenses    = prevExp.reduce((s: number, e: any) => s + e.amount, 0);
+        const revenueGrowth        = prevMonthRevenue > 0 ? Math.round(((currentMonthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100) : 0;
 
-      // ✅ Commission TTC avec TVA 18% (identique à la Comptabilité)
-      const currentMonthCommission = calculateCommission(currentMonthRevenue, commissionConfig);
-      const currentMonthCommissionsHT = currentMonthCommission.companyRevenue;
-      const currentMonthCommissionsTVA = currentMonthCommission.commissionTVA;
-      const currentMonthCommissions = currentMonthCommission.landlordCommission;
-      const currentMonthBailleurExpenses = curExp.filter((e: any) => e.type === 'bailleur').reduce((s: number, e: any) => s + e.amount, 0);
-      const currentMonthEntrepriseExpenses = curExp.filter((e: any) => e.type === 'entreprise').reduce((s: number, e: any) => s + e.amount, 0);
-      const currentMonthNetBailleur = computeLandlordNet(currentMonthRevenue, currentMonthBailleurExpenses, commissionConfig);
-      const currentMonthNetEntreprise = computeCompanyNet(currentMonthRevenue, currentMonthEntrepriseExpenses, commissionConfig);
-      const currentMonthNet         = currentMonthNetBailleur;
+        // ✅ Commission TTC avec TVA 18% (identique à la Comptabilité)
+        const currentMonthCommission = calculateCommission(currentMonthRevenue, commissionConfig);
+        const currentMonthCommissionsHT = currentMonthCommission.companyRevenue;
+        const currentMonthCommissionsTVA = currentMonthCommission.commissionTVA;
+        const currentMonthCommissions = currentMonthCommission.landlordCommission;
+        const currentMonthBailleurExpenses = curExp.filter((e: any) => e.type === 'bailleur').reduce((s: number, e: any) => s + e.amount, 0);
+        const currentMonthEntrepriseExpenses = curExp.filter((e: any) => e.type === 'entreprise').reduce((s: number, e: any) => s + e.amount, 0);
+        const currentMonthNetBailleur = computeLandlordNet(currentMonthRevenue, currentMonthBailleurExpenses, commissionConfig);
+        const currentMonthNetEntreprise = computeCompanyNet(currentMonthRevenue, currentMonthEntrepriseExpenses, commissionConfig);
+        const currentMonthNet         = currentMonthNetBailleur;
 
-      const collectionRate = periodAll.length > 0
-        ? Math.round((periodPaid.length / periodAll.length) * 100)
-        : (P.length > 0 ? Math.round((paid.length / P.length) * 100) : 0);
+        const collectionRate = periodAll.length > 0
+          ? Math.round((periodPaid.length / periodAll.length) * 100)
+          : (P.length > 0 ? Math.round((paid.length / P.length) * 100) : 0);
 
-      // ── Expenses by category ──────────────────────────────────────────────────
-      const catMap: Record<string, number> = {};
-      E.forEach((e: any) => { catMap[e.category || 'Autre'] = (catMap[e.category || 'Autre'] || 0) + e.amount; });
-      const expensesByCategory = Object.entries(catMap)
-        .sort((a, b) => b[1] - a[1])
-        .map(([name, amount], i) => ({ name, amount, color: COLORS[i % COLORS.length] }));
-      const totalBailleurExp    = E.filter((e: any) => e.type === 'bailleur').reduce((s: number, e: any) => s + e.amount, 0);
-      const totalEntrepriseExp  = E.filter((e: any) => e.type === 'entreprise').reduce((s: number, e: any) => s + e.amount, 0);
+        // ── Expenses by category ──────────────────────────────────────────────────
+        const catMap: Record<string, number> = {};
+        E.forEach((e: any) => { catMap[e.category || 'Autre'] = (catMap[e.category || 'Autre'] || 0) + e.amount; });
+        const expensesByCategory = Object.entries(catMap)
+          .sort((a, b) => b[1] - a[1])
+          .map(([name, amount], i) => ({ name, amount, color: COLORS[i % COLORS.length] }));
+        const totalBailleurExp    = E.filter((e: any) => e.type === 'bailleur').reduce((s: number, e: any) => s + e.amount, 0);
+        const totalEntrepriseExp  = E.filter((e: any) => e.type === 'entreprise').reduce((s: number, e: any) => s + e.amount, 0);
 
-      // ── Properties ────────────────────────────────────────────────────────────
-      const rentedProps    = PR.filter((p: any) => p.status === 'rented').length;
-      const availableProps = PR.filter((p: any) => p.status === 'available').length;
-      const occupancyRate  = PR.length > 0 ? Math.min(100, Math.round((rentedProps / PR.length) * 100)) : 0;
-      const revenuePerProperty = PR.filter((p: any) => p.status === 'rented').slice(0, 6).map((p: any) => ({
-        name: p.name.length > 12 ? p.name.slice(0, 12) + '…' : p.name,
-        revenue: periodPaid
-          .filter((pay: any) => {
-            const lease = L.find((l: any) => l.tenant_id === pay.tenant_id);
-            return lease && (lease.property_id === p.id || lease.properties?.name === p.name);
-          })
-          .reduce((s: number, pay: any) => s + pay.amount, 0),
-      }));
+        // ── Properties ────────────────────────────────────────────────────────────
+        const rentedProps    = PR.filter((p: any) => p.status === 'rented').length;
+        const availableProps = PR.filter((p: any) => p.status === 'available').length;
+        const occupancyRate  = PR.length > 0 ? Math.min(100, Math.round((rentedProps / PR.length) * 100)) : 0;
+        const revenuePerProperty = PR.filter((p: any) => p.status === 'rented').slice(0, 6).map((p: any) => ({
+          name: p.name.length > 12 ? p.name.slice(0, 12) + '…' : p.name,
+          revenue: periodPaid
+            .filter((pay: any) => {
+              const lease = L.find((l: any) => l.tenant_id === pay.tenant_id);
+              return lease && (lease.property_id === p.id || lease.properties?.name === p.name);
+            })
+            .reduce((s: number, pay: any) => s + pay.amount, 0),
+        }));
 
-      // ── Tenants ───────────────────────────────────────────────────────────────
-      const tenantPayMap: Record<string, { name: string; amount: number }> = {};
-      periodPaid.forEach((p: any) => {
-        const tid   = p.tenant_id || 'inconnu';
-        const lease = L.find((l: any) => l.tenant_id === tid);
-        const name  = lease?.tenants ? `${lease.tenants.first_name || ''} ${lease.tenants.last_name || ''}` : 'Locataire';
-        if (!tenantPayMap[tid]) tenantPayMap[tid] = { name, amount: 0 };
-        tenantPayMap[tid].amount += p.amount;
-      });
-      const topPayers = Object.values(tenantPayMap).sort((a, b) => b.amount - a.amount).slice(0, 5).map(t => ({ name: t.name, amount: t.amount, onTime: true }));
+        // ── Tenants ───────────────────────────────────────────────────────────────
+        const tenantPayMap: Record<string, { name: string; amount: number }> = {};
+        periodPaid.forEach((p: any) => {
+          const tid   = p.tenant_id || 'inconnu';
+          const lease = L.find((l: any) => l.tenant_id === tid);
+          const name  = lease?.tenants ? `${lease.tenants.first_name || ''} ${lease.tenants.last_name || ''}` : 'Locataire';
+          if (!tenantPayMap[tid]) tenantPayMap[tid] = { name, amount: 0 };
+          tenantPayMap[tid].amount += p.amount;
+        });
+        const topPayers = Object.values(tenantPayMap).sort((a, b) => b.amount - a.amount).slice(0, 5).map(t => ({ name: t.name, amount: t.amount, onTime: true }));
 
-      const latePayerMap: Record<string, { name: string; amount: number; periods: string[] }> = {};
-      overdue.forEach((p: any) => {
-        const tid   = p.tenant_id || 'inconnu';
-        const lease = L.find((l: any) => l.tenant_id === tid);
-        const name  = lease?.tenants ? `${lease.tenants.first_name || ''} ${lease.tenants.last_name || ''}` : 'Locataire';
-        if (!latePayerMap[tid]) latePayerMap[tid] = { name, amount: 0, periods: [] };
-        latePayerMap[tid].amount += p.amount;
-        latePayerMap[tid].periods.push(`${p.period_month}/${p.period_year}`);
-      });
-      const latePayers = Object.values(latePayerMap).slice(0, 5).map(t => ({ name: t.name, amount: t.amount, periods: t.periods.join(', ') }));
+        const latePayerMap: Record<string, { name: string; amount: number; periods: string[] }> = {};
+        overdue.forEach((p: any) => {
+          const tid   = p.tenant_id || 'inconnu';
+          const lease = L.find((l: any) => l.tenant_id === tid);
+          const name  = lease?.tenants ? `${lease.tenants.first_name || ''} ${lease.tenants.last_name || ''}` : 'Locataire';
+          if (!latePayerMap[tid]) latePayerMap[tid] = { name, amount: 0, periods: [] };
+          latePayerMap[tid].amount += p.amount;
+          latePayerMap[tid].periods.push(`${p.period_month}/${p.period_year}`);
+        });
+        const latePayers = Object.values(latePayerMap).slice(0, 5).map(t => ({ name: t.name, amount: t.amount, periods: t.periods.join(', ') }));
 
-      const paidTenantIds = new Set(periodPaid.map((p: any) => p.tenant_id));
-      const lateTenantIds = new Set(periodAll.filter((p: any) => p.status === 'late' || p.status === 'overdue').map((p: any) => p.tenant_id));
+        const paidTenantIds = new Set(periodPaid.map((p: any) => p.tenant_id));
+        const lateTenantIds = new Set(periodAll.filter((p: any) => p.status === 'late' || p.status === 'overdue').map((p: any) => p.tenant_id));
 
-      // ── Tickets ───────────────────────────────────────────────────────────────
-      const catTickets: Record<string, number> = {};
-      T.forEach((t: any) => { catTickets[t.category || 'Autre'] = (catTickets[t.category || 'Autre'] || 0) + 1; });
-      const ticketsByCategory = Object.entries(catTickets).map(([name, count]) => ({ name, count }));
+        // ── Tickets ───────────────────────────────────────────────────────────────
+        const catTickets: Record<string, number> = {};
+        T.forEach((t: any) => { catTickets[t.category || 'Autre'] = (catTickets[t.category || 'Autre'] || 0) + 1; });
+        const ticketsByCategory = Object.entries(catTickets).map(([name, count]) => ({ name, count }));
 
-      // ── Monthly chart ─────────────────────────────────────────────────────────
-      const monthlyChart = Array.from({ length: months }, (_, i) => {
-        const d   = new Date(now.getFullYear(), now.getMonth() - (months - 1) + i, 1);
-        const moK = moKey(d);
-        const revenue  = paid.filter((p: any) => moKey(new Date(p.period_year, p.period_month - 1, 1)) === moK).reduce((s: number, p: any) => s + p.amount, 0);
-        const expenses = E.filter((e: any) => moKey(new Date(e.date)) === moK).reduce((s: number, e: any) => s + e.amount, 0);
-        // ✅ Commission TTC
-        const commissions = calculateCommission(revenue, commissionConfig).landlordCommission;
-        return { month: format(d, 'MMM yy', { locale: fr }), revenue, expenses, commissions, net: computeLandlordNet(revenue, expenses, commissionConfig) };
-      });
+        // ── Monthly chart ─────────────────────────────────────────────────────────
+        const monthlyChart = Array.from({ length: months }, (_, i) => {
+          const d   = new Date(now.getFullYear(), now.getMonth() - (months - 1) + i, 1);
+          const moK = moKey(d);
+          const revenue  = paid.filter((p: any) => moKey(new Date(p.period_year, p.period_month - 1, 1)) === moK).reduce((s: number, p: any) => s + p.amount, 0);
+          const expenses = E.filter((e: any) => moKey(new Date(e.date)) === moK).reduce((s: number, e: any) => s + e.amount, 0);
+          // ✅ Commission TTC
+          const commissions = calculateCommission(revenue, commissionConfig).landlordCommission;
+          return { month: format(d, 'MMM yy', { locale: fr }), revenue, expenses, commissions, net: computeLandlordNet(revenue, expenses, commissionConfig) };
+        });
 
-      const last3           = monthlyChart.slice(-3);
-      const forecastRevenue  = Math.round(last3.reduce((s, m) => s + m.revenue,  0) / last3.length);
-      const forecastExpenses = Math.round(last3.reduce((s, m) => s + m.expenses, 0) / last3.length);
-      const forecastRevenueEntreprise = Math.round(calculateCommission(forecastRevenue, commissionConfig).companyRevenue);
-      const forecastRevenueBailleur = forecastRevenue;
-      const forecastExpensesBailleur = Math.round(totalBailleurExp / Math.max(1, months));
-      const forecastExpensesEntreprise = Math.round(totalEntrepriseExp / Math.max(1, months));
+        const last3           = monthlyChart.slice(-3);
+        const forecastRevenue  = Math.round(last3.reduce((s, m) => s + m.revenue,  0) / last3.length);
+        const forecastExpenses = Math.round(last3.reduce((s, m) => s + m.expenses, 0) / last3.length);
+        const forecastRevenueEntreprise = Math.round(calculateCommission(forecastRevenue, commissionConfig).companyRevenue);
+        const forecastRevenueBailleur = forecastRevenue;
+        const forecastExpensesBailleur = Math.round(totalBailleurExp / Math.max(1, months));
+        const forecastExpensesEntreprise = Math.round(totalEntrepriseExp / Math.max(1, months));
 
-      setData({
-        currentMonthRevenue, currentMonthExpenses, currentMonthNet, currentMonthNetEntreprise, currentMonthNetBailleur,
-        prevMonthRevenue, prevMonthExpenses,
-        collectionRate, totalProperties: PR.length, totalTenants: L.length,
-        commissionRate: commRate, totalCommissions: currentMonthCommissions, totalCommissionsHT: currentMonthCommissionsHT, totalCommissionsTVA: currentMonthCommissionsTVA, commissionMode: commissionConfig.commission_mode ?? 'ttc', vatRate: commissionConfig.vat_rate ?? 18,
-        collectedRents: currentMonthRevenue,
-        pendingRents:  periodAll.filter((p: any) => p.status === 'pending').reduce((s: number, p: any) => s + p.amount, 0),
-        overdueRents:  periodAll.filter((p: any) => p.status === 'late' || p.status === 'overdue').reduce((s: number, p: any) => s + p.amount, 0),
-        revenueGrowth, expensesByCategory, totalBailleurExp, totalEntrepriseExp,
-        rentedProps, availableProps, occupancyRate, revenuePerProperty,
-        activeTenants: L.length, paidTenants: paidTenantIds.size, lateTenants: lateTenantIds.size,
-        topPayers, latePayers,
-        openTickets:     T.filter((t: any) => t.status === 'open' || t.status === 'in_progress').length,
-        resolvedTickets: T.filter((t: any) => t.status === 'resolved' || t.status === 'closed').length,
-        totalTickets: T.length, ticketsByCategory,
-        monthlyChart, forecastRevenue, forecastExpenses, forecastRevenueEntreprise, forecastRevenueBailleur, forecastExpensesEntreprise, forecastExpensesBailleur,
-      });
+        setData({
+          currentMonthRevenue, currentMonthExpenses, currentMonthNet, currentMonthNetEntreprise, currentMonthNetBailleur,
+          prevMonthRevenue, prevMonthExpenses,
+          collectionRate, totalProperties: PR.length, totalTenants: L.length,
+          commissionRate: commRate, totalCommissions: currentMonthCommissions, totalCommissionsHT: currentMonthCommissionsHT, totalCommissionsTVA: currentMonthCommissionsTVA, commissionMode: commissionConfig.commission_mode ?? 'ttc', vatRate: commissionConfig.vat_rate ?? 18,
+          collectedRents: currentMonthRevenue,
+          pendingRents:  periodAll.filter((p: any) => p.status === 'pending').reduce((s: number, p: any) => s + p.amount, 0),
+          overdueRents:  periodAll.filter((p: any) => p.status === 'late' || p.status === 'overdue').reduce((s: number, p: any) => s + p.amount, 0),
+          revenueGrowth, expensesByCategory, totalBailleurExp, totalEntrepriseExp,
+          rentedProps, availableProps, occupancyRate, revenuePerProperty,
+          activeTenants: L.length, paidTenants: paidTenantIds.size, lateTenants: lateTenantIds.size,
+          topPayers, latePayers,
+          openTickets:     T.filter((t: any) => t.status === 'open' || t.status === 'in_progress').length,
+          resolvedTickets: T.filter((t: any) => t.status === 'resolved' || t.status === 'closed').length,
+          totalTickets: T.length, ticketsByCategory,
+          monthlyChart, forecastRevenue, forecastExpenses, forecastRevenueEntreprise, forecastRevenueBailleur, forecastExpensesEntreprise, forecastExpensesBailleur,
+        });
+        setLoading(false);
+      } catch (error) {
+        console.error('Error processing report data:', error);
+        setLoading(false);
+      }
+    }).catch(err => {
+      console.error('Error fetching report data:', err);
       setLoading(false);
     });
   }, [company?.id, period]);
