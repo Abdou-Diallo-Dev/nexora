@@ -1,5 +1,5 @@
 // Client-side PDF generation using jsPDF
-import type { ContractArticle } from '@/types/contract';
+import type { ContractArticle } from '@/lib/types';
 
 export async function loadJsPDF() {
   if (typeof window === 'undefined') return null;
@@ -487,10 +487,16 @@ export async function generateContractPDF(data: {
   primaryColor?: string | null;
   customArticles?: ContractArticle[] | null;
   specialConditions?: string | null;
+  contractTemplate?: any | null;
 }) {
+  // Extract articles from contractTemplate if provided
+  const articles = data.customArticles || data.contractTemplate?.articles || null;
+  const conditions = data.specialConditions || data.contractTemplate?.specialConditions || null;
   return generateLeaseContract({
     ...data,
     depositAmount: data.depositAmount ?? undefined,
+    customArticles: articles,
+    specialConditions: conditions,
   });
 }
 

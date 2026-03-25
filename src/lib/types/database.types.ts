@@ -1,6 +1,8 @@
 // Auto-generated types from Supabase schema
 // Run: npm run db:generate to regenerate
 
+import type { CompanySettings } from './settings.types';
+
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {

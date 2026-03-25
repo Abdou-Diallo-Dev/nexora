@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store';
 import { LoadingSpinner, cardCls, btnPrimary } from '@/components/ui';
-import type { ContractArticle } from '@/types/contract';
+import type { ContractArticle } from '@/lib/types';
 
 const DEFAULT_ARTICLES: ContractArticle[] = [
   { num: '6', title: 'Obligations du locataire', content: `- Payer le loyer et charges au plus tard le {{jour_paiement}} de chaque mois.\n- User paisiblement du logement conformement a sa destination d'habitation.\n- Entretenir le logement et effectuer les reparations locatives a sa charge.\n- Ne pas effectuer de travaux sans accord ecrit prealable du bailleur.\n- Ne pas sous-louer sans autorisation ecrite du bailleur.\n- Respecter la tranquillite du voisinage et le reglement de l'immeuble.\n- Souscrire une assurance habitation et en justifier sur demande.\n- Restituer le logement en bon etat a la fin du bail.` },
@@ -44,9 +44,9 @@ export default function ContractTemplatePage() {
   useEffect(() => {
     if (!company?.id) return;
     const sb = createClient();
-    sb.from('companies').select('contract_template').eq('id', company.id).single().then(({ data }) => {
-      if (data?.contract_template) {
-        const tpl = data.contract_template as any;
+    sb.from('companies').select('settings').eq('id', company.id).single().then(({ data }) => {
+      if (data?.settings?.contract_template) {
+        const tpl = data.settings.contract_template as any;
         if (tpl.articles?.length) setArticles(tpl.articles);
         if (tpl.specialConditions) setSpecialConditions(tpl.specialConditions);
       }
@@ -58,9 +58,21 @@ export default function ContractTemplatePage() {
     if (!company?.id) return;
     setSaving(true);
     const sb = createClient();
+    
+    // Fetch current settings to preserve other fields
+    const { data: current } = await sb.from('companies')
+      .select('settings').eq('id', company.id).single();
+    
+    const currentSettings = (current?.settings as any) || {};
+    const updatedSettings = {
+      ...currentSettings,
+      contract_template: { articles, specialConditions }
+    };
+    
     const { error } = await sb.from('companies')
-      .update({ contract_template: { articles, specialConditions } })
+      .update({ settings: updatedSettings })
       .eq('id', company.id);
+    
     if (error) toast.error('Erreur sauvegarde');
     else toast.success('Modele de contrat sauvegarde !');
     setSaving(false);

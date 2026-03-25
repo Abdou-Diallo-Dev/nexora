@@ -8,8 +8,8 @@ import { useAuthStore } from '@/lib/store';
 import { PageHeader, Badge, LoadingSpinner, btnSecondary, btnPrimary, cardCls, BadgeVariant } from '@/components/ui';
 import { formatDate, formatCurrency, isLeaseExpired, isLeaseExpiringSoon } from '@/lib/utils';
 import { generateContractPDF } from '@/lib/pdf';
+import { CompanySettings } from '@/lib/types';
 import { toast } from 'sonner';
-import type { ContractArticle } from '@/types/contract';
 
 type Lease = {
   id: string; status: string; start_date: string; end_date: string;
@@ -17,15 +17,6 @@ type Lease = {
   payment_day: number; notes: string | null;
   tenants: { first_name: string; last_name: string; email: string; phone: string | null } | null;
   properties: { name: string; address: string; city: string; type: string; rooms_count: number | null } | null;
-};
-
-type CompanySettings = {
-  logo_url: string | null;
-  contract_template: { articles?: ContractArticle[]; specialConditions?: string } | null;
-  address: string | null;
-  email: string | null;
-  phone: string | null;
-  name: string;
 };
 
 const ST: Record<string,{l:string;v:BadgeVariant}> = {
@@ -51,12 +42,20 @@ export default function LeaseDetailPage() {
         .eq('id', id).maybeSingle(),
       company?.id
         ? sb.from('companies')
-            .select('name,email,address,phone,logo_url,primary_color,contract_template')
+            .select('name,email,address,phone,logo_url,settings')
             .eq('id', company.id).maybeSingle()
         : Promise.resolve({ data: null }),
     ]).then(([{ data: lease }, { data: comp }]) => {
       setL(lease as Lease);
-      setSettings(comp as CompanySettings);
+      const settings = comp ? {
+        name: comp.name,
+        email: comp.email,
+        address: comp.address,
+        phone: comp.phone,
+        logo_url: comp.logo_url,
+        ...(comp.settings as any)
+      } : null;
+      setSettings(settings as CompanySettings);
       setLoading(false);
     });
   }, [id, company?.id]);
@@ -65,7 +64,6 @@ export default function LeaseDetailPage() {
     if (!l) return;
     setGenerating(true);
     try {
-      const tpl = settings?.contract_template;
       await generateContractPDF({
         tenantName:      l.tenants ? `${l.tenants.first_name} ${l.tenants.last_name}` : '—',
         tenantEmail:     l.tenants?.email,
@@ -85,11 +83,9 @@ export default function LeaseDetailPage() {
         companyAddress:  settings?.address || undefined,
         companyEmail:    settings?.email || undefined,
         companyPhone:    settings?.phone || undefined,
-        // ── Logo et modèle chargés automatiquement depuis la DB ──
         companyLogoUrl:  settings?.logo_url || null,
-        primaryColor:    (settings as any)?.primary_color || null,
-        customArticles:  tpl?.articles?.length ? tpl.articles : null,
-        specialConditions: tpl?.specialConditions || null,
+        primaryColor:    settings?.primary_color || null,
+        contractTemplate: settings?.contract_template || null,
       });
       toast.success('Contrat PDF téléchargé');
     } catch (e) {
@@ -129,9 +125,9 @@ export default function LeaseDetailPage() {
       </div>
 
       {/* Info modèle utilisé */}
-      {settings?.contract_template?.articles?.length ? (
+      {settings?.contract_template?.fullText ? (
         <div className="mb-4 px-4 py-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-xs text-green-700 dark:text-green-300 flex items-center gap-2">
-          ✅ Modèle personnalisé ({settings.contract_template.articles.length} articles) sera utilisé
+          ✅ Modèle personnalisé sera utilisé
           {settings.logo_url && ' · Logo entreprise inclus'}
         </div>
       ) : (

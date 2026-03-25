@@ -30,15 +30,34 @@ export default function DocumentsPage() {
   const [leases, setLeases]       = useState<Lease[]>([]);
   const [loading, setLoading]     = useState(true);
   const [generating, setGenerating] = useState<GeneratingState>(null);
+  const [companySettings, setCompanySettings] = useState<any>(null);
 
   useEffect(() => {
     if (!company?.id) return;
-    createClient()
-      .from('leases')
-      .select('id,start_date,end_date,rent_amount,charges_amount,deposit_amount,payment_day,status,tenants(first_name,last_name,email,phone),properties(name,address,city,type)')
-      .eq('company_id', company.id)
-      .order('created_at', { ascending: false })
-      .then(({ data }) => { setLeases((data || []) as unknown as Lease[]); setLoading(false); });
+    Promise.all([
+      createClient()
+        .from('leases')
+        .select('id,start_date,end_date,rent_amount,charges_amount,deposit_amount,payment_day,status,tenants(first_name,last_name,email,phone),properties(name,address,city,type)')
+        .eq('company_id', company.id)
+        .order('created_at', { ascending: false }),
+      createClient()
+        .from('companies')
+        .select('name,email,address,phone,logo_url,settings')
+        .eq('id', company.id)
+        .maybeSingle(),
+    ]).then(([{ data: leaseData }, { data: compData }]) => {
+      setLeases((leaseData || []) as unknown as Lease[]);
+      const settings = compData ? {
+        name: compData.name,
+        email: compData.email,
+        address: compData.address,
+        phone: compData.phone,
+        logo_url: compData.logo_url,
+        ...(compData.settings as any)
+      } : null;
+      setCompanySettings(settings);
+      setLoading(false);
+    });
   }, [company?.id]);
 
   const handleReceipt = async (l: Lease) => {
@@ -62,12 +81,12 @@ export default function DocumentsPage() {
         paidDate:        now.toISOString().slice(0, 10),
         paymentMethod:   'cash',
         status:          'paid',
-        companyName:     company?.name || '',
-        companyAddress:  (company as any)?.address || undefined,
-        companyPhone:    (company as any)?.phone   || undefined,
-        companyEmail:    (company as any)?.email   || undefined,
-        companyLogoUrl:  company?.logo_url || null,
-        primaryColor:    (company as any)?.primary_color || null,
+        companyName:     companySettings?.name || company?.name || '',
+        companyAddress:  companySettings?.address || undefined,
+        companyPhone:    companySettings?.phone   || undefined,
+        companyEmail:    companySettings?.email   || undefined,
+        companyLogoUrl:  companySettings?.logo_url || null,
+        primaryColor:    companySettings?.primary_color || null,
       });
       toast.success('Quittance PDF téléchargée');
     } catch { toast.error('Erreur génération'); }
@@ -93,13 +112,12 @@ export default function DocumentsPage() {
         depositAmount:   l.deposit_amount,
         paymentDay:      l.payment_day,
         companyName:     company?.name || '',
-        companyAddress:  (company as any)?.address || undefined,
-        companyEmail:    (company as any)?.email   || undefined,
-        companyPhone:    (company as any)?.phone   || undefined,
-        companyLogoUrl:  company?.logo_url || null,
-        primaryColor:    (company as any)?.primary_color || null,
-        customArticles:  (company as any)?.contract_template?.articles || null,
-        specialConditions: (company as any)?.contract_template?.special_conditions || null,
+        companyAddress:  companySettings?.address || undefined,
+        companyEmail:    companySettings?.email   || undefined,
+        companyPhone:    companySettings?.phone   || undefined,
+        companyLogoUrl:  companySettings?.logo_url || null,
+        primaryColor:    companySettings?.primary_color || null,
+        contractTemplate: companySettings?.contract_template || null,
       });
       toast.success('Contrat PDF téléchargé');
     } catch { toast.error('Erreur génération'); }

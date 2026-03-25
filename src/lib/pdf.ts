@@ -179,6 +179,12 @@ export async function generateReceipt(data: {
   companyLogoUrl?: string | null;
   primaryColor?: string | null;
   prorataStartDay?: number; // si défini, calcule le prorata
+  paidAmount?: number;
+  totalAmount?: number;
+  remainingAmount?: number;
+  vatRate?: number;
+  commissionRate?: number;
+  showCommission?: boolean;
 }) {
   const JsPDF = await loadJsPDF();
   if (!JsPDF) return;
@@ -229,26 +235,76 @@ export async function generateReceipt(data: {
   y = row(doc, y, 'Période', period, false);
   if (data.paidDate) y = row(doc, y, 'Date de paiement', new Date(data.paidDate).toLocaleDateString('fr-FR'), true);
   y = row(doc, y, 'Méthode', data.paymentMethod, data.paidDate ? false : true);
+  // Partial payment info
+  const isPartialPayment = data.paidAmount && data.totalAmount && data.paidAmount < data.totalAmount;
+  if (isPartialPayment) {
+    y = row(doc, y, 'Versement', fmtNum(data.paidAmount!) + ' F CFA', true);
+    y = row(doc, y, 'Reste à payer', fmtNum(data.remainingAmount || 0) + ' F CFA', false);
+  }
   y += 4;
 
-  doc.setFillColor(...(PRIMARY as [number,number,number])); doc.roundedRect(8, y, 194, 36, 3, 3, 'F');
+  // Commission TVA calculation
+  const vatRate = data.vatRate || 18;
+  const commRate = data.commissionRate || 10;
+  const commHT = displayAmount * (commRate / 100);
+  const tva = commHT * (vatRate / 100);
+  const commTTC = commHT + tva;
+  const reversalAmount = displayAmount - commTTC;
+
+  const boxH = isPartialPayment ? 52 : 36;
+  doc.setFillColor(...(PRIMARY as [number,number,number])); doc.roundedRect(8, y, 194, boxH, 3, 3, 'F');
   doc.setTextColor(...WHITE); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
   doc.text('Loyer mensuel', 20, y + 10);
   doc.text('Charges', 20, y + 20);
-  doc.setDrawColor(255,255,255,0.3); doc.setLineWidth(0.2); doc.line(8, y + 24, 202, y + 24);
-  doc.setFontSize(11); doc.setFont('helvetica', 'bold');
-  doc.text('TOTAL', 20, y + 32);
-  // Amounts - use fmtNum + ' F CFA' to force space rendering
+  if (isPartialPayment) {
+    doc.text('Versement partiel', 20, y + 30);
+    doc.setDrawColor(255,255,255,0.3); doc.setLineWidth(0.2); doc.line(8, y + 34, 202, y + 34);
+    doc.setFontSize(11); doc.setFont('helvetica', 'bold');
+    doc.text('VERSÉ', 20, y + 44);
+  } else {
+    doc.setDrawColor(255,255,255,0.3); doc.setLineWidth(0.2); doc.line(8, y + 24, 202, y + 24);
+    doc.setFontSize(11); doc.setFont('helvetica', 'bold');
+    doc.text('TOTAL', 20, y + 32);
+  }
   const amtLoyer = fmtNum(displayAmount) + ' F CFA';
   const amtCharges = fmtNum(data.chargesAmount) + ' F CFA';
-  const amtTotal = fmtNum(displayAmount + data.chargesAmount) + ' F CFA';
+  const amtTotal = fmtNum((isPartialPayment ? data.paidAmount! : displayAmount) + data.chargesAmount) + ' F CFA';
   doc.setFontSize(9); doc.setFont('helvetica', 'bold');
   doc.text(amtLoyer, 190, y + 10, { align: 'right' });
   doc.setFont('helvetica', 'normal');
   doc.text(amtCharges, 190, y + 20, { align: 'right' });
-  doc.setFontSize(13); doc.setFont('helvetica', 'bold');
-  doc.text(amtTotal, 190, y + 32, { align: 'right' });
-  y += 44;
+  if (isPartialPayment) {
+    doc.text(fmtNum(data.paidAmount!) + ' F CFA', 190, y + 30, { align: 'right' });
+    doc.setFontSize(13); doc.setFont('helvetica', 'bold');
+    doc.text(amtTotal, 190, y + 44, { align: 'right' });
+  } else {
+    doc.setFontSize(13); doc.setFont('helvetica', 'bold');
+    doc.text(amtTotal, 190, y + 32, { align: 'right' });
+  }
+  y += boxH + 8;
+
+  // Commission + TVA breakdown
+  if (data.showCommission !== false) {
+    doc.setFillColor(245, 247, 250); doc.roundedRect(8, y, 194, 28, 2, 2, 'F');
+    doc.setTextColor(...GRAY); doc.setFontSize(7.5); doc.setFont('helvetica', 'normal');
+    doc.text(`Commission HT (${commRate}%)`, 14, y + 7);
+    doc.text(`TVA (${vatRate}%) sur commission`, 14, y + 14);
+    doc.text(`Commission TTC`, 14, y + 21);
+    doc.setTextColor(...(PRIMARY as [number,number,number])); doc.setFont('helvetica', 'bold');
+    doc.text(fmtNum(commHT) + ' F CFA', 190, y + 7, { align: 'right' });
+    doc.setTextColor(...GRAY); doc.setFont('helvetica', 'normal');
+    doc.text(fmtNum(tva) + ' F CFA', 190, y + 14, { align: 'right' });
+    doc.setTextColor(220, 38, 38); doc.setFont('helvetica', 'bold');
+    doc.text(fmtNum(commTTC) + ' F CFA', 190, y + 21, { align: 'right' });
+    y += 34;
+
+    // Net bailleur
+    doc.setFillColor(220, 252, 231); doc.roundedRect(8, y, 194, 12, 2, 2, 'F');
+    doc.setTextColor(22, 101, 52); doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+    doc.text('Net à reverser au bailleur', 14, y + 8);
+    doc.text(fmtNum(reversalAmount) + ' F CFA', 190, y + 8, { align: 'right' });
+    y += 18;
+  } else { y += 4; }
 
   if (prorataInfo) {
     doc.setFillColor(...LIGHT); doc.roundedRect(8, y, 194, 12, 2, 2, 'F');
@@ -431,10 +487,16 @@ export async function generateContractPDF(data: {
   primaryColor?: string | null;
   customArticles?: ContractArticle[] | null;
   specialConditions?: string | null;
+  contractTemplate?: any | null;
 }) {
+  // Extract articles from contractTemplate if provided
+  const articles = data.customArticles || data.contractTemplate?.articles || null;
+  const conditions = data.specialConditions || data.contractTemplate?.specialConditions || null;
   return generateLeaseContract({
     ...data,
     depositAmount: data.depositAmount ?? undefined,
+    customArticles: articles,
+    specialConditions: conditions,
   });
 }
 
