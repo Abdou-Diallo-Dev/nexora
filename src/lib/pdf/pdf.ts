@@ -410,12 +410,11 @@ export async function generateLeaseContract(data: {
   // Préambule
   const preambleText = data.preamble?.trim() || 'Entre les soussignés, il a été convenu et arrêté ce qui suit :';
   y = pb(doc, y, 30);
-  doc.setTextColor(...DARK);
-  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
-  const preambleLines = doc.splitTextToSize(preambleText, 182);
-  doc.text(preambleLines, 14, y);
-  y += preambleLines.length * 5 + 6;
+  doc.text(preambleText, 14, y, { maxWidth: 182 });
+  y += 10;
 
   // Art. 1 — Parties (toujours fixe)
   y = sectionTitle(doc, y, 'Article 1 — Parties');
