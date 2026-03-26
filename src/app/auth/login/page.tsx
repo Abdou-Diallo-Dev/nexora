@@ -96,23 +96,42 @@ export default function LoginPage() {
     setCompany(company as any);
 
     const role = userRow.role;
+    const modules = company?.modules || [];
+
+    // ── Rôles spéciaux ─────────────────────────────────────────
     if (role === 'super_admin') {
       router.push('/super-admin/dashboard');
     } else if (role === 'tenant') {
       router.push('/tenant-portal/dashboard');
+
+    // ── Direction SARPA GROUP → dashboard global ou premier module dispo ──
+    } else if (['pdg','directeur_operations','directeur_financier','directeur_juridique','coordinatrice'].includes(role)) {
+      // Les rôles direction voient tous les modules — on les envoie vers le premier disponible
+      if (modules.includes('real_estate')) router.push('/real-estate');
+      else if (modules.includes('logistics')) router.push('/logistics');
+      else if (modules.includes('beton')) router.push('/beton');
+      else router.push('/real-estate');
+
+    // ── Rôles spécifiques Logistique ───────────────────────────
+    } else if (['manager_logistique','caissiere','responsable_vente','assistante_admin'].includes(role)) {
+      router.push('/logistics');
+
+    // ── Rôles spécifiques Béton ────────────────────────────────
+    } else if (['manager_beton','responsable_production','operateur_centrale','assistante_commerciale','responsable_qualite'].includes(role)) {
+      router.push('/beton');
+
+    // ── Rôles Immobilier spécialisés ───────────────────────────
     } else if (role === 'comptable') {
       router.push('/real-estate/reports');
+    } else if (['responsable_operations'].includes(role)) {
+      router.push('/real-estate/analytics');
+
+    // ── Tous les autres (admin, manager, agent, viewer) ────────
     } else {
-      const modules = company?.modules || [];
-      if (modules.includes('beton')) {
-        router.push('/beton');
-      } else if (modules.includes('real_estate')) {
-        router.push('/real-estate');
-      } else if (modules.includes('logistics')) {
-        router.push('/logistics');
-      } else {
-        router.push('/real-estate');
-      }
+      if (modules.includes('real_estate')) router.push('/real-estate');
+      else if (modules.includes('logistics')) router.push('/logistics');
+      else if (modules.includes('beton')) router.push('/beton');
+      else router.push('/real-estate');
     }
   };
 

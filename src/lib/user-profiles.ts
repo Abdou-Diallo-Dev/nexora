@@ -1,14 +1,33 @@
 import type { UserRole } from '@/lib/store';
 
 export const USER_ROLES: UserRole[] = [
+  // Super Admin
   'super_admin',
+  // Direction SARPA GROUP
+  'pdg',
+  'directeur_operations',
+  'directeur_financier',
+  'directeur_juridique',
+  'coordinatrice',
+  // Module Immobilier
   'admin',
   'manager',
-  'agent',
-  'viewer',
   'comptable',
-  'pdg',
+  'agent',
   'responsable_operations',
+  'viewer',
+  // Module Logistique
+  'manager_logistique',
+  'caissiere',
+  'responsable_vente',
+  'assistante_admin',
+  // Module Béton
+  'manager_beton',
+  'responsable_production',
+  'operateur_centrale',
+  'assistante_commerciale',
+  'responsable_qualite',
+  // Autres
   'tenant',
 ];
 

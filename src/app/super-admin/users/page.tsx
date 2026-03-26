@@ -12,29 +12,86 @@ type FullUser = AppUser & { companies: { name: string } | null };
 type Company  = { id: string; name: string };
 
 const ROLE_MAP: Record<string,{l:string;v:BadgeVariant}> = {
-  super_admin: { l:'Super Admin', v:'error'   },
-  admin:       { l:'Admin',       v:'info'    },
-  manager:     { l:'Manager',     v:'info'    },
-  agent:       { l:'Agent',       v:'warning' },
-  viewer:      { l:'Viewer',      v:'default' },
-  comptable:   { l:'Comptable',   v:'purple'  },
-  pdg:         { l:'PDG',         v:'warning' },
-  responsable_operations: { l:'Resp. operations', v:'info' },
-  tenant:      { l:'Locataire',   v:'default' },
+  // Super Admin
+  super_admin:              { l:'Super Admin',          v:'error'   },
+  // Direction
+  pdg:                      { l:'PDG',                  v:'warning' },
+  directeur_operations:     { l:'Dir. Opérations',      v:'purple'  },
+  directeur_financier:      { l:'Dir. Financier',       v:'purple'  },
+  directeur_juridique:      { l:'Dir. Juridique & RH',  v:'purple'  },
+  coordinatrice:            { l:'Coordinatrice',        v:'info'    },
+  // Immobilier
+  admin:                    { l:'Admin',                v:'info'    },
+  manager:                  { l:'Manager',              v:'info'    },
+  comptable:                { l:'Comptable',            v:'purple'  },
+  agent:                    { l:'Agent',                v:'warning' },
+  responsable_operations:   { l:'Resp. Opérations',     v:'info'    },
+  viewer:                   { l:'Lecteur',              v:'default' },
+  // Logistique
+  manager_logistique:       { l:'Manager Logistique',   v:'info'    },
+  caissiere:                { l:'Caissière',            v:'warning' },
+  responsable_vente:        { l:'Resp. Vente',          v:'warning' },
+  assistante_admin:         { l:'Assist. Admin',        v:'default' },
+  // Béton
+  manager_beton:            { l:'Manager Béton',        v:'info'    },
+  responsable_production:   { l:'Resp. Production',     v:'warning' },
+  operateur_centrale:       { l:'Opérateur Centrale',   v:'default' },
+  assistante_commerciale:   { l:'Assist. Commerciale',  v:'default' },
+  responsable_qualite:      { l:'Resp. Qualité',        v:'info'    },
+  // Autres
+  tenant:                   { l:'Locataire',            v:'default' },
 };
 
-const ROLES: UserRole[] = ['admin','manager','agent','viewer','comptable','pdg','responsable_operations'];
-const ROLES_WITH_SA: UserRole[] = ['super_admin','admin','manager','agent','viewer','comptable','pdg','responsable_operations'];
+// Groupes de rôles pour le sélecteur
+const ROLE_GROUPS: { label: string; roles: { value: UserRole; label: string; desc: string }[] }[] = [
+  {
+    label: 'Direction SARPA GROUP',
+    roles: [
+      { value: 'pdg',                    label: 'PDG',                        desc: 'Vue executive lecture seule (toutes filiales)' },
+      { value: 'directeur_operations',   label: 'Dir. Opérations & Logistique', desc: 'Accès complet toutes filiales' },
+      { value: 'directeur_financier',    label: 'Dir. Administratif & Financier', desc: 'Finance & comptabilité global' },
+      { value: 'directeur_juridique',    label: 'Dir. Juridique & RH',        desc: 'Contrats, baux et gestion RH' },
+      { value: 'coordinatrice',          label: 'Coordinatrice Générale',      desc: 'Coordination transversale' },
+    ],
+  },
+  {
+    label: 'Module Immobilier',
+    roles: [
+      { value: 'admin',                  label: 'Administrateur',              desc: 'Accès complet à sa filiale' },
+      { value: 'manager',                label: 'Manager',                     desc: 'Gestion opérationnelle' },
+      { value: 'comptable',              label: 'Comptable',                   desc: 'Finance, factures, rapports' },
+      { value: 'agent',                  label: 'Agent Terrain',               desc: 'Paiements et tickets maintenance' },
+      { value: 'responsable_operations', label: 'Resp. Opérations',            desc: 'Suivi opérationnel lecture seule' },
+      { value: 'viewer',                 label: 'Lecteur',                     desc: 'Consultation uniquement' },
+    ],
+  },
+  {
+    label: 'Module Logistique',
+    roles: [
+      { value: 'manager_logistique',     label: 'Manager Logistique',          desc: 'Accès complet logistique' },
+      { value: 'caissiere',              label: 'Caissière',                   desc: 'Paiements et caisse' },
+      { value: 'responsable_vente',      label: 'Responsable Vente',           desc: 'Commandes, clients, factures' },
+      { value: 'assistante_admin',       label: 'Assistante Administrative',   desc: 'Support administratif' },
+    ],
+  },
+  {
+    label: 'Module Béton',
+    roles: [
+      { value: 'manager_beton',          label: 'Manager Béton',               desc: 'Accès complet béton' },
+      { value: 'responsable_production', label: 'Responsable Production',       desc: 'Production et planning' },
+      { value: 'operateur_centrale',     label: 'Opérateur Centrale',          desc: 'Saisie production quotidienne' },
+      { value: 'assistante_commerciale', label: 'Assistante Commerciale',      desc: 'Commandes clients et factures' },
+      { value: 'responsable_qualite',    label: 'Responsable Qualité',         desc: 'Contrôle qualité et conformité' },
+    ],
+  },
+];
 
-const ROLE_DESC: Record<string,string> = {
-  admin:     'Acces complet a son entreprise',
-  manager:   'Gestion operationnelle',
-  agent:     'Paiements et maintenance',
-  viewer:    'Lecture seule',
-  comptable: 'Gestion financiere et comptabilite',
-  pdg:       'Vision executive en lecture seule',
-  responsable_operations: 'Suivi operationnel en lecture seule',
-};
+const ALL_ROLES: UserRole[] = ROLE_GROUPS.flatMap(g => g.roles.map(r => r.value));
+const ROLES: UserRole[] = ALL_ROLES;
+const ROLES_WITH_SA: UserRole[] = ['super_admin', ...ALL_ROLES];
+const ROLE_DESC: Record<string,string> = Object.fromEntries(
+  ROLE_GROUPS.flatMap(g => g.roles.map(r => [r.value, r.desc]))
+);
 
 export default function SuperAdminUsersPage() {
   const { user } = useAuthStore();
@@ -417,19 +474,22 @@ export default function SuperAdminUsersPage() {
               </div>
               <div>
                 <label className={labelCls}>Rôle *</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-                  {ROLES.map(r => {
-                    const rm = ROLE_MAP[r];
-                    return (
-                      <button key={r} onClick={()=>setNewUser(f=>({...f,role:r}))}
-                        className={'flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all '+(newUser.role===r?'border-primary':'border-border hover:border-primary/40')}
-                        style={newUser.role===r?{background:'rgba(61,38,116,0.08)'}:{}}>
-                        <Badge variant={rm.v}>{rm.l}</Badge>
-                        <p className="text-xs text-muted-foreground">{ROLE_DESC[r]}</p>
-                      </button>
-                    );
-                  })}
-                </div>
+                <select value={newUser.role} onChange={e=>setNewUser(f=>({...f,role:e.target.value as UserRole}))} className={selectCls+' w-full'}>
+                  {ROLE_GROUPS.map(g=>(
+                    <optgroup key={g.label} label={`── ${g.label} ──`}>
+                      {g.roles.map(r=>(
+                        <option key={r.value} value={r.value}>{r.label} — {r.desc}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+                {/* Aperçu du rôle sélectionné */}
+                {newUser.role && ROLE_DESC[newUser.role] && (
+                  <p className="mt-1.5 text-xs text-muted-foreground px-1">
+                    <Badge variant={ROLE_MAP[newUser.role]?.v||'default'} >{ROLE_MAP[newUser.role]?.l||newUser.role}</Badge>
+                    {' '}{ROLE_DESC[newUser.role]}
+                  </p>
+                )}
               </div>
               <div>
                 <label className={labelCls}>Entreprise</label>
@@ -456,18 +516,23 @@ export default function SuperAdminUsersPage() {
           <div className={cardCls+' p-6 w-full max-w-sm'}>
             <h3 className="font-semibold text-foreground mb-1">Modifier le role</h3>
             <p className="text-sm text-muted-foreground mb-4">{editingUser.full_name||editingUser.email}</p>
-            <div className="space-y-2 mb-5">
-              {ROLES.map(r => {
-                const rm = ROLE_MAP[r];
-                return (
-                  <label key={r} className={'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all '+(editRole===r?'border-primary':'border-border hover:border-primary/40')}
-                    style={editRole===r?{background:'rgba(61,38,116,0.08)'}:{}}>
-                    <input type="radio" name="role" value={r} checked={editRole===r} onChange={()=>setEditRole(r)} className="accent-primary"/>
-                    <div className="flex-1"><p className="text-sm font-medium text-foreground">{rm.l}</p><p className="text-xs text-muted-foreground">{ROLE_DESC[r]}</p></div>
-                    <Badge variant={rm.v}>{rm.l}</Badge>
-                  </label>
-                );
-              })}
+            <div className="mb-5">
+              <label className={labelCls}>Nouveau rôle</label>
+              <select value={editRole} onChange={e=>setEditRole(e.target.value as UserRole)} className={selectCls+' w-full'}>
+                {ROLE_GROUPS.map(g=>(
+                  <optgroup key={g.label} label={`── ${g.label} ──`}>
+                    {g.roles.map(r=>(
+                      <option key={r.value} value={r.value}>{r.label} — {r.desc}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+              {editRole && ROLE_DESC[editRole] && (
+                <p className="mt-2 text-xs text-muted-foreground px-1">
+                  <Badge variant={ROLE_MAP[editRole]?.v||'default'}>{ROLE_MAP[editRole]?.l||editRole}</Badge>
+                  {' '}{ROLE_DESC[editRole]}
+                </p>
+              )}
             </div>
             <div className="flex gap-3 justify-end">
               <button onClick={()=>setEditingUser(null)} className={btnSecondary}>Annuler</button>

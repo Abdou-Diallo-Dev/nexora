@@ -93,6 +93,7 @@ export const config = {
   matcher: [
     '/real-estate/:path*',
     '/logistics/:path*',
+    '/beton/:path*',
     '/super-admin/:path*',
     '/admin/:path*',
     '/tenant-portal/:path*',
