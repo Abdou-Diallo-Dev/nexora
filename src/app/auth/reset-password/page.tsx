@@ -27,14 +27,17 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #1a1040 0%, #3d2674 50%, #2d1f6e 100%)' }}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-4">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/30">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(135deg, #faab2d, #f59e0b)' }}>
               <Zap size={20} className="text-white" />
             </div>
-            <span className="text-2xl font-bold text-white">Nexora</span>
+            <div>
+              <span className="text-2xl font-bold text-white">SARPA GROUP</span>
+              <p className="text-xs font-semibold tracking-widest uppercase text-white/60">SENEGAL</p>
+            </div>
           </div>
         </div>
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-2xl">
@@ -66,7 +69,7 @@ export default function ResetPasswordPage() {
                   </div>
                 </div>
                 <button type="submit" disabled={loading}
-                  className="w-full py-3 bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors disabled:opacity-60">
+                  className="w-full py-3 text-white rounded-xl font-semibold text-sm hover:opacity-90 transition-colors disabled:opacity-60" style={{ background: '#3d2674' }}>
                   {loading ? 'Enregistrement...' : 'Enregistrer'}
                 </button>
               </form>

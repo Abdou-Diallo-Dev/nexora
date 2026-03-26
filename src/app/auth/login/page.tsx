@@ -119,7 +119,7 @@ export default function LoginPage() {
       {/* Panel gauche — branding SARPA */}
       <div
         className="hidden lg:flex lg:w-1/2 xl:w-3/5 flex-col items-center justify-center p-12 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #1a1040 0%, #3d2d7d 50%, #2d1f6e 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #1a1040 0%, #3d2674 50%, #2d1f6e 100%)' }}
       >
         {/* Cercles décoratifs */}
         <div className="absolute top-[-80px] right-[-80px] w-96 h-96 rounded-full opacity-10" style={{ background: '#faab2d' }} />
@@ -174,7 +174,7 @@ export default function LoginPage() {
           {/* Logo mobile */}
           <div className="flex lg:hidden items-center gap-3 mb-8 justify-center">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #3d2d7d, #5b3ea8)' }}>
+              style={{ background: 'linear-gradient(135deg, #3d2674, #5b3ea8)' }}>
               <span className="text-base font-black text-white" style={{ fontFamily: 'Georgia, serif' }}>SG</span>
             </div>
             <div>
@@ -199,7 +199,7 @@ export default function LoginPage() {
               <input
                 type="email" value={email} onChange={e => setEmail(e.target.value)} required
                 className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all"
-                style={{ ['--tw-ring-color' as any]: '#3d2d7d' }}
+                style={{ ['--tw-ring-color' as any]: '#3d2674' }}
                 placeholder="votre@sarpagroup.sn"
               />
             </div>
@@ -220,14 +220,14 @@ export default function LoginPage() {
             </div>
 
             <div className="flex justify-end">
-              <Link href="/auth/forgot-password" className="text-xs font-medium hover:underline" style={{ color: '#3d2d7d' }}>
+              <Link href="/auth/forgot-password" className="text-xs font-medium hover:underline" style={{ color: '#3d2674' }}>
                 Mot de passe oublié ?
               </Link>
             </div>
 
             <button type="submit" disabled={loading}
               className="w-full py-3.5 text-white rounded-xl font-bold text-sm transition-all disabled:opacity-60 flex items-center justify-center gap-2 shadow-lg mt-2"
-              style={{ background: loading ? '#5b3ea8' : 'linear-gradient(135deg, #3d2d7d, #5b3ea8)', boxShadow: '0 8px 24px rgba(61,45,125,0.35)' }}>
+              style={{ background: loading ? '#5b3ea8' : 'linear-gradient(135deg, #3d2674, #5b3ea8)', boxShadow: '0 8px 24px rgba(61,38,116,0.35)' }}>
               {loading ? <><Loader2 size={16} className="animate-spin"/> Connexion en cours...</> : 'Se connecter'}
             </button>
           </form>

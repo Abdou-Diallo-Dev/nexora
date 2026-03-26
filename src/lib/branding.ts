@@ -1,7 +1,7 @@
 type RGB = { r: number; g: number; b: number };
 
 // SARPA GROUP — couleurs officielles
-const DEFAULT_PRIMARY = '#3d2d7d';
+const DEFAULT_PRIMARY = '#3d2674';
 const DEFAULT_SECONDARY = '#faab2d';
 
 function normalizeHex(color?: string | null, fallback = DEFAULT_PRIMARY) {

@@ -8,13 +8,13 @@
     --background: 250 30% 98%;
     --foreground: 252 40% 12%;
     --border: 252 20% 88%;
-    /* Mauve SARPA #3d2d7d → hsl(252, 47%, 33%) */
-    --primary: 252 47% 33%;
+    /* Mauve SARPA #3d2674 → hsl(254, 48%, 30%) */
+    --primary: 254 48% 30%;
     /* Jaune SARPA #faab2d → hsl(37, 95%, 58%) */
     --secondary: 37 95% 58%;
     --muted-foreground: 252 15% 48%;
     /* Sidebar mauve SARPA */
-    --sidebar-bg: #3d2d7d;
+    --sidebar-bg: #3d2674;
     --sidebar-text: #ffffff;
     --sidebar-muted: rgba(255, 255, 255, 0.65);
     --sidebar-border: rgba(255, 255, 255, 0.10);

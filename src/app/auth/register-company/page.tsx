@@ -7,16 +7,16 @@ import { LoadingSpinner, inputCls, labelCls, btnPrimary } from '@/components/ui'
 
 const MODULES = [
   {
-    id: 'real_estate', label: 'Nexora Immo',
+    id: 'real_estate', label: 'SARPA Immobilier',
     desc: 'Gestion des biens immobiliers, locataires, loyers et maintenance',
-    icon: <Building2 size={28}/>, color: 'border-blue-400 bg-blue-50 text-blue-700',
-    active: 'border-blue-600 bg-blue-100 ring-2 ring-blue-400',
+    icon: <Building2 size={28}/>, color: 'border-purple-400 bg-purple-50 text-purple-700',
+    active: 'border-purple-600 bg-purple-100 ring-2 ring-purple-400',
   },
   {
-    id: 'logistics', label: 'Nexora Logistique',
+    id: 'logistics', label: 'SARPA Logistiques',
     desc: 'Gestion de la flotte, commandes, livraisons et entrepot',
-    icon: <Truck size={28}/>, color: 'border-green-400 bg-green-50 text-green-700',
-    active: 'border-green-600 bg-green-100 ring-2 ring-green-400',
+    icon: <Truck size={28}/>, color: 'border-amber-400 bg-amber-50 text-amber-700',
+    active: 'border-amber-600 bg-amber-100 ring-2 ring-amber-400',
   },
 ];
 
@@ -154,7 +154,7 @@ export default function RegisterCompanyPage() {
   // ── Succès ───────────────────────────────────────────────────
   if (done) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200 dark:from-slate-900 dark:to-slate-800 px-4">
         <div className="w-full max-w-md text-center">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <ShieldCheck size={36} className="text-green-600"/>
@@ -163,29 +163,29 @@ export default function RegisterCompanyPage() {
           <p className="text-muted-foreground text-sm mb-2">
             Votre entreprise <span className="font-semibold text-foreground">{form.company_name}</span> est en attente de validation.
           </p>
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-4 mt-4 mb-6 text-left space-y-2">
-            <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider">Prochaines étapes</p>
-            <div className="flex items-start gap-2 text-sm text-blue-800 dark:text-blue-200">
-              <span className="w-5 h-5 rounded-full bg-blue-200 text-blue-700 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</span>
+          <div className="rounded-2xl p-4 mt-4 mb-6 text-left space-y-2" style={{ background: 'rgba(61, 38, 116, 0.08)', border: '1px solid rgba(61, 38, 116, 0.2)' }}>
+            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#3d2674' }}>Prochaines étapes</p>
+            <div className="flex items-start gap-2 text-sm" style={{ color: '#3d2674' }}>
+              <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style={{ background: '#faab2d', color: '#1a1040' }}>1</span>
               <span>Notre équipe examine votre demande (sous 24h)</span>
             </div>
-            <div className="flex items-start gap-2 text-sm text-blue-800 dark:text-blue-200">
-              <span className="w-5 h-5 rounded-full bg-blue-200 text-blue-700 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</span>
+            <div className="flex items-start gap-2 text-sm" style={{ color: '#3d2674' }}>
+              <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style={{ background: '#faab2d', color: '#1a1040' }}>2</span>
               <span>Vous recevrez un email de confirmation à <strong>{form.email}</strong></span>
             </div>
-            <div className="flex items-start gap-2 text-sm text-blue-800 dark:text-blue-200">
-              <span className="w-5 h-5 rounded-full bg-blue-200 text-blue-700 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</span>
+            <div className="flex items-start gap-2 text-sm" style={{ color: '#3d2674' }}>
+              <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style={{ background: '#faab2d', color: '#1a1040' }}>3</span>
               <span>Connectez-vous avec vos identifiants</span>
             </div>
           </div>
           <div className="flex gap-2 justify-center mb-6">
             {form.modules.map(m => (
-              <span key={m} className={'px-3 py-1 rounded-full text-xs font-semibold ' + (m === 'real_estate' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700')}>
-                {m === 'real_estate' ? '🏠 Nexora Immo' : '🚚 Nexora Logistique'}
+              <span key={m} className={'px-3 py-1 rounded-full text-xs font-semibold'} style={{ background: m === 'real_estate' ? 'rgba(61, 38, 116, 0.1)' : 'rgba(250, 171, 45, 0.1)', color: m === 'real_estate' ? '#3d2674' : '#faab2d' }}>
+                {m === 'real_estate' ? '🏠 SARPA Immobilier' : '🚚 SARPA Logistiques'}
               </span>
             ))}
           </div>
-          <Link href="/auth/login" className="inline-flex items-center gap-2 text-primary hover:underline text-sm font-medium">
+          <Link href="/auth/login" className="inline-flex items-center gap-2 hover:underline text-sm font-medium" style={{ color: '#3d2674' }}>
             Retour à la connexion →
           </Link>
         </div>
@@ -196,17 +196,17 @@ export default function RegisterCompanyPage() {
   const totalSteps = 4;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200 dark:from-slate-900 dark:to-slate-800 px-4 py-8">
       <div className="w-full max-w-lg">
 
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-6">
-          <div className="w-11 h-11 bg-primary rounded-2xl flex items-center justify-center shadow-lg">
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(135deg, #3d2674, #5b3ea8)' }}>
             <Zap size={22} className="text-white"/>
           </div>
           <div>
-            <span className="text-2xl font-bold text-foreground">Nexora</span>
-            <p className="text-xs text-muted-foreground -mt-0.5">Plateforme de gestion</p>
+            <span className="text-2xl font-bold text-foreground">SARPA GROUP</span>
+            <p className="text-xs text-muted-foreground -mt-0.5">Plateforme ERP Intégrée</p>
           </div>
         </div>
 
@@ -215,8 +215,8 @@ export default function RegisterCompanyPage() {
           {Array.from({ length: totalSteps }, (_, i) => i + 1).map(s => (
             <div key={s} className="flex items-center gap-2">
               <div className={'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ' + (
-                step > s ? 'bg-green-500 text-white' : step === s ? 'bg-primary text-white' : 'bg-slate-200 text-slate-500'
-              )}>
+                step > s ? 'bg-green-500 text-white' : step === s ? 'text-white' : 'bg-slate-200 text-slate-500'
+              )} style={step === s ? { background: '#3d2674' } : {}}>
                 {step > s ? <Check size={12}/> : s}
               </div>
               {s < totalSteps && <div className={'w-8 h-0.5 ' + (step > s ? 'bg-green-400' : 'bg-slate-200')}/>}

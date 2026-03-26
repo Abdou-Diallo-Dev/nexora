@@ -6,7 +6,7 @@ import { getBrandingColors } from '@/lib/branding';
 import { useAuthStore } from '@/lib/store';
 
 const DEFAULT_BRANDING = getBrandingColors(null);
-const COMPANY_BRANDING_PREFIXES = ['/dashboard', '/real-estate', '/logistics', '/tenant-portal', '/billing'];
+const COMPANY_BRANDING_PREFIXES = ['/dashboard', '/real-estate', '/logistics', '/tenant-portal', '/billing', '/admin', '/beton', '/super-admin', '/driver'];
 
 export function BrandingSync() {
   const { company } = useAuthStore();

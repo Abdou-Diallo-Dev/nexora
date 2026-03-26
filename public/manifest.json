@@ -1,11 +1,11 @@
 {
-  "name": "Nexora — Gestion immobilière",
-  "short_name": "Nexora",
-  "description": "Plateforme de gestion immobilière professionnelle",
+  "name": "SARPA GROUP — ERP Intégré",
+  "short_name": "SARPA",
+  "description": "Plateforme ERP centralisée du Groupe SARPA",
   "start_url": "/auth/login",
   "display": "standalone",
-  "background_color": "#080C14",
-  "theme_color": "#2563EB",
+  "background_color": "#0f0d19",
+  "theme_color": "#3d2674",
   "orientation": "portrait",
   "icons": [
     {
