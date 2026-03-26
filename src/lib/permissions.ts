@@ -2,6 +2,205 @@ import { UserRole } from './store';
 
 // ─── PERMISSIONS PAR DEFAUT (fallback si pas de config en DB) ─
 export const DEFAULT_PERMISSIONS: Record<string, Record<string, boolean>> = {
+  // ── Direction SARPA GROUP ────────────────────────────────────
+  directeur_operations: {
+    createProperty: true, editProperty: true, deleteProperty: true,
+    createTenant: true, editTenant: true, deleteTenant: true,
+    createLease: true, editLease: true, deleteLease: true,
+    createPayment: true, editPayment: true, deletePayment: true, viewPayments: true,
+    onlinePayment: true,
+    createTicket: true, editTicket: true, deleteTicket: true,
+    viewExpenses: true, createExpense: true, deleteExpense: true,
+    viewInvoices: true, createInvoice: true, deleteInvoice: true,
+    viewReports: true, createReport: true,
+    viewAnalytics: true, viewStats: true,
+    manageUsers: true,
+    viewDocuments: true, editContracts: true,
+    viewMessages: true, manageTenantPortal: true,
+  },
+  directeur_financier: {
+    createProperty: false, editProperty: false, deleteProperty: false,
+    createTenant: false, editTenant: false, deleteTenant: false,
+    createLease: false, editLease: false, deleteLease: false,
+    createPayment: true, editPayment: true, deletePayment: true, viewPayments: true,
+    onlinePayment: true,
+    createTicket: false, editTicket: false, deleteTicket: false,
+    viewExpenses: true, createExpense: true, deleteExpense: true,
+    viewInvoices: true, createInvoice: true, deleteInvoice: true,
+    viewReports: true, createReport: true,
+    viewAnalytics: true, viewStats: true,
+    manageUsers: false,
+    viewDocuments: true, editContracts: false,
+    viewMessages: false, manageTenantPortal: false,
+  },
+  directeur_juridique: {
+    createProperty: false, editProperty: false, deleteProperty: false,
+    createTenant: true, editTenant: true, deleteTenant: false,
+    createLease: true, editLease: true, deleteLease: true,
+    createPayment: false, editPayment: false, deletePayment: false, viewPayments: true,
+    onlinePayment: false,
+    createTicket: false, editTicket: false, deleteTicket: false,
+    viewExpenses: false, createExpense: false, deleteExpense: false,
+    viewInvoices: true, createInvoice: false, deleteInvoice: false,
+    viewReports: true, createReport: false,
+    viewAnalytics: true, viewStats: true,
+    manageUsers: true,
+    viewDocuments: true, editContracts: true,
+    viewMessages: false, manageTenantPortal: false,
+  },
+  coordinatrice: {
+    createProperty: false, editProperty: true, deleteProperty: false,
+    createTenant: true, editTenant: true, deleteTenant: false,
+    createLease: true, editLease: true, deleteLease: false,
+    createPayment: true, editPayment: true, deletePayment: false, viewPayments: true,
+    onlinePayment: false,
+    createTicket: true, editTicket: true, deleteTicket: false,
+    viewExpenses: true, createExpense: false, deleteExpense: false,
+    viewInvoices: true, createInvoice: false, deleteInvoice: false,
+    viewReports: true, createReport: false,
+    viewAnalytics: true, viewStats: true,
+    manageUsers: false,
+    viewDocuments: true, editContracts: false,
+    viewMessages: true, manageTenantPortal: true,
+  },
+  // ── Module Logistique ────────────────────────────────────────
+  manager_logistique: {
+    createProperty: true, editProperty: true, deleteProperty: true,
+    createTenant: true, editTenant: true, deleteTenant: true,
+    createLease: true, editLease: true, deleteLease: true,
+    createPayment: true, editPayment: true, deletePayment: true, viewPayments: true,
+    onlinePayment: true,
+    createTicket: true, editTicket: true, deleteTicket: true,
+    viewExpenses: true, createExpense: true, deleteExpense: true,
+    viewInvoices: true, createInvoice: true, deleteInvoice: true,
+    viewReports: true, createReport: true,
+    viewAnalytics: true, viewStats: true,
+    manageUsers: true,
+    viewDocuments: true, editContracts: true,
+    viewMessages: true, manageTenantPortal: true,
+  },
+  caissiere: {
+    createProperty: false, editProperty: false, deleteProperty: false,
+    createTenant: false, editTenant: false, deleteTenant: false,
+    createLease: false, editLease: false, deleteLease: false,
+    createPayment: true, editPayment: true, deletePayment: false, viewPayments: true,
+    onlinePayment: true,
+    createTicket: false, editTicket: false, deleteTicket: false,
+    viewExpenses: true, createExpense: true, deleteExpense: false,
+    viewInvoices: true, createInvoice: true, deleteInvoice: false,
+    viewReports: false, createReport: false,
+    viewAnalytics: false, viewStats: true,
+    manageUsers: false,
+    viewDocuments: false, editContracts: false,
+    viewMessages: false, manageTenantPortal: false,
+  },
+  responsable_vente: {
+    createProperty: false, editProperty: false, deleteProperty: false,
+    createTenant: true, editTenant: true, deleteTenant: false,
+    createLease: false, editLease: false, deleteLease: false,
+    createPayment: false, editPayment: false, deletePayment: false, viewPayments: true,
+    onlinePayment: false,
+    createTicket: false, editTicket: false, deleteTicket: false,
+    viewExpenses: false, createExpense: false, deleteExpense: false,
+    viewInvoices: true, createInvoice: true, deleteInvoice: false,
+    viewReports: true, createReport: false,
+    viewAnalytics: true, viewStats: true,
+    manageUsers: false,
+    viewDocuments: true, editContracts: false,
+    viewMessages: true, manageTenantPortal: false,
+  },
+  assistante_admin: {
+    createProperty: false, editProperty: false, deleteProperty: false,
+    createTenant: true, editTenant: true, deleteTenant: false,
+    createLease: false, editLease: false, deleteLease: false,
+    createPayment: true, editPayment: false, deletePayment: false, viewPayments: true,
+    onlinePayment: false,
+    createTicket: true, editTicket: true, deleteTicket: false,
+    viewExpenses: true, createExpense: false, deleteExpense: false,
+    viewInvoices: true, createInvoice: false, deleteInvoice: false,
+    viewReports: false, createReport: false,
+    viewAnalytics: false, viewStats: true,
+    manageUsers: false,
+    viewDocuments: true, editContracts: false,
+    viewMessages: true, manageTenantPortal: false,
+  },
+  // ── Module Béton ─────────────────────────────────────────────
+  manager_beton: {
+    createProperty: true, editProperty: true, deleteProperty: true,
+    createTenant: true, editTenant: true, deleteTenant: true,
+    createLease: true, editLease: true, deleteLease: true,
+    createPayment: true, editPayment: true, deletePayment: true, viewPayments: true,
+    onlinePayment: true,
+    createTicket: true, editTicket: true, deleteTicket: true,
+    viewExpenses: true, createExpense: true, deleteExpense: true,
+    viewInvoices: true, createInvoice: true, deleteInvoice: true,
+    viewReports: true, createReport: true,
+    viewAnalytics: true, viewStats: true,
+    manageUsers: true,
+    viewDocuments: true, editContracts: true,
+    viewMessages: true, manageTenantPortal: true,
+  },
+  responsable_production: {
+    createProperty: true, editProperty: true, deleteProperty: false,
+    createTenant: false, editTenant: false, deleteTenant: false,
+    createLease: false, editLease: false, deleteLease: false,
+    createPayment: false, editPayment: false, deletePayment: false, viewPayments: true,
+    onlinePayment: false,
+    createTicket: true, editTicket: true, deleteTicket: true,
+    viewExpenses: true, createExpense: true, deleteExpense: false,
+    viewInvoices: false, createInvoice: false, deleteInvoice: false,
+    viewReports: true, createReport: true,
+    viewAnalytics: true, viewStats: true,
+    manageUsers: false,
+    viewDocuments: true, editContracts: false,
+    viewMessages: false, manageTenantPortal: false,
+  },
+  operateur_centrale: {
+    createProperty: false, editProperty: true, deleteProperty: false,
+    createTenant: false, editTenant: false, deleteTenant: false,
+    createLease: false, editLease: false, deleteLease: false,
+    createPayment: false, editPayment: false, deletePayment: false, viewPayments: false,
+    onlinePayment: false,
+    createTicket: true, editTicket: true, deleteTicket: false,
+    viewExpenses: false, createExpense: false, deleteExpense: false,
+    viewInvoices: false, createInvoice: false, deleteInvoice: false,
+    viewReports: false, createReport: false,
+    viewAnalytics: false, viewStats: true,
+    manageUsers: false,
+    viewDocuments: true, editContracts: false,
+    viewMessages: false, manageTenantPortal: false,
+  },
+  assistante_commerciale: {
+    createProperty: false, editProperty: false, deleteProperty: false,
+    createTenant: true, editTenant: true, deleteTenant: false,
+    createLease: false, editLease: false, deleteLease: false,
+    createPayment: false, editPayment: false, deletePayment: false, viewPayments: true,
+    onlinePayment: false,
+    createTicket: false, editTicket: false, deleteTicket: false,
+    viewExpenses: false, createExpense: false, deleteExpense: false,
+    viewInvoices: true, createInvoice: true, deleteInvoice: false,
+    viewReports: false, createReport: false,
+    viewAnalytics: false, viewStats: true,
+    manageUsers: false,
+    viewDocuments: true, editContracts: false,
+    viewMessages: true, manageTenantPortal: false,
+  },
+  responsable_qualite: {
+    createProperty: false, editProperty: false, deleteProperty: false,
+    createTenant: false, editTenant: false, deleteTenant: false,
+    createLease: false, editLease: false, deleteLease: false,
+    createPayment: false, editPayment: false, deletePayment: false, viewPayments: false,
+    onlinePayment: false,
+    createTicket: true, editTicket: true, deleteTicket: false,
+    viewExpenses: false, createExpense: false, deleteExpense: false,
+    viewInvoices: false, createInvoice: false, deleteInvoice: false,
+    viewReports: true, createReport: true,
+    viewAnalytics: true, viewStats: true,
+    manageUsers: false,
+    viewDocuments: true, editContracts: false,
+    viewMessages: false, manageTenantPortal: false,
+  },
+  // ── Module Immobilier ────────────────────────────────────────
   manager: {
     createProperty: true, editProperty: true, deleteProperty: false,
     createTenant: true, editTenant: true, deleteTenant: false,
@@ -111,15 +310,35 @@ export function getCachedPermissions() {
   return _cachedPermissions;
 }
 
+// Direction SARPA GROUP — accès global lecture seule (+ directeur_operations full)
+export const DIRECTION_ROLES: UserRole[] = [
+  'pdg', 'directeur_operations', 'directeur_financier', 'directeur_juridique', 'coordinatrice',
+];
+// Rôles qui ne voient que analytics/stats/reports
 export const EXECUTIVE_ROLES: UserRole[] = ['pdg', 'responsable_operations'];
 export const EXECUTIVE_ALLOWED_ROUTES = ['/real-estate', '/real-estate/analytics', '/real-estate/stats', '/real-estate/reports'];
+// Rôles spécifiques logistique
+export const LOGISTICS_ROLES: UserRole[] = ['manager_logistique', 'caissiere', 'responsable_vente', 'assistante_admin'];
+// Rôles spécifiques béton
+export const BETON_ROLES: UserRole[] = ['manager_beton', 'responsable_production', 'operateur_centrale', 'assistante_commerciale', 'responsable_qualite'];
 
 export function isExecutiveRole(role: UserRole) {
   return EXECUTIVE_ROLES.includes(role);
 }
+export function isDirectionRole(role: UserRole) {
+  return DIRECTION_ROLES.includes(role);
+}
+export function isLogisticsRole(role: UserRole) {
+  return LOGISTICS_ROLES.includes(role);
+}
+export function isBetonRole(role: UserRole) {
+  return BETON_ROLES.includes(role);
+}
+
+const FULL_ACCESS_ROLES: UserRole[] = ['admin', 'super_admin', 'directeur_operations', 'manager_logistique', 'manager_beton'];
 
 function getPerms(role: UserRole): Record<string, boolean> {
-  if (role === 'admin' || role === 'super_admin') return ADMIN_PERMISSIONS;
+  if (FULL_ACCESS_ROLES.includes(role)) return ADMIN_PERMISSIONS;
   if (_cachedPermissions?.[role]) return _cachedPermissions[role];
   return DEFAULT_PERMISSIONS[role] || {};
 }
@@ -161,7 +380,7 @@ export const can = {
 };
 
 export const getNavItems = (role: UserRole): string[] => {
-  if (role === 'admin' || role === 'super_admin') {
+  if (FULL_ACCESS_ROLES.includes(role)) {
     return ['properties','apartments','tenants','notices','leases','payments','onlinePayment','expenses',
       'accounting','disbursements','reports-terrain',
       'invoices','documents','contracts','maintenance','notifications',
@@ -169,6 +388,13 @@ export const getNavItems = (role: UserRole): string[] => {
   }
   if (isExecutiveRole(role)) {
     return ['analytics', 'stats', 'reports'];
+  }
+  if (role === 'directeur_financier' || role === 'coordinatrice') {
+    return ['properties','tenants','leases','payments','onlinePayment','expenses','accounting',
+      'invoices','documents','maintenance','notifications','analytics','stats','messages','reports'];
+  }
+  if (role === 'directeur_juridique') {
+    return ['tenants','leases','documents','reports','stats','analytics'];
   }
   const p = getPerms(role);
   const map: Record<string, boolean> = {
@@ -305,10 +531,27 @@ export const PERMISSION_GROUPS = [
 ];
 
 export const ROLES_CONFIGURABLE: { role: UserRole; label: string; color: string; desc: string }[] = [
-  { role: 'manager',   label: 'Manager',    color: 'blue',   desc: 'Gestion opérationnelle quotidienne' },
-  { role: 'agent',     label: 'Agent',      color: 'green',  desc: 'Terrain — paiements et tickets' },
-  { role: 'comptable', label: 'Comptable',  color: 'purple', desc: 'Finance, factures et rapports' },
-  { role: 'pdg',       label: 'PDG',        color: 'amber',  desc: 'Vision executive lecture seule' },
-  { role: 'responsable_operations', label: 'Responsable operations', color: 'cyan', desc: 'Suivi operationnel lecture seule' },
-  { role: 'viewer',    label: 'Lecteur',    color: 'gray',   desc: 'Consultation uniquement' },
+  // Direction
+  { role: 'pdg',                    label: 'PDG',                        color: 'amber',  desc: 'Vision executive lecture seule' },
+  { role: 'directeur_operations',   label: 'Dir. Opérations',            color: 'purple', desc: 'Accès complet toutes filiales' },
+  { role: 'directeur_financier',    label: 'Dir. Financier',             color: 'purple', desc: 'Finance & comptabilité global' },
+  { role: 'directeur_juridique',    label: 'Dir. Juridique & RH',        color: 'purple', desc: 'Contrats, baux et RH' },
+  { role: 'coordinatrice',          label: 'Coordinatrice',              color: 'blue',   desc: 'Coordination transversale' },
+  // Immobilier
+  { role: 'manager',                label: 'Manager',                    color: 'blue',   desc: 'Gestion opérationnelle' },
+  { role: 'agent',                  label: 'Agent',                      color: 'green',  desc: 'Terrain — paiements et tickets' },
+  { role: 'comptable',              label: 'Comptable',                  color: 'purple', desc: 'Finance, factures et rapports' },
+  { role: 'responsable_operations', label: 'Resp. Opérations',           color: 'cyan',   desc: 'Suivi opérationnel lecture seule' },
+  { role: 'viewer',                 label: 'Lecteur',                    color: 'gray',   desc: 'Consultation uniquement' },
+  // Logistique
+  { role: 'manager_logistique',     label: 'Manager Logistique',         color: 'blue',   desc: 'Accès complet logistique' },
+  { role: 'caissiere',              label: 'Caissière',                  color: 'green',  desc: 'Paiements et caisse' },
+  { role: 'responsable_vente',      label: 'Resp. Vente',                color: 'amber',  desc: 'Commandes, clients, factures' },
+  { role: 'assistante_admin',       label: 'Assistante Admin',           color: 'gray',   desc: 'Support administratif' },
+  // Béton
+  { role: 'manager_beton',          label: 'Manager Béton',              color: 'blue',   desc: 'Accès complet béton' },
+  { role: 'responsable_production', label: 'Resp. Production',           color: 'purple', desc: 'Production et planning' },
+  { role: 'operateur_centrale',     label: 'Opérateur Centrale',         color: 'green',  desc: 'Saisie production quotidienne' },
+  { role: 'assistante_commerciale', label: 'Assistante Commerciale',     color: 'amber',  desc: 'Commandes clients et factures' },
+  { role: 'responsable_qualite',    label: 'Resp. Qualité',              color: 'cyan',   desc: 'Contrôle qualité et conformité' },
 ];
