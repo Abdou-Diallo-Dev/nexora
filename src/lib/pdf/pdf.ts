@@ -408,11 +408,10 @@ export async function generateLeaseContract(data: {
   let y = await headerWithLogo(doc, 'CONTRAT DE BAIL', `Du ${fmt(data.startDate)} au ${fmt(data.endDate)}`, data.companyName, data.companyLogoUrl, data.primaryColor);
 
   // Préambule
-  if (data.preamble?.trim()) {
-    y = pb(doc, y, 30);
-    y = renderArticleContent(y, data.preamble);
-    y += 6;
-  }
+  const preambleText = data.preamble?.trim() || 'Entre les soussignés, il a été convenu et arrêté ce qui suit :';
+  y = pb(doc, y, 30);
+  y = renderArticleContent(y, preambleText);
+  y += 6;
 
   // Art. 1 — Parties (toujours fixe)
   y = sectionTitle(doc, y, 'Article 1 — Parties');
