@@ -146,6 +146,24 @@ const FILIALES = [
   { module: 'logistics',   href: '/logistics',   icon: <Truck size={18} />,     name: 'SARPA Logistiques',  sub: 'Flotte & livraisons' },
 ];
 
+// ─── COULEURS SARPA GROUP (super admin) ───────────────────────
+const SARPA_SIDEBAR_COLORS = {
+  sidebarBg:          '#3d2674',
+  sidebarText:        '#ffffff',
+  sidebarMuted:       'rgba(255,255,255,0.62)',
+  sidebarBorder:      'rgba(255,255,255,0.10)',
+  sidebarHover:       'rgba(255,255,255,0.10)',
+  sidebarActive:      '#faab2d',
+  sidebarActiveText:  '#1a0f3d',
+  primary:            '#3d2674',
+  primaryHsl:         '254 48% 30%',
+  secondary:          '#faab2d',
+  secondaryHsl:       '37 95% 58%',
+  primaryText:        '#ffffff',
+  secondaryText:      '#1a0f3d',
+  cardAccent:         'rgba(250,171,45,0.10)',
+};
+
 // ─── COMPOSANTS PARTAGÉS ──────────────────────────────────────
 function BrandLogo({ companyName, companyInitial, logoUrl }: { companyName: string; companyInitial: string; logoUrl?: string | null }) {
   if (logoUrl) {
@@ -355,11 +373,8 @@ export default function Sidebar() {
   const isSuperAdmin  = user?.role === 'super_admin';
   const companyName   = isSuperAdmin ? 'SARPA GROUP' : getCompanyDisplayName(company);
   const companyInitial = isSuperAdmin ? 'SG' : getCompanyInitial(company);
-  // Super admin: toujours couleurs SARPA GROUP (#3d2674) indépendamment de la company
-  const baseColors = getBrandingColors(isSuperAdmin ? null : company);
-  const colors = isSuperAdmin
-    ? { ...baseColors, sidebarActive: '#faab2d', sidebarActiveText: '#1a1040' }
-    : baseColors;
+  // Super admin: couleurs SARPA hardcodées, jamais override par une company
+  const colors = isSuperAdmin ? SARPA_SIDEBAR_COLORS : getBrandingColors(company);
 
   return (
     <motion.aside
@@ -415,11 +430,8 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
   const isSuperAdmin   = user?.role === 'super_admin';
   const companyName    = isSuperAdmin ? 'SARPA GROUP' : getCompanyDisplayName(company);
   const companyInitial = isSuperAdmin ? 'SG' : getCompanyInitial(company);
-  // Super admin: toujours couleurs SARPA GROUP (#3d2674)
-  const baseColors = getBrandingColors(isSuperAdmin ? null : company);
-  const colors = isSuperAdmin
-    ? { ...baseColors, sidebarActive: '#faab2d', sidebarActiveText: '#1a1040' }
-    : baseColors;
+  // Super admin: couleurs SARPA hardcodées, jamais override par une company
+  const colors = isSuperAdmin ? SARPA_SIDEBAR_COLORS : getBrandingColors(company);
 
   useEffect(() => {
     if (open) document.body.style.overflow = 'hidden';
