@@ -355,7 +355,8 @@ export default function Sidebar() {
   const isSuperAdmin  = user?.role === 'super_admin';
   const companyName   = isSuperAdmin ? 'SARPA GROUP' : getCompanyDisplayName(company);
   const companyInitial = isSuperAdmin ? 'SG' : getCompanyInitial(company);
-  const baseColors = getBrandingColors(company);
+  // Super admin: toujours couleurs SARPA GROUP (#3d2674) indépendamment de la company
+  const baseColors = getBrandingColors(isSuperAdmin ? null : company);
   const colors = isSuperAdmin
     ? { ...baseColors, sidebarActive: '#faab2d', sidebarActiveText: '#1a1040' }
     : baseColors;
@@ -414,7 +415,8 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
   const isSuperAdmin   = user?.role === 'super_admin';
   const companyName    = isSuperAdmin ? 'SARPA GROUP' : getCompanyDisplayName(company);
   const companyInitial = isSuperAdmin ? 'SG' : getCompanyInitial(company);
-  const baseColors = getBrandingColors(company);
+  // Super admin: toujours couleurs SARPA GROUP (#3d2674)
+  const baseColors = getBrandingColors(isSuperAdmin ? null : company);
   const colors = isSuperAdmin
     ? { ...baseColors, sidebarActive: '#faab2d', sidebarActiveText: '#1a1040' }
     : baseColors;

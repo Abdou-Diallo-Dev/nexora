@@ -9,13 +9,15 @@ const DEFAULT_BRANDING = getBrandingColors(null);
 const COMPANY_BRANDING_PREFIXES = ['/dashboard', '/real-estate', '/logistics', '/tenant-portal', '/billing', '/admin', '/beton', '/super-admin', '/driver'];
 
 export function BrandingSync() {
-  const { company } = useAuthStore();
+  const { company, user } = useAuthStore();
   const pathname = usePathname();
 
   useEffect(() => {
     const root = document.documentElement;
+    const isSuperAdmin = user?.role === 'super_admin';
     const shouldUseCompanyBranding = COMPANY_BRANDING_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
-    const colors = shouldUseCompanyBranding ? getBrandingColors(company) : DEFAULT_BRANDING;
+    // Super admin: toujours couleurs SARPA GROUP par défaut (#3d2674)
+    const colors = shouldUseCompanyBranding ? getBrandingColors(isSuperAdmin ? null : company) : DEFAULT_BRANDING;
 
     root.style.setProperty('--primary', colors.primaryHsl);
     root.style.setProperty('--secondary', colors.secondaryHsl);
