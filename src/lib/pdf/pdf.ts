@@ -360,6 +360,7 @@ export async function generateLeaseContract(data: {
   // ── Automatiques depuis la DB ──
   companyLogoUrl?: string | null;
   primaryColor?: string | null;
+  preamble?: string | null;
   customArticles?: ContractArticle[] | null;
   specialConditions?: string | null;
 }) {
@@ -371,9 +372,31 @@ export async function generateLeaseContract(data: {
   const fmt = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' });
   const articles = data.customArticles?.length ? data.customArticles : DEFAULT_ARTICLES;
 
+  // Fonction pour remplacer les variables
+  function replaceVariables(text: string): string {
+    if (!text) return '';
+    const total = data.rentAmount + data.chargesAmount;
+    const penalite = Math.round(data.rentAmount * 0.05);
+    return text
+      .replaceAll('{{locataire}}', data.tenantName)
+      .replaceAll('{{bailleur}}', data.companyName)
+      .replaceAll('{{bien}}', data.propertyName)
+      .replaceAll('{{adresse}}', data.propertyAddress)
+      .replaceAll('{{ville}}', data.propertyCity)
+      .replaceAll('{{loyer}}', String(data.rentAmount))
+      .replaceAll('{{charges}}', String(data.chargesAmount))
+      .replaceAll('{{total}}', String(total))
+      .replaceAll('{{depot}}', String(data.depositAmount || 0))
+      .replaceAll('{{debut}}', fmt(data.startDate))
+      .replaceAll('{{fin}}', fmt(data.endDate))
+      .replaceAll('{{jour_paiement}}', String(data.paymentDay))
+      .replaceAll('{{penalite}}', String(penalite));
+  }
+
   function renderArticleContent(yRef: number, content: string): number {
     let y = yRef;
-    for (const line of content.split('\n')) {
+    const replacedContent = replaceVariables(content);
+    for (const line of replacedContent.split('\n')) {
       const t = line.trim();
       if (!t) { y += 3; continue; }
       y = pb(doc, y, 15);
@@ -383,6 +406,13 @@ export async function generateLeaseContract(data: {
   }
 
   let y = await headerWithLogo(doc, 'CONTRAT DE BAIL', `Du ${fmt(data.startDate)} au ${fmt(data.endDate)}`, data.companyName, data.companyLogoUrl, data.primaryColor);
+
+  // Préambule
+  if (data.preamble?.trim()) {
+    y = pb(doc, y, 30);
+    y = renderArticleContent(y, data.preamble);
+    y += 6;
+  }
 
   // Art. 1 — Parties (toujours fixe)
   y = sectionTitle(doc, y, 'Article 1 — Parties');
@@ -490,11 +520,13 @@ export async function generateContractPDF(data: {
   contractTemplate?: any | null;
 }) {
   // Extract articles from contractTemplate if provided
+  const preamble = data.contractTemplate?.preamble || null;
   const articles = data.customArticles || data.contractTemplate?.articles || null;
   const conditions = data.specialConditions || data.contractTemplate?.specialConditions || null;
   return generateLeaseContract({
     ...data,
     depositAmount: data.depositAmount ?? undefined,
+    preamble,
     customArticles: articles,
     specialConditions: conditions,
   });

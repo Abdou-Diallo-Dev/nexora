@@ -18,7 +18,7 @@ type Lease = {
   payment_day: number;
   status: string;
   tenants: { first_name: string; last_name: string; email: string; phone: string | null } | null;
-  properties: { name: string; address: string; city: string; type: string } | null;
+  properties: { name: string; address: string; city: string; type: string; owner_name?: string | null } | null;
 };
 
 type GeneratingState = { id: string; type: 'receipt' | 'contract' } | null;
@@ -37,7 +37,7 @@ export default function DocumentsPage() {
     Promise.all([
       createClient()
         .from('leases')
-        .select('id,start_date,end_date,rent_amount,charges_amount,deposit_amount,payment_day,status,tenants(first_name,last_name,email,phone),properties(name,address,city,type)')
+        .select('id,start_date,end_date,rent_amount,charges_amount,deposit_amount,payment_day,status,tenants(first_name,last_name,email,phone),properties(name,address,city,type,owner_name)')
         .eq('company_id', company.id)
         .order('created_at', { ascending: false }),
       createClient()

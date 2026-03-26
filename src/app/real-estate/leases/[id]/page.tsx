@@ -16,7 +16,7 @@ type Lease = {
   rent_amount: number; charges_amount: number; deposit_amount: number | null;
   payment_day: number; notes: string | null;
   tenants: { first_name: string; last_name: string; email: string; phone: string | null } | null;
-  properties: { name: string; address: string; city: string; type: string; rooms_count: number | null } | null;
+  properties: { name: string; address: string; city: string; type: string; rooms_count: number | null; owner_name?: string | null } | null;
 };
 
 const ST: Record<string,{l:string;v:BadgeVariant}> = {
@@ -38,7 +38,7 @@ export default function LeaseDetailPage() {
     const sb = createClient();
     Promise.all([
       sb.from('leases')
-        .select('*,tenants(first_name,last_name,email,phone),properties(name,address,city,type,rooms_count)')
+        .select('*,tenants(first_name,last_name,email,phone),properties(name,address,city,type,rooms_count,owner_name)')
         .eq('id', id).maybeSingle(),
       company?.id
         ? sb.from('companies')
