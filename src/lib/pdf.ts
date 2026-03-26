@@ -132,6 +132,19 @@ function sectionTitle(doc: any, y: number, title: string) {
   return y + 12;
 }
 
+function articleTitle(doc: any, y: number, num: string, title: string) {
+  const W = doc.internal.pageSize.getWidth();
+  doc.setFillColor(...(PRIMARY as [number,number,number]));
+  doc.roundedRect(8, y, W - 16, 10, 2, 2, 'F');
+  doc.setTextColor(...WHITE); doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+  doc.text(`ARTICLE ${num} — ${title}`, 14, y + 7);
+  return y + 15;
+}
+
+function replaceVars(text: string, vars: Record<string, string>): string {
+  return text.replace(/\{\{(\w+)\}\}/g, (_: string, key: string) => vars[key] !== undefined ? vars[key] : `{{${key}}}`);
+}
+
 function bullet(doc: any, y: number, text: string) {
   const W = doc.internal.pageSize.getWidth();
   doc.setFillColor(...(PRIMARY as [number,number,number])); doc.circle(14, y - 1, 1.2, 'F');
@@ -348,16 +361,18 @@ export async function generateLeaseContract(data: {
   propertyName: string;
   propertyAddress: string;
   propertyCity: string;
+  propertyType?: string;
   startDate: string;
   endDate: string;
   rentAmount: number;
   chargesAmount: number;
   depositAmount?: number;
   paymentDay: number;
-  companyName: string;
+  ownerName?: string;           // Bailleur = nom du propriétaire du bien
+  preamble?: string;            // Texte du préambule personnalisé
+  companyName: string;          // Société de gestion
   companyAddress?: string;
   companyEmail?: string;
-  // ── Automatiques depuis la DB ──
   companyLogoUrl?: string | null;
   primaryColor?: string | null;
   customArticles?: ContractArticle[] | null;
@@ -370,10 +385,30 @@ export async function generateLeaseContract(data: {
   const W = doc.internal.pageSize.getWidth();
   const fmt = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' });
   const articles = data.customArticles?.length ? data.customArticles : DEFAULT_ARTICLES;
+  const baileurName = data.ownerName?.trim() || data.companyName;
 
-  function renderArticleContent(yRef: number, content: string): number {
+  // Variables pour remplacement dans les templates
+  const penalty = Math.round(data.rentAmount * 0.05);
+  const tplVars: Record<string, string> = {
+    bailleur:      baileurName,
+    locataire:     data.tenantName,
+    bien:          data.propertyName,
+    adresse:       data.propertyAddress,
+    ville:         data.propertyCity,
+    loyer:         fmtAmount(data.rentAmount),
+    charges:       fmtAmount(data.chargesAmount),
+    total:         fmtAmount(data.rentAmount + data.chargesAmount),
+    depot:         data.depositAmount ? fmtAmount(data.depositAmount) : 'non applicable',
+    debut:         fmt(data.startDate),
+    fin:           fmt(data.endDate),
+    jour_paiement: String(data.paymentDay),
+    penalite:      fmtAmount(penalty),
+  };
+
+  function renderContent(yRef: number, content: string): number {
     let y = yRef;
-    for (const line of content.split('\n')) {
+    const resolved = replaceVars(content, tplVars);
+    for (const line of resolved.split('\n')) {
       const t = line.trim();
       if (!t) { y += 3; continue; }
       y = pb(doc, y, 15);
@@ -382,85 +417,199 @@ export async function generateLeaseContract(data: {
     return y;
   }
 
-  let y = await headerWithLogo(doc, 'CONTRAT DE BAIL', `Du ${fmt(data.startDate)} au ${fmt(data.endDate)}`, data.companyName, data.companyLogoUrl, data.primaryColor);
+  // ── En-tête ──────────────────────────────────────────────────
+  let y = await headerWithLogo(
+    doc, 'CONTRAT DE BAIL',
+    `Du ${fmt(data.startDate)} au ${fmt(data.endDate)}`,
+    data.companyName, data.companyLogoUrl, data.primaryColor
+  );
 
-  // Art. 1 — Parties (toujours fixe)
-  y = sectionTitle(doc, y, 'Article 1 — Parties');
-  y = row(doc, y, 'Bailleur', data.companyName, false);
-  if (data.companyAddress) y = row(doc, y, 'Adresse bailleur', data.companyAddress, true);
-  if (data.companyEmail)   y = row(doc, y, 'Email bailleur', data.companyEmail, false);
-  y += 4;
-  y = row(doc, y, 'Locataire', data.tenantName, true);
-  if (data.tenantEmail) y = row(doc, y, 'Email locataire', data.tenantEmail, false);
-  if (data.tenantPhone) y = row(doc, y, 'Tél. locataire', data.tenantPhone, true);
-  y += 6;
+  // Titre centré
+  doc.setFillColor(...LIGHT);
+  doc.roundedRect(8, y, W - 16, 13, 2, 2, 'F');
+  doc.setTextColor(...(PRIMARY as [number,number,number]));
+  doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+  doc.text("CONTRAT DE BAIL D'HABITATION", W / 2, y + 9, { align: 'center' });
+  y += 18;
 
-  // Art. bien (toujours fixe)
-  y = pb(doc, y, 35);
-  y = sectionTitle(doc, y, 'Article 2 — Bien loué');
-  y = row(doc, y, 'Désignation', data.propertyName, false);
+  // ── Identification des parties ────────────────────────────────
+  const halfW = (W - 20) / 2;
+  const boxH = 42;
+  // Bailleur (gauche)
+  doc.setFillColor(...LIGHT);
+  doc.roundedRect(8, y, halfW, boxH, 2, 2, 'F');
+  doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(...GRAY);
+  doc.text('LE BAILLEUR', 14, y + 7);
+  doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...DARK);
+  const baileurLines = doc.splitTextToSize(baileurName, halfW - 12);
+  doc.text(baileurLines[0], 14, y + 15);
+  doc.setFontSize(7.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(...GRAY);
+  let baileurY = y + 22;
+  if (data.ownerName && data.companyName !== data.ownerName) {
+    doc.text(`Gere par : ${data.companyName}`, 14, baileurY); baileurY += 6;
+  }
+  if (data.companyAddress) { doc.text(data.companyAddress.substring(0, 36), 14, baileurY); baileurY += 6; }
+  if (data.companyEmail)   { doc.text(data.companyEmail, 14, baileurY); }
+
+  // Séparateur
+  doc.setDrawColor(...GRAY); doc.setLineWidth(0.2);
+  doc.line(W / 2 + 1, y + 4, W / 2 + 1, y + boxH - 4);
+
+  // Locataire (droite)
+  const cx = W / 2 + 6;
+  doc.setFillColor(...LIGHT);
+  doc.roundedRect(W / 2 + 2, y, halfW, boxH, 2, 2, 'F');
+  doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(...GRAY);
+  doc.text('LE LOCATAIRE', cx, y + 7);
+  doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...DARK);
+  doc.text(data.tenantName, cx, y + 15);
+  doc.setFontSize(7.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(...GRAY);
+  let locY = y + 22;
+  if (data.tenantEmail) { doc.text(data.tenantEmail, cx, locY); locY += 6; }
+  if (data.tenantPhone) { doc.text(data.tenantPhone, cx, locY); }
+  y += boxH + 6;
+
+  // ── Préambule ─────────────────────────────────────────────────
+  y = pb(doc, y, 30);
+  const defaultPreamble = `Entre les soussignes : ${baileurName}, ci-apres denomme "le Bailleur", d'une part, et ${data.tenantName}, ci-apres denomme "le Locataire", d'autre part, il a ete convenu et arrete ce qui suit :`;
+  const preambleText = data.preamble?.trim()
+    ? replaceVars(data.preamble, tplVars)
+    : defaultPreamble;
+  const preambleLines = doc.splitTextToSize(preambleText, W - 36);
+  const preambleBoxH = preambleLines.length * 5 + 16;
+  doc.setFillColor(239, 246, 255);
+  doc.roundedRect(8, y, W - 16, preambleBoxH, 3, 3, 'F');
+  doc.setFillColor(...(PRIMARY as [number,number,number]));
+  doc.roundedRect(8, y, 3, preambleBoxH, 1, 1, 'F');
+  doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(...(PRIMARY as [number,number,number]));
+  doc.text('PREAMBULE', 18, y + 7);
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(...DARK);
+  doc.text(preambleLines, 18, y + 14);
+  y += preambleBoxH + 8;
+
+  // ── Article 1 — Designation du bien ──────────────────────────
+  y = pb(doc, y, 40);
+  y = articleTitle(doc, y, '1', 'DESIGNATION DU BIEN');
+  y = row(doc, y, 'Designation', data.propertyName, false);
   y = row(doc, y, 'Adresse', data.propertyAddress, true);
   y = row(doc, y, 'Ville', data.propertyCity, false);
+  if (data.propertyType) y = row(doc, y, 'Type de bien', data.propertyType, true);
   y += 6;
 
-  // Tableau financier (toujours fixe)
-  y = pb(doc, y, 55);
-  y = sectionTitle(doc, y, 'Article 3 — Loyer et charges');
+  // ── Article 2 — Duree du bail ─────────────────────────────────
+  y = pb(doc, y, 40);
+  y = articleTitle(doc, y, '2', 'DUREE DU BAIL');
+  y = row(doc, y, 'Date de prise d\'effet', fmt(data.startDate), false);
+  y = row(doc, y, 'Date d\'echeance', fmt(data.endDate), true);
+  y += 2;
+  y = para(doc, y, "A l'echeance, le bail est tacitement reconduit par periodes d'un (1) an, sauf denonciation par lettre recommandee un (1) mois avant l'echeance.");
+  y += 6;
+
+  // ── Article 3 — Conditions financieres ───────────────────────
+  y = pb(doc, y, 65);
+  y = articleTitle(doc, y, '3', 'CONDITIONS FINANCIERES');
+
+  // Tableau loyer / charges / depot
+  const finRows = data.depositAmount ? 3 : 2;
+  const finH = finRows * 14 + 6;
   doc.setFillColor(...(PRIMARY as [number,number,number]));
-  doc.roundedRect(8, y, 194, data.depositAmount ? 36 : 26, 3, 3, 'F');
+  doc.roundedRect(8, y, W - 16, finH, 3, 3, 'F');
   doc.setTextColor(...WHITE); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
-  doc.text('Loyer mensuel', 20, y + 9);
-  doc.text('Charges', 20, y + 19);
-  doc.text(fmtNum(data.rentAmount) + ' F CFA', 190, y + 9, { align: 'right' });
-  doc.text(fmtNum(data.chargesAmount) + ' F CFA', 190, y + 19, { align: 'right' });
+  doc.text('Loyer mensuel', 18, y + 11);
+  doc.text(fmtAmount(data.rentAmount), W - 12, y + 11, { align: 'right' });
+  doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.2);
+  doc.line(18, y + 14, W - 18, y + 14);
+  doc.text('Charges mensuelles', 18, y + 25);
+  doc.text(fmtAmount(data.chargesAmount), W - 12, y + 25, { align: 'right' });
   if (data.depositAmount) {
-    doc.text('Dépôt de garantie', 20, y + 29);
-    doc.text(fmtNum(data.depositAmount) + ' F CFA', 190, y + 29, { align: 'right' });
+    doc.line(18, y + 28, W - 18, y + 28);
+    doc.text('Depot de garantie', 18, y + 39);
+    doc.text(fmtAmount(data.depositAmount), W - 12, y + 39, { align: 'right' });
   }
-  y += data.depositAmount ? 44 : 34;
-  y = row(doc, y, 'Jour de paiement', `Le ${data.paymentDay} de chaque mois`, false);
-  y += 6;
+  y += finH + 3;
 
-  // Articles personnalisés ou défaut
+  // Total mensuel + jour de paiement
+  doc.setFillColor(...LIGHT);
+  doc.roundedRect(8, y, W - 16, 20, 2, 2, 'F');
+  doc.setTextColor(...DARK); doc.setFontSize(9.5); doc.setFont('helvetica', 'bold');
+  doc.text('Total mensuel (loyer + charges)', 14, y + 8);
+  doc.text(fmtAmount(data.rentAmount + data.chargesAmount), W - 12, y + 8, { align: 'right' });
+  doc.setFont('helvetica', 'normal'); doc.setTextColor(...GRAY); doc.setFontSize(8);
+  doc.text(`Paiement exigible le ${data.paymentDay} de chaque mois`, 14, y + 16);
+  y += 26;
+
+  // ── Articles personnalises ─────────────────────────────────────
   for (const art of articles) {
-    if (art.num === '1' || art.num === '2' || art.num === '3' || art.num === 'F') continue; // déjà rendus
-    y = pb(doc, y, 30);
-    y = sectionTitle(doc, y, `Article ${art.num} — ${art.title}`);
-    if (art.content) y = renderArticleContent(y, art.content);
-    y += 4;
+    if (['1', '2', '3', 'F'].includes(art.num)) continue;
+    y = pb(doc, y, 35);
+    y = articleTitle(doc, y, art.num, art.title.toUpperCase());
+    if (art.content) y = renderContent(y, art.content);
+    y += 6;
   }
 
-  // Conditions spéciales
+  // ── Conditions speciales ──────────────────────────────────────
   if (data.specialConditions?.trim()) {
     y = pb(doc, y, 30);
-    y = sectionTitle(doc, y, 'Conditions spéciales');
-    y = renderArticleContent(y, data.specialConditions);
-    y += 4;
+    const scResolved = replaceVars(data.specialConditions, tplVars);
+    const scLines = doc.splitTextToSize(scResolved, W - 36);
+    const scBoxH = scLines.length * 5 + 16;
+    doc.setFillColor(255, 251, 235);
+    doc.roundedRect(8, y, W - 16, scBoxH, 3, 3, 'F');
+    doc.setFillColor(217, 119, 6);
+    doc.roundedRect(8, y, 3, scBoxH, 1, 1, 'F');
+    doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(120, 80, 0);
+    doc.text('CONDITIONS SPECIALES', 18, y + 7);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...DARK);
+    doc.text(scLines, 18, y + 14);
+    y += scBoxH + 8;
   }
 
-  // Signatures
-  y = pb(doc, y, 50);
-  y = sectionTitle(doc, y, 'Signatures');
-  doc.setTextColor(...GRAY); doc.setFontSize(8); doc.setFont('helvetica', 'italic');
-  doc.text("Les soussignés reconnaissent avoir lu et accepté l'intégralité des clauses du présent contrat.", 12, y);
-  y += 8;
+  // ── Conclusion ────────────────────────────────────────────────
+  y = pb(doc, y, 35);
+  const conclusionText = `Le present contrat est etabli en deux (2) exemplaires originaux ayant chacun valeur d'original, un remis a chaque partie. Il prend effet a la date de signature et regit les droits et obligations des parties pour la duree du bail mentionnee ci-dessus. Tout avenant devra faire l'objet d'un accord ecrit signe des deux parties.`;
+  const concLines = doc.splitTextToSize(conclusionText, W - 36);
+  const concBoxH = concLines.length * 5 + 16;
+  doc.setFillColor(...LIGHT);
+  doc.roundedRect(8, y, W - 16, concBoxH, 3, 3, 'F');
+  doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(...GRAY);
+  doc.text('CONCLUSION', 18, y + 7);
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(...DARK);
+  doc.text(concLines, 18, y + 14);
+  y += concBoxH + 8;
 
-  // Bailleur — case vide pour tampon/timbre
-  doc.setDrawColor(...LIGHT); doc.setLineWidth(0.5); doc.rect(8, y, 88, 28);
-  doc.setTextColor(...GRAY); doc.setFontSize(8);
-  doc.text('Signature / Cachet du bailleur', 52, y + 5, { align: 'center' });
-  doc.text(data.companyName, 52, y + 10, { align: 'center' });
+  // ── Signatures ────────────────────────────────────────────────
+  y = pb(doc, y, 58);
+  doc.setFontSize(8.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(...GRAY);
+  doc.text(`Fait a ____________, le ${new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' })}`, 12, y);
+  y += 5;
+  doc.setFontSize(8); doc.setFont('helvetica', 'italic');
+  doc.text("Les soussignes reconnaissent avoir lu et accepte l'integralite des clauses du present contrat.", 12, y);
+  y += 10;
 
-  doc.setDrawColor(...LIGHT); doc.setLineWidth(0.5); doc.rect(108, y, 88, 28);
-  doc.setTextColor(...GRAY); doc.setFontSize(8);
-  doc.text('Signature du locataire', 152, y + 5, { align: 'center' });
-  doc.text(data.tenantName, 152, y + 10, { align: 'center' });
+  // Bloc Bailleur
+  doc.setFillColor(...LIGHT); doc.roundedRect(8, y, 88, 38, 2, 2, 'F');
+  doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(...(PRIMARY as [number,number,number]));
+  doc.text('LE BAILLEUR', 52, y + 7, { align: 'center' });
+  doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(...DARK);
+  const bailSigName = doc.splitTextToSize(baileurName, 76);
+  doc.text(bailSigName[0], 52, y + 14, { align: 'center' });
+  doc.setFontSize(7); doc.setTextColor(...GRAY);
+  doc.text('Signature et cachet', 52, y + 33, { align: 'center' });
 
-  // Footers sur toutes les pages
+  // Bloc Locataire
+  doc.setFillColor(...LIGHT); doc.roundedRect(108, y, 88, 38, 2, 2, 'F');
+  doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(...(PRIMARY as [number,number,number]));
+  doc.text('LE LOCATAIRE', 152, y + 7, { align: 'center' });
+  doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(...DARK);
+  doc.text(data.tenantName, 152, y + 14, { align: 'center' });
+  doc.setFontSize(7); doc.setTextColor(...GRAY);
+  doc.text('Signature', 152, y + 33, { align: 'center' });
+
+  // ── Footer sur toutes les pages ───────────────────────────────
   const totalPages = doc.getNumberOfPages();
   for (let p = 1; p <= totalPages; p++) { doc.setPage(p); footer(doc, data.companyName); }
 
-  doc.save(`contrat-bail-${data.tenantName.replace(/\s+/g,'-')}-${data.startDate}.pdf`);
+  doc.save(`contrat-bail-${data.tenantName.replace(/\s+/g, '-')}-${data.startDate}.pdf`);
 }
 
 // Alias pour compatibilité avec leases/[id]/page.tsx
@@ -479,6 +628,7 @@ export async function generateContractPDF(data: {
   chargesAmount: number;
   depositAmount?: number | null;
   paymentDay: number;
+  ownerName?: string | null;           // Nom du propriétaire (bailleur)
   companyName: string;
   companyAddress?: string;
   companyEmail?: string;
@@ -489,11 +639,13 @@ export async function generateContractPDF(data: {
   specialConditions?: string | null;
   contractTemplate?: any | null;
 }) {
-  // Extract articles from contractTemplate if provided
   const articles = data.customArticles || data.contractTemplate?.articles || null;
   const conditions = data.specialConditions || data.contractTemplate?.specialConditions || null;
+  const preamble = data.contractTemplate?.preamble || undefined;
   return generateLeaseContract({
     ...data,
+    ownerName: data.ownerName ?? undefined,
+    preamble,
     depositAmount: data.depositAmount ?? undefined,
     customArticles: articles,
     specialConditions: conditions,

@@ -12,7 +12,7 @@ type Lease = {
   id: string; start_date: string; end_date: string | null;
   rent_amount: number; charges_amount: number; deposit_amount: number;
   payment_day: number; status: string;
-  properties: { name: string; address: string; city: string; type: string } | null;
+  properties: { name: string; address: string; city: string; type: string; owner_name?: string | null } | null;
 };
 type Company = { name: string; email: string | null; phone: string | null; address: string | null; logo_url: string | null; primary_color: string | null };
 type Tenant  = { first_name: string; last_name: string; phone: string | null; email: string };
@@ -42,7 +42,7 @@ export default function TenantContractPage() {
 
         const [{ data: l }, { data: t }, { data: c }] = await Promise.all([
           sb.from('leases')
-            .select('id,start_date,end_date,rent_amount,charges_amount,deposit_amount,payment_day,status,properties(name,address,city,type)')
+            .select('id,start_date,end_date,rent_amount,charges_amount,deposit_amount,payment_day,status,properties(name,address,city,type,owner_name)')
             .eq('tenant_id', ta.tenant_id)
             .order('created_at', { ascending: false })
             .limit(1).maybeSingle(),
@@ -64,7 +64,7 @@ export default function TenantContractPage() {
             if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
               // Reload with property join
               const { data: updated } = await sb.from('leases')
-                .select('id,start_date,end_date,rent_amount,charges_amount,deposit_amount,payment_day,status,properties(name,address,city,type)')
+                .select('id,start_date,end_date,rent_amount,charges_amount,deposit_amount,payment_day,status,properties(name,address,city,type,owner_name)')
                 .eq('id', (payload.new as any).id).maybeSingle();
               if (updated) {
                 setLease(updated as Lease);
@@ -96,6 +96,7 @@ export default function TenantContractPage() {
         chargesAmount:  lease.charges_amount,
         depositAmount:  lease.deposit_amount,
         paymentDay:     lease.payment_day,
+        ownerName:      (lease.properties as any)?.owner_name || null,
         companyName:    company.name,
         companyEmail:   company.email || '',
         companyPhone:   company.phone || '',

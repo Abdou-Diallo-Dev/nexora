@@ -18,7 +18,7 @@ const DEFAULT_ARTICLES: ContractArticle[] = [
 
 const VARIABLES = [
   { v: '{{locataire}}',     label: 'Nom du locataire' },
-  { v: '{{bailleur}}',      label: 'Nom du bailleur' },
+  { v: '{{bailleur}}',      label: 'Nom du proprietaire (bailleur)' },
   { v: '{{bien}}',          label: 'Nom du bien' },
   { v: '{{adresse}}',       label: 'Adresse du bien' },
   { v: '{{ville}}',         label: 'Ville' },
