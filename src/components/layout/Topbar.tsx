@@ -1,19 +1,38 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { Bell, Sun, Moon, LogOut, Settings, Menu } from 'lucide-react';
+import { Bell, Sun, Moon, LogOut, Settings, Menu, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { getBrandingColors, getCompanyDisplayName, getCompanyInitial } from '@/lib/branding';
 import { useAuthStore } from '@/lib/store';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { formatDateRelative, getInitials } from '@/lib/utils';
 import Link from 'next/link';
 import { MobileDrawer } from './Sidebar';
+
+const SARPA_PURPLE = '#3d2674';
+const SARPA_YELLOW = '#faab2d';
 
 type Notif = {
   id: string; title: string; message: string;
   type: string; is_read: boolean; created_at: string;
 };
+
+const MODULE_LABELS: Record<string, string> = {
+  '/real-estate': 'SARPA Immobilier',
+  '/beton':       'SARPA Béton',
+  '/logistics':   'SARPA Logistiques',
+  '/super-admin': 'Administration',
+  '/admin':       'Paramètres',
+  '/dashboard':   'Tableau de bord',
+};
+
+function getModuleLabel(pathname: string) {
+  for (const [prefix, label] of Object.entries(MODULE_LABELS)) {
+    if (pathname.startsWith(prefix)) return label;
+  }
+  return 'SARPA GROUP';
+}
 
 export function Topbar() {
   const { user, company, reset } = useAuthStore();
@@ -23,7 +42,8 @@ export function Topbar() {
   const [showU, setShowU]     = useState(false);
   const [dark, setDark]       = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const router = useRouter();
+  const router   = useRouter();
+  const pathname = usePathname();
   const nRef = useRef<HTMLDivElement>(null);
   const uRef = useRef<HTMLDivElement>(null);
 
@@ -61,50 +81,77 @@ export function Topbar() {
     router.push('/auth/login');
   };
 
-  const initials = getInitials(user?.full_name || user?.email || '?');
-  const displayName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Utilisateur';
-  const companyName = user?.role === 'super_admin' ? 'Nexora' : getCompanyDisplayName(company);
-  const companyInitial = user?.role === 'super_admin' ? 'N' : getCompanyInitial(company);
-  const colors = getBrandingColors(company);
+  const initials     = getInitials(user?.full_name || user?.email || '?');
+  const displayName  = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Utilisateur';
+  const isSuperAdmin = user?.role === 'super_admin';
+  const moduleLabel  = getModuleLabel(pathname);
 
   return (
     <>
-      <header className="h-14 md:h-16 bg-white dark:bg-slate-800 border-b border-border flex items-center px-3 md:px-4 gap-2 md:gap-3 flex-shrink-0">
-
+      <header
+        className="h-14 md:h-16 flex items-center px-3 md:px-5 gap-2 md:gap-3 flex-shrink-0"
+        style={{
+          background: `linear-gradient(90deg, #2e1a5e 0%, ${SARPA_PURPLE} 100%)`,
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+        }}
+      >
         {/* Burger mobile */}
         <button onClick={() => setDrawerOpen(true)}
-          className="md:hidden p-2 rounded-xl text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+          className="md:hidden p-2 rounded-xl transition-colors"
+          style={{ color: 'rgba(255,255,255,0.70)' }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.10)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
           <Menu size={20}/>
         </button>
 
-        {/* Logo mobile uniquement */}
+        {/* Logo mobile */}
         <div className="flex items-center gap-2 md:hidden">
-          {company?.logo_url && user?.role !== 'super_admin' ? (
-            <img src={company.logo_url} alt={companyName} className="w-7 h-7 rounded-lg object-cover bg-primary/10 p-1 flex-shrink-0" />
-          ) : (
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 font-bold text-xs" style={{ backgroundColor: colors.primary, color: colors.primaryText }}>
-              {companyInitial}
-            </div>
-          )}
-          <span className="font-bold text-foreground text-sm truncate max-w-[130px]">{companyName}</span>
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs flex-shrink-0"
+            style={{ background: SARPA_YELLOW, color: '#1a0f3d' }}>
+            SG
+          </div>
+          <span className="font-bold text-white text-sm truncate max-w-[120px]">SARPA GROUP</span>
+        </div>
+
+        {/* Fil d'Ariane module — desktop */}
+        <div className="hidden md:flex items-center gap-2">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.08)' }}>
+            <div className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-black flex-shrink-0"
+              style={{ background: SARPA_YELLOW, color: '#1a0f3d' }}>SG</div>
+            <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.55)' }}>SARPA GROUP</span>
+            {moduleLabel !== 'SARPA GROUP' && (
+              <>
+                <span style={{ color: 'rgba(255,255,255,0.25)' }}>/</span>
+                <span className="text-xs font-bold text-white">{moduleLabel}</span>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="flex-1"/>
 
         <div className="flex items-center gap-0.5 md:gap-1">
+
           {/* Dark mode */}
           <button onClick={toggleDark}
-            className="p-2 rounded-xl text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-            {dark ? <Sun size={18}/> : <Moon size={18}/>}
+            className="p-2 rounded-xl transition-colors"
+            style={{ color: 'rgba(255,255,255,0.60)' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.10)'; e.currentTarget.style.color = '#fff'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.60)'; }}>
+            {dark ? <Sun size={17}/> : <Moon size={17}/>}
           </button>
 
           {/* Notifications */}
           <div className="relative" ref={nRef}>
             <button onClick={() => setShowN(v => !v)}
-              className="relative p-2 rounded-xl text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-              <Bell size={18}/>
+              className="relative p-2 rounded-xl transition-colors"
+              style={{ color: 'rgba(255,255,255,0.60)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.10)'; e.currentTarget.style.color = '#fff'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.60)'; }}>
+              <Bell size={17}/>
               {unread > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                <span className="absolute top-1 right-1 w-4 h-4 text-[10px] font-black rounded-full flex items-center justify-center"
+                  style={{ background: SARPA_YELLOW, color: '#1a0f3d' }}>
                   {unread > 9 ? '9+' : unread}
                 </span>
               )}
@@ -113,16 +160,20 @@ export function Topbar() {
               {showN && (
                 <motion.div
                   initial={{opacity:0,y:8,scale:0.95}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:8,scale:0.95}}
-                  className="absolute right-0 top-full mt-2 w-[calc(100vw-24px)] sm:w-80 max-w-sm bg-white dark:bg-slate-800 border border-border rounded-2xl shadow-xl overflow-hidden z-50">
+                  className="absolute right-0 top-full mt-2 w-[calc(100vw-24px)] sm:w-80 max-w-sm bg-white dark:bg-slate-800 border border-border rounded-2xl shadow-2xl overflow-hidden z-50">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                    <h4 className="font-semibold text-sm text-foreground">Notifications</h4>
-                    {unread > 0 && <button onClick={markRead} className="text-xs text-primary hover:underline">Tout marquer lu</button>}
+                    <h4 className="font-bold text-sm text-foreground">Notifications</h4>
+                    {unread > 0 && (
+                      <button onClick={markRead} className="text-xs font-semibold hover:underline" style={{ color: SARPA_PURPLE }}>
+                        Tout marquer lu
+                      </button>
+                    )}
                   </div>
                   <div className="max-h-72 overflow-y-auto divide-y divide-border">
                     {notifs.length === 0 ? (
                       <p className="text-sm text-muted-foreground text-center py-8">Aucune notification</p>
                     ) : notifs.map(n => (
-                      <div key={n.id} className={'px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors'+(!n.is_read?' bg-blue-50/50 dark:bg-blue-900/10':'')}>
+                      <div key={n.id} className={'px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors' + (!n.is_read ? ' bg-purple-50/40 dark:bg-purple-900/10' : '')}>
                         <p className="text-xs font-semibold text-foreground">{n.title}</p>
                         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>
                         <p className="text-[10px] text-muted-foreground mt-1">{formatDateRelative(n.created_at)}</p>
@@ -137,32 +188,59 @@ export function Topbar() {
           {/* User menu */}
           <div className="relative ml-1" ref={uRef}>
             <button onClick={() => setShowU(v => !v)}
-              className="flex items-center gap-2 pl-1.5 md:pl-2 pr-2 md:pr-3 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-              <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+              className="flex items-center gap-2 pl-2 pr-2 md:pr-3 py-1.5 rounded-xl transition-colors"
+              style={{ background: 'rgba(255,255,255,0.10)' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.16)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.10)')}>
+              {/* Avatar */}
+              <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0"
+                style={{ background: SARPA_YELLOW, color: '#1a0f3d' }}>
                 {initials}
               </div>
               <div className="text-left hidden sm:block">
-                <p className="text-xs font-semibold text-foreground leading-none">{displayName}</p>
-                <p className="text-[10px] text-muted-foreground capitalize mt-0.5">{user?.role || 'admin'}</p>
+                <p className="text-xs font-bold text-white leading-none">{displayName}</p>
+                <p className="text-[10px] capitalize mt-0.5" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                  {user?.role?.replace(/_/g, ' ') || 'admin'}
+                </p>
               </div>
+              <ChevronDown size={13} className="hidden sm:block" style={{ color: 'rgba(255,255,255,0.50)' }}/>
             </button>
+
             <AnimatePresence>
               {showU && (
                 <motion.div
                   initial={{opacity:0,y:8,scale:0.95}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:8,scale:0.95}}
-                  className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-slate-800 border border-border rounded-2xl shadow-xl overflow-hidden z-50">
-                  <div className="px-4 py-3 border-b border-border">
-                    <p className="text-sm font-semibold text-foreground truncate">{user?.full_name || displayName}</p>
-                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                  className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-800 border border-border rounded-2xl shadow-2xl overflow-hidden z-50">
+                  {/* En-tête utilisateur */}
+                  <div className="px-4 py-3 border-b border-border" style={{ background: SARPA_PURPLE + '08' }}>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0"
+                        style={{ background: SARPA_YELLOW, color: '#1a0f3d' }}>
+                        {initials}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-foreground truncate">{user?.full_name || displayName}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                      </div>
+                    </div>
+                    {isSuperAdmin && (
+                      <div className="mt-2 px-2 py-1 rounded-lg text-center text-[10px] font-bold tracking-wide"
+                        style={{ background: SARPA_YELLOW + '20', color: SARPA_PURPLE }}>
+                        SUPER ADMIN
+                      </div>
+                    )}
                   </div>
-                  <div className="p-1">
+                  <div className="p-1.5">
                     <Link href="/admin/settings" onClick={() => setShowU(false)}
-                      className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-colors">
-                      <Settings size={15} className="text-muted-foreground"/> Parametres
+                      className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-foreground hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-colors">
+                      <Settings size={14} className="text-muted-foreground"/> Paramètres
                     </Link>
                     <button onClick={logout}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors">
-                      <LogOut size={15}/> Deconnexion
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors"
+                      style={{ color: '#ef4444' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#fef2f2')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                      <LogOut size={14}/> Déconnexion
                     </button>
                   </div>
                 </motion.div>
@@ -172,7 +250,6 @@ export function Topbar() {
         </div>
       </header>
 
-      {/* Drawer mobile */}
       <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)}/>
     </>
   );
