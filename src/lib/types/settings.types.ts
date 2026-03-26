@@ -12,6 +12,7 @@ export type CompanySettings = {
   email?: string | null;
   phone?: string | null;
   contract_template?: {
+    preamble?: string;
     fullText?: string;
     articles?: ContractArticle[];
     specialConditions?: string;

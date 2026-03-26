@@ -34,6 +34,7 @@ const VARIABLES = [
 
 export default function ContractTemplatePage() {
   const { company } = useAuthStore();
+  const [preamble, setPreamble] = useState('');
   const [articles, setArticles] = useState<ContractArticle[]>(DEFAULT_ARTICLES);
   const [specialConditions, setSpecialConditions] = useState('');
   const [loading, setLoading] = useState(true);
@@ -47,6 +48,7 @@ export default function ContractTemplatePage() {
     sb.from('companies').select('settings').eq('id', company.id).single().then(({ data }) => {
       if (data?.settings?.contract_template) {
         const tpl = data.settings.contract_template as any;
+        if (tpl.preamble) setPreamble(tpl.preamble);
         if (tpl.articles?.length) setArticles(tpl.articles);
         if (tpl.specialConditions) setSpecialConditions(tpl.specialConditions);
       }
@@ -66,7 +68,7 @@ export default function ContractTemplatePage() {
     const currentSettings = (current?.settings as any) || {};
     const updatedSettings = {
       ...currentSettings,
-      contract_template: { articles, specialConditions }
+      contract_template: { preamble, articles, specialConditions }
     };
     
     const { error } = await sb.from('companies')
@@ -108,6 +110,7 @@ export default function ContractTemplatePage() {
 
   const resetToDefault = () => {
     if (!confirm('Reinitialiser aux articles par defaut ?')) return;
+    setPreamble('Entre les soussignés : {{bailleur}}, agissant en tant que bailleur, d\'une part, et {{locataire}}, agissant en tant que locataire, d\'autre part, il a été convenu et arrêté ce qui suit :');
     setArticles(DEFAULT_ARTICLES);
     setSpecialConditions('');
     toast.success('Articles reinitialises');
@@ -156,6 +159,23 @@ export default function ContractTemplatePage() {
       {/* Astuce */}
       <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-3 text-xs text-amber-800 dark:text-amber-300">
         <strong>Astuce :</strong> Commencez une ligne par <code className="bg-amber-100 px-1 rounded">- </code> pour creer une puce. Utilisez les variables entre doubles accolades pour injecter les donnees du bail.
+      </div>
+
+      {/* Préambule */}
+      <div className={cardCls + ' p-5'}>
+        <h3 className="font-semibold text-foreground mb-1 text-sm">Préambule</h3>
+        <p className="text-xs text-muted-foreground mb-3">Texte d'introduction au début du contrat — présentation des parties et contexte.</p>
+        <div className="mb-1.5 flex flex-wrap gap-1.5">
+          {VARIABLES.slice(0,6).map(v => (
+            <button key={v.v} onClick={() => setPreamble(c => c + v.v)} type="button"
+              className="text-xs px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-primary hover:bg-blue-100 transition-colors font-mono">
+              {v.v}
+            </button>
+          ))}
+        </div>
+        <textarea value={preamble} onChange={e => setPreamble(e.target.value)}
+          rows={4} placeholder="Ex: Entre les soussignés : {{bailleur}}, d'une part, et {{locataire}}, d'autre part..."
+          className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-y"/>
       </div>
 
       {/* Articles */}
