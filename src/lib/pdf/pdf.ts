@@ -410,6 +410,7 @@ export async function generateLeaseContract(data: {
   // Préambule
   const preambleText = data.preamble?.trim() || 'Entre les soussignés, il a été convenu et arrêté ce qui suit :';
   y = pb(doc, y, 30);
+  y = sectionTitle(doc, y, 'Préambule');
   y = renderArticleContent(y, preambleText);
   y += 6;
 
