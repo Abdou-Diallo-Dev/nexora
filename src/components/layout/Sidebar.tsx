@@ -142,7 +142,7 @@ const SA_NAV: NavGroup[] = [
 // ─── FILIALES PICKER (accueil dashboard) ──────────────────────
 const FILIALES = [
   { module: 'real_estate', href: '/real-estate', icon: <Building2 size={18} />, name: 'SARPA Immobilier',   sub: 'Biens & locataires' },
-  { module: 'beton',       href: '/beton',       icon: <Factory size={18} />,   name: 'SARPA Beton',        sub: 'Production & stock' },
+  { module: 'beton',       href: '/beton',       icon: <Factory size={18} />,   name: 'SARPA Béton',        sub: 'Production & stock' },
   { module: 'logistics',   href: '/logistics',   icon: <Truck size={18} />,     name: 'SARPA Logistiques',  sub: 'Flotte & livraisons' },
 ];
 
@@ -150,6 +150,15 @@ const FILIALES = [
 function BrandLogo({ companyName, companyInitial, logoUrl }: { companyName: string; companyInitial: string; logoUrl?: string | null }) {
   if (logoUrl) {
     return <img src={logoUrl} alt={companyName} className="w-8 h-8 rounded-lg object-cover bg-white/15 p-0.5 flex-shrink-0" />;
+  }
+  if (companyInitial === 'SG') {
+    return (
+      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 relative overflow-hidden"
+        style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
+        <span className="absolute text-base font-black leading-none" style={{ color: '#faab2d', left: '3px', top: '3px', fontFamily: 'Georgia, serif' }}>S</span>
+        <span className="absolute text-base font-black leading-none" style={{ color: 'rgba(255,255,255,0.90)', right: '3px', bottom: '3px', fontFamily: 'Georgia, serif' }}>G</span>
+      </div>
+    );
   }
   return (
     <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 font-black text-xs"
@@ -236,13 +245,13 @@ function SidebarContent({ collapsed, onNav }: { collapsed: boolean; onNav?: () =
   const nav = isRE ? reNav : isLog ? LOG_NAV : isBeton ? BETON_NAV : isSA ? SA_NAV : null;
 
   const moduleInfo = isRE
-    ? { name: 'SARPA Immobilier',   subtitle: 'Gestion immobiliere',    icon: <Building2 size={13}/> }
+    ? { name: 'SARPA Immobilier',   subtitle: 'Gestion immobilière',   icon: <Building2 size={13}/> }
     : isLog
-      ? { name: 'SARPA Logistiques', subtitle: 'Flotte & livraisons',    icon: <Truck size={13}/> }
+      ? { name: 'SARPA Logistiques', subtitle: 'Flotte & livraisons',   icon: <Truck size={13}/> }
       : isBeton
-        ? { name: 'SARPA Beton',     subtitle: 'Production & qualite',   icon: <Factory size={13}/> }
+        ? { name: 'SARPA Béton',     subtitle: 'Production & qualité',  icon: <Factory size={13}/> }
         : isSA
-          ? { name: 'Super Admin',   subtitle: 'Administration ERP',     icon: <Crown size={13}/> }
+          ? { name: 'Super Admin',   subtitle: 'SARPA GROUP',            icon: <Crown size={13}/> }
           : null;
 
   return (
