@@ -66,9 +66,11 @@ export default function AccountingPage() {
     const sb = createClient();
     const cid = company.id;
 
-    sb.from('companies').select('commission_rate,commission_mode,vat_rate').eq('id', cid).maybeSingle()
+    Promise.resolve(
+      sb.from('companies').select('commission_rate,commission_mode,vat_rate').eq('id', cid).maybeSingle()
+    )
       .then(({ data }) => setCommission(data || { commission_rate: 10, commission_mode: 'ttc', vat_rate: 18 }))
-      .catch(err => console.error('Error loading commission settings:', err));
+      .catch((err: any) => console.error('Error loading commission settings:', err));
 
     Promise.all([
       sb.from('rent_payments').select('id,amount,paid_amount,status,period_month,period_year,paid_date,tenant_id,lease_id').eq('company_id', cid).order('paid_date', { ascending: false }).limit(500),
