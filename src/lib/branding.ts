@@ -1,7 +1,8 @@
 type RGB = { r: number; g: number; b: number };
 
-const DEFAULT_PRIMARY = '#1e40af';
-const DEFAULT_SECONDARY = '#0f766e';
+// SARPA GROUP — couleurs officielles
+const DEFAULT_PRIMARY = '#3d2d7d';
+const DEFAULT_SECONDARY = '#faab2d';
 
 function normalizeHex(color?: string | null, fallback = DEFAULT_PRIMARY) {
   if (!color) return fallback;
@@ -94,7 +95,7 @@ export function getBrandingColors(company?: {
 }
 
 export function getCompanyDisplayName(company?: { name?: string | null } | null) {
-  return company?.name?.trim() || 'Nexora';
+  return company?.name?.trim() || 'SARPA GROUP';
 }
 
 export function getCompanyInitial(company?: { name?: string | null } | null) {
