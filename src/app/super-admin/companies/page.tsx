@@ -11,11 +11,14 @@ import { toast } from 'sonner';
 
 type Company = { id:string; name:string; email:string|null; phone:string|null; plan:string; is_active:boolean; created_at:string; modules:string[] };
 
-const PLAN_CFG: Record<string,{label:string;color:string}> = {
-  free:       { label:'Free',       color:'bg-slate-100 text-slate-600' },
-  starter:    { label:'Starter',    color:'bg-blue-100 text-blue-700' },
-  pro:        { label:'Pro',        color:'bg-purple-100 text-purple-700' },
-  enterprise: { label:'Enterprise', color:'bg-amber-100 text-amber-700' },
+const SARPA_PURPLE = '#3d2674';
+const SARPA_YELLOW = '#faab2d';
+
+const PLAN_CFG: Record<string,{label:string;bg:string;color:string}> = {
+  free:       { label:'Free',       bg:'rgba(61,38,116,0.08)',  color: SARPA_PURPLE },
+  starter:    { label:'Starter',    bg:'rgba(61,38,116,0.14)',  color: SARPA_PURPLE },
+  pro:        { label:'Pro',        bg:'rgba(61,38,116,0.22)',  color: SARPA_PURPLE },
+  enterprise: { label:'Enterprise', bg:'rgba(250,171,45,0.22)', color:'#7c5200' },
 };
 
 export default function SuperAdminCompanies() {
@@ -113,27 +116,29 @@ export default function SuperAdminCompanies() {
 
       {/* Pending company approvals */}
       {pendingItems.length > 0 && (
-        <div className="mb-5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4">
-          <p className="text-sm font-semibold text-amber-800 dark:text-amber-400 mb-3">
-            ⏳ Nouvelles entreprises en attente ({pendingItems.length})
+        <div className="mb-5 rounded-2xl p-4" style={{ background:'rgba(250,171,45,0.10)', border:'1px solid rgba(250,171,45,0.35)' }}>
+          <p className="text-sm font-bold mb-3" style={{ color:'#7c5200' }}>
+            Nouvelles filiales en attente ({pendingItems.length})
           </p>
           <div className="space-y-2">
             {pendingItems.map(c => (
-              <div key={c.id} className="flex items-center justify-between bg-white dark:bg-slate-800 rounded-xl px-4 py-3">
+              <div key={c.id} className="flex items-center justify-between bg-white dark:bg-slate-800 rounded-xl px-4 py-3 border border-border">
                 <div>
                   <p className="text-sm font-semibold text-foreground">{c.name}</p>
                   <p className="text-xs text-muted-foreground">{c.email||'—'}</p>
                   <div className="flex gap-1 mt-1">
                     {(c.modules||[]).map(m=>(
-                      <span key={m} className={'text-[10px] px-2 py-0.5 rounded-full font-semibold '+(m==='real_estate'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700')}>
-                        {m==='real_estate'?'Immo':'Logistique'}
+                      <span key={m} className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                        style={{ background:'rgba(61,38,116,0.10)', color: SARPA_PURPLE }}>
+                        {m==='real_estate'?'Immo':m==='beton'?'Béton':m==='logistics'?'Logistique':m}
                       </span>
                     ))}
                   </div>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
                   <button onClick={()=>approveCompany(c)}
-                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition-colors">
+                    className="px-3 py-1.5 text-white text-xs font-bold rounded-lg transition-opacity hover:opacity-90"
+                    style={{ background: SARPA_PURPLE }}>
                     Approuver
                   </button>
                   <button onClick={()=>rejectCompany(c)}
@@ -188,11 +193,13 @@ export default function SuperAdminCompanies() {
                         <p className="text-xs text-muted-foreground">{c.email||'—'}{c.phone?' · '+c.phone:''}</p>
                         <p className="text-xs text-muted-foreground">{formatDate(c.created_at)}</p>
                       </div>
-                      <span className={'inline-flex text-xs font-semibold px-2.5 py-1 rounded-full w-fit '+plan.color}>{plan.label}</span>
+                      <span className="inline-flex text-xs font-semibold px-2.5 py-1 rounded-full w-fit"
+                        style={{ background: plan.bg, color: plan.color }}>{plan.label}</span>
                       <div className="flex flex-wrap gap-1">
                         {(c.modules||[]).slice(0,2).map(m=>(
-                          <span key={m} className="text-[10px] bg-slate-100 dark:bg-slate-700 text-muted-foreground px-1.5 py-0.5 rounded">
-                            {m==='real_estate'?'Immo':m==='logistics'?'Logi':m}
+                          <span key={m} className="text-[10px] px-1.5 py-0.5 rounded font-medium"
+                            style={{ background:'rgba(61,38,116,0.08)', color: SARPA_PURPLE }}>
+                            {m==='real_estate'?'Immo':m==='beton'?'Béton':m==='logistics'?'Logi':m}
                           </span>
                         ))}
                       </div>
@@ -200,12 +207,14 @@ export default function SuperAdminCompanies() {
                       <div className="flex items-center gap-1 md:justify-end">
                         {/* Voir */}
                         <Link href={'/super-admin/companies/'+c.id}
-                          className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" title="Voir">
+                          className="p-1.5 rounded-lg text-muted-foreground transition-colors"
+                          style={{}} onMouseEnter={e=>{e.currentTarget.style.background='rgba(61,38,116,0.08)';e.currentTarget.style.color=SARPA_PURPLE;}} onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.color='';}} title="Voir">
                           <Eye size={15}/>
                         </Link>
                         {/* Modifier */}
                         <Link href={'/super-admin/companies/'+c.id+'/edit'}
-                          className="p-1.5 rounded-lg text-muted-foreground hover:text-blue-600 hover:bg-blue-50 transition-colors" title="Modifier">
+                          className="p-1.5 rounded-lg text-muted-foreground transition-colors"
+                          onMouseEnter={e=>{e.currentTarget.style.background='rgba(61,38,116,0.08)';e.currentTarget.style.color=SARPA_PURPLE;}} onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.color='';}} title="Modifier">
                           <Edit size={15}/>
                         </Link>
                         {/* Suspendre / Activer */}

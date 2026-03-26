@@ -276,20 +276,21 @@ export default function SuperAdminUsersPage() {
 
       {/* Pending tenant approvals */}
       {items.filter(u=>u.role==='tenant'&&!u.is_active).length > 0 && (
-        <div className="mb-5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4">
-          <p className="text-sm font-semibold text-amber-800 dark:text-amber-400 mb-3">
-            ⏳ Demandes en attente ({items.filter(u=>u.role==='tenant'&&!u.is_active).length})
+        <div className="mb-5 rounded-2xl p-4" style={{ background:'rgba(250,171,45,0.10)', border:'1px solid rgba(250,171,45,0.35)' }}>
+          <p className="text-sm font-bold mb-3" style={{ color:'#7c5200' }}>
+            Demandes locataires en attente ({items.filter(u=>u.role==='tenant'&&!u.is_active).length})
           </p>
           <div className="space-y-2">
             {items.filter(u=>u.role==='tenant'&&!u.is_active).map(u=>(
-              <div key={u.id} className="flex items-center justify-between bg-white dark:bg-slate-800 rounded-xl px-4 py-2.5">
+              <div key={u.id} className="flex items-center justify-between bg-white dark:bg-slate-800 rounded-xl px-4 py-2.5 border border-border">
                 <div>
                   <p className="text-sm font-medium text-foreground">{u.full_name||'—'}</p>
                   <p className="text-xs text-muted-foreground">{u.email}</p>
                 </div>
                 <div className="flex gap-2">
                   <button onClick={()=>approveTenant(u)}
-                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition-colors">
+                    className="px-3 py-1.5 text-white text-xs font-bold rounded-lg transition-opacity hover:opacity-90"
+                    style={{ background:'#3d2674' }}>
                     Approuver
                   </button>
                   <button onClick={()=>setDeletingUser(u)}
@@ -421,7 +422,8 @@ export default function SuperAdminUsersPage() {
                     const rm = ROLE_MAP[r];
                     return (
                       <button key={r} onClick={()=>setNewUser(f=>({...f,role:r}))}
-                        className={'flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all '+(newUser.role===r?'border-primary bg-blue-50 dark:bg-blue-900/20':'border-border hover:border-primary/40')}>
+                        className={'flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all '+(newUser.role===r?'border-primary':'border-border hover:border-primary/40')}
+                        style={newUser.role===r?{background:'rgba(61,38,116,0.08)'}:{}}>
                         <Badge variant={rm.v}>{rm.l}</Badge>
                         <p className="text-xs text-muted-foreground">{ROLE_DESC[r]}</p>
                       </button>
@@ -458,7 +460,8 @@ export default function SuperAdminUsersPage() {
               {ROLES.map(r => {
                 const rm = ROLE_MAP[r];
                 return (
-                  <label key={r} className={'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all '+(editRole===r?'border-primary bg-blue-50 dark:bg-blue-900/20':'border-border hover:border-primary/40')}>
+                  <label key={r} className={'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all '+(editRole===r?'border-primary':'border-border hover:border-primary/40')}
+                    style={editRole===r?{background:'rgba(61,38,116,0.08)'}:{}}>
                     <input type="radio" name="role" value={r} checked={editRole===r} onChange={()=>setEditRole(r)} className="accent-primary"/>
                     <div className="flex-1"><p className="text-sm font-medium text-foreground">{rm.l}</p><p className="text-xs text-muted-foreground">{ROLE_DESC[r]}</p></div>
                     <Badge variant={rm.v}>{rm.l}</Badge>
