@@ -11,7 +11,7 @@ const SARPA_YELLOW = '#faab2d';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setUser, setCompany } = useAuthStore();
+  const { setUser, setCompany, setLoading: setAuthLoading } = useAuthStore();
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw]     = useState(false);
@@ -94,6 +94,7 @@ export default function LoginPage() {
 
     setUser(userRow as any);
     setCompany(company as any);
+    setAuthLoading(false);
 
     const role = userRow.role;
     const modules = company?.modules || [];
