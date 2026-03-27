@@ -9,36 +9,69 @@ import { usePagination, useSearch } from '@/lib/hooks';
 import { toast } from 'sonner';
 
 type FullUser = AppUser & { companies: { name: string } | null };
-type Company  = { id: string; name: string };
 
 const ROLE_MAP: Record<string,{l:string;v:BadgeVariant}> = {
-  super_admin: { l:'Super Admin', v:'error'   },
-  admin:       { l:'Admin',       v:'info'    },
-  manager:     { l:'Manager',     v:'info'    },
-  agent:       { l:'Agent',       v:'warning' },
-  viewer:      { l:'Viewer',      v:'default' },
-  comptable:   { l:'Comptable',   v:'purple'  },
-  pdg:         { l:'PDG',         v:'warning' },
-  responsable_operations: { l:'Resp. operations', v:'info' },
+  super_admin: { l:'Super Admin',           v:'error'   },
+  admin:       { l:'Admin',                 v:'info'    },
+  manager:     { l:'Manager',               v:'info'    },
+  agent:       { l:'Agent',                 v:'warning' },
+  viewer:      { l:'Viewer',               v:'default' },
+  comptable:   { l:'Comptable',             v:'purple'  },
+  pdg:         { l:'PDG',                   v:'warning' },
+  responsable_operations:    { l:'Resp. opérations',     v:'info'    },
+  // Logistique
+  manager_logistique:        { l:'Manager Logistique',   v:'info'    },
+  caissiere:                 { l:'Caissière',             v:'warning' },
+  responsable_vente:         { l:'Resp. vente',           v:'info'    },
+  assistante_admin:          { l:'Assistante admin',      v:'default' },
+  // Béton
+  manager_beton:             { l:'Manager Béton',         v:'info'    },
+  responsable_production:    { l:'Resp. production',      v:'warning' },
+  operateur_centrale:        { l:'Opérateur centrale',    v:'default' },
+  assistante_commerciale:    { l:'Assistante commerciale',v:'default' },
+  responsable_qualite:       { l:'Resp. qualité',         v:'warning' },
   tenant:      { l:'Locataire',   v:'default' },
 };
 
-const ROLES: UserRole[] = ['admin','manager','agent','viewer','comptable','pdg','responsable_operations'];
-
 const ROLE_DESC: Record<string,string> = {
-  admin:     'Acces complet a son entreprise',
-  manager:   'Gestion operationnelle',
-  agent:     'Paiements et maintenance',
-  viewer:    'Lecture seule',
-  comptable: 'Gestion financiere et comptabilite',
-  pdg:       'Vision executive en lecture seule',
-  responsable_operations: 'Suivi operationnel en lecture seule',
+  admin:                  'Accès complet à son entreprise',
+  manager:                'Gestion opérationnelle',
+  agent:                  'Paiements et maintenance',
+  viewer:                 'Lecture seule',
+  comptable:              'Gestion financière et comptabilité',
+  pdg:                    'Vision exécutive en lecture seule',
+  responsable_operations: 'Suivi opérationnel en lecture seule',
+  // Logistique
+  manager_logistique:     'Gestion complète du module logistique',
+  caissiere:              'Gestion de la caisse et paiements',
+  responsable_vente:      'Suivi des commandes et clients',
+  assistante_admin:       'Support administratif logistique',
+  // Béton
+  manager_beton:          'Gestion complète du module béton',
+  responsable_production: 'Suivi de la production',
+  operateur_centrale:     'Opérations de la centrale',
+  assistante_commerciale: 'Support commercial béton',
+  responsable_qualite:    'Contrôle qualité production',
 };
+
+const ROLES_BY_MODULE: Record<string, UserRole[]> = {
+  real_estate: ['admin','manager','agent','viewer','comptable','responsable_operations'],
+  logistics:   ['manager_logistique','caissiere','responsable_vente','assistante_admin'],
+  beton:       ['manager_beton','responsable_production','operateur_centrale','assistante_commerciale','responsable_qualite'],
+};
+
+function getRolesForCompany(modules: string[]): UserRole[] {
+  const roles: UserRole[] = ['admin'];
+  for (const mod of modules) {
+    if (ROLES_BY_MODULE[mod]) roles.push(...ROLES_BY_MODULE[mod]);
+  }
+  if (!modules.length) roles.push('manager','agent','viewer','comptable','responsable_operations');
+  return roles;
+}
 
 export default function SuperAdminUsersPage() {
   const { user, company } = useAuthStore();
   const [items, setItems] = useState<FullUser[]>([]);
-  const [companies, setCompanies] = useState<Company[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [filterRole, setFilterRole] = useState('');
@@ -54,7 +87,7 @@ export default function SuperAdminUsersPage() {
 
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [newUser, setNewUser] = useState({ full_name:'', email:'', password:'', role:'agent' as UserRole, company_id:'' });
+  const [newUser, setNewUser] = useState({ full_name:'', email:'', password:'', role:'admin' as UserRole });
 
   const isAdmin = user?.role === 'admin';
 
@@ -74,11 +107,6 @@ export default function SuperAdminUsersPage() {
   };
 
   useEffect(() => { load(); }, [user?.role, company?.id, debounced, filterRole, filterStatus, offset, pageSize]);
-
-  useEffect(() => {
-    if (!company?.id || !company?.name) return;
-    setCompanies([{ id: company.id, name: company.name }]);
-  }, [company?.id, company?.name]);
 
   const upsertListItem = (updatedUser?: FullUser | null) => {
     if (!updatedUser) return;
@@ -192,7 +220,7 @@ export default function SuperAdminUsersPage() {
         load();
       }
       setShowCreate(false);
-      setNewUser({ full_name:'', email:'', password:'', role:'agent', company_id:company?.id || '' });
+      setNewUser({ full_name:'', email:'', password:'', role:'admin' });
     } catch (e: any) { toast.error(e.message || 'Erreur'); }
     setCreating(false);
   };
@@ -339,7 +367,7 @@ export default function SuperAdminUsersPage() {
               <div>
                 <label className={labelCls}>Role *</label>
                 <div className="grid grid-cols-2 gap-2 mt-1">
-                  {ROLES.map(r => {
+                  {getRolesForCompany(company?.modules || []).map(r => {
                     const rm = ROLE_MAP[r];
                     return (
                       <button key={r} onClick={()=>setNewUser(f=>({...f,role:r}))}
@@ -353,10 +381,10 @@ export default function SuperAdminUsersPage() {
               </div>
               <div>
                 <label className={labelCls}>Entreprise</label>
-                <select value={newUser.company_id} onChange={e=>setNewUser(f=>({...f,company_id:e.target.value}))} className={selectCls+' w-full'}>
-                  <option value="">-- Choisir une entreprise --</option>
-                  {companies.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <div className="px-3 py-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl text-sm text-foreground font-medium">
+                  {company?.name || '—'}
+                  <span className="text-xs text-muted-foreground ml-2">(auto-assignée)</span>
+                </div>
               </div>
             </div>
             <div className="flex gap-3 justify-end px-6 py-4 border-t border-border bg-slate-50 dark:bg-slate-700/20 rounded-b-2xl">
@@ -377,7 +405,7 @@ export default function SuperAdminUsersPage() {
             <h3 className="font-semibold text-foreground mb-1">Modifier le role</h3>
             <p className="text-sm text-muted-foreground mb-4">{editingUser.full_name||editingUser.email}</p>
             <div className="space-y-2 mb-5">
-              {ROLES.map(r => {
+              {getRolesForCompany(company?.modules || []).map(r => {
                 const rm = ROLE_MAP[r];
                 return (
                   <label key={r} className={'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all '+(editRole===r?'border-primary bg-blue-50 dark:bg-blue-900/20':'border-border hover:border-primary/40')}>
