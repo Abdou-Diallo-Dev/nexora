@@ -51,6 +51,10 @@ export default function FinancesPage() {
       setAccounts((a || []) as any);
       setTransactions((t || []) as any);
       setLoading(false);
+    }).catch(err => {
+      console.error('Erreur chargement finances:', err);
+      toast.error('Erreur: ' + (err?.message || 'requête échouée'));
+      setLoading(false);
     });
   };
 

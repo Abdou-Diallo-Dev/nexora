@@ -44,7 +44,8 @@ export default function DriversPage() {
       .range(offset, offset+pageSize-1);
     if (filterStatus) q = q.eq('status', filterStatus);
     if (debounced) q = q.or(`first_name.ilike.%${debounced}%,last_name.ilike.%${debounced}%,phone.ilike.%${debounced}%`);
-    q.then(({ data, count }) => { setItems((data||[]) as Driver[]); setTotal(count||0); setLoading(false); });
+    q.then(({ data, count }) => { setItems((data||[]) as Driver[]); setTotal(count||0); setLoading(false); })
+      .catch(err => { console.error('Erreur chargement chauffeurs:', err); toast.error('Erreur: ' + (err?.message || 'requête échouée')); setLoading(false); });
   };
 
   useEffect(load, [company?.id, filterStatus, debounced, offset, pageSize]);

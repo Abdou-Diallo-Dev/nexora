@@ -52,7 +52,8 @@ export default function FacturesPage() {
       .order('issue_date', { ascending: false })
       .range(offset, offset + pageSize - 1);
     if (filterStatus) q = q.eq('status', filterStatus);
-    q.then(({ data, count }) => { setItems((data || []) as any); setTotal(count || 0); setLoading(false); });
+    q.then(({ data, count }) => { setItems((data || []) as any); setTotal(count || 0); setLoading(false); })
+      .catch(err => { console.error('Erreur chargement factures:', err); toast.error('Erreur: ' + (err?.message || 'requête échouée')); setLoading(false); });
   };
 
   useEffect(() => { load(); }, [company?.id, filterStatus, offset]);

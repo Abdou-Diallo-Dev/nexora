@@ -55,7 +55,8 @@ export default function DeliveriesPage() {
     if (filterStatus) q = q.eq('status', filterStatus);
     if (filterPriority) q = q.eq('priority', filterPriority);
     if (debounced) q = q.ilike('reference', `%${debounced}%`);
-    q.then(({ data, count }) => { setItems((data||[]) as unknown as Delivery[]); setTotal(count||0); setLoading(false); });
+    q.then(({ data, count }) => { setItems((data||[]) as unknown as Delivery[]); setTotal(count||0); setLoading(false); })
+      .catch(err => { console.error('Erreur chargement livraisons:', err); toast.error('Erreur: ' + (err?.message || 'requête échouée')); setLoading(false); });
   };
 
   useEffect(load, [company?.id, filterStatus, filterPriority, debounced, offset, pageSize]);

@@ -33,7 +33,8 @@ export default function AnnuairePage() {
       .eq('company_id', company.id)
       .order('type')
       .order('full_name')
-      .then(({ data }) => { setItems((data || []) as any); setLoading(false); });
+      .then(({ data }) => { setItems((data || []) as any); setLoading(false); })
+      .catch(err => { console.error('Erreur annuaire:', err); toast.error('Erreur: ' + (err?.message || 'requête échouée')); setLoading(false); });
   }, [company?.id]);
 
   const filtered = items.filter(c => {
