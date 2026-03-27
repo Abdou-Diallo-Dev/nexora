@@ -63,28 +63,35 @@ const RE_GROUP_MAP: { label: string; keys: string[]; adminOnly?: boolean }[] = [
 // ─── SARPA LOGISTIQUES ─────────────────────────────────────────
 const LOG_NAV: NavGroup[] = [
   { label: 'Operations', items: [
-    { key: 'dashboard',  href: '/logistics',             label: 'Tableau de bord',     icon: <Home size={15} /> },
-    { key: 'deliveries', href: '/logistics/deliveries',  label: 'Livraisons',          icon: <Truck size={15} /> },
-    { key: 'orders',     href: '/logistics/orders',      label: 'Commandes clients',   icon: <ShoppingCart size={15} /> },
-    { key: 'clients',    href: '/logistics/clients',     label: 'Clients',             icon: <Users size={15} /> },
+    { key: 'dashboard',    href: '/logistics',                   label: 'Tableau de bord',     icon: <Home size={15} /> },
+    { key: 'deliveries',   href: '/logistics/deliveries',        label: 'Livraisons',          icon: <Truck size={15} /> },
+    { key: 'orders',       href: '/logistics/orders',            label: 'Commandes clients',   icon: <ShoppingCart size={15} /> },
+    { key: 'clients',      href: '/logistics/clients',           label: 'Clients',             icon: <Users size={15} /> },
+    { key: 'factures',     href: '/logistics/factures',          label: 'Factures',            icon: <FileText size={15} /> },
   ]},
   { label: 'Flotte', items: [
-    { key: 'fleet',      href: '/logistics/fleet',       label: 'Camions & vehicules', icon: <Truck size={15} /> },
-    { key: 'drivers',    href: '/logistics/drivers',     label: 'Chauffeurs',          icon: <UserCog size={15} /> },
-    { key: 'gps',        href: '/logistics/shipments',   label: 'Suivi GPS',           icon: <MapPin size={15} /> },
-    { key: 'accidents',  href: '/logistics/warehouse',   label: 'Accidents',           icon: <AlertTriangle size={15} /> },
+    { key: 'fleet',        href: '/logistics/fleet',             label: 'Camions & vehicules', icon: <Truck size={15} /> },
+    { key: 'drivers',      href: '/logistics/drivers',           label: 'Chauffeurs',          icon: <UserCog size={15} /> },
+    { key: 'maintenance',  href: '/logistics/maintenance',       label: 'Maintenance',         icon: <Wrench size={15} /> },
+    { key: 'gps',          href: '/logistics/gps',               label: 'Suivi GPS',           icon: <MapPin size={15} /> },
+    { key: 'accidents',    href: '/logistics/accidents',         label: 'Accidents',           icon: <AlertTriangle size={15} /> },
   ]},
   { label: 'Stock', items: [
-    { key: 'warehouse',  href: '/logistics/warehouse',   label: 'Stock maintenance',   icon: <Package size={15} /> },
-    { key: 'stockvente', href: '/logistics/warehouse',   label: 'Stock vente',         icon: <Package size={15} /> },
+    { key: 'stockmaint',   href: '/logistics/stock/maintenance', label: 'Stock maintenance',   icon: <Package size={15} /> },
+    { key: 'stockvente',   href: '/logistics/stock/vente',      label: 'Stock vente',         icon: <Package size={15} /> },
+    { key: 'fournisseurs', href: '/logistics/fournisseurs',      label: 'Commandes fourniss.', icon: <ShoppingCart size={15} /> },
   ]},
   { label: 'Finance', items: [
-    { key: 'finance',    href: '/logistics/stats',       label: 'Comptes & banques',   icon: <Banknote size={15} /> },
-    { key: 'dettes',     href: '/logistics/stats',       label: 'Dettes clients',      icon: <Wallet size={15} /> },
-    { key: 'stats',      href: '/logistics/stats',       label: 'Statistiques',        icon: <BarChart3 size={15} /> },
+    { key: 'finances',     href: '/logistics/finances',          label: 'Comptes & banques',   icon: <Banknote size={15} /> },
+    { key: 'budget',       href: '/logistics/finances/budget',   label: 'Budget mensuel',      icon: <Wallet size={15} /> },
+    { key: 'dettes',       href: '/logistics/dettes',            label: 'Dettes clients',      icon: <Wallet size={15} /> },
+    { key: 'stats',        href: '/logistics/stats',             label: 'Statistiques',        icon: <BarChart3 size={15} /> },
+    { key: 'rapports',     href: '/logistics/rapports',          label: 'Rapports financiers', icon: <BarChart3 size={15} /> },
   ]},
   { label: 'RH & Contacts', items: [
-    { key: 'annuaire',   href: '/logistics/drivers',     label: 'Annuaire',            icon: <Phone size={15} /> },
+    { key: 'employes',     href: '/logistics/employes',          label: 'Employés',            icon: <UserCog size={15} /> },
+    { key: 'annuaire',     href: '/logistics/annuaire',          label: 'Annuaire',            icon: <Phone size={15} /> },
+    { key: 'rapsorties',   href: '/logistics/rapports-sorties',  label: 'Rapports de sorties', icon: <FileText size={15} /> },
   ]},
 ];
 
