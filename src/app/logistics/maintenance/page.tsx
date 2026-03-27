@@ -66,16 +66,20 @@ export default function MaintenancePage() {
       .range(offset, offset + pageSize - 1);
     if (filterType) q = q.eq('type', filterType);
     if (filterStatus) q = q.eq('status', filterStatus);
-    q.then(({ data, count }) => { setItems((data || []) as any); setTotal(count || 0); setLoading(false); })
-      .catch(err => { console.error('Erreur chargement maintenance:', err); toast.error('Erreur: ' + (err?.message || 'requête échouée')); setLoading(false); });
+    q.then(
+      ({ data, count }) => { setItems((data || []) as any); setTotal(count || 0); setLoading(false); },
+      (err: any) => { console.error('Erreur maintenance:', err); toast.error('Erreur: ' + (err?.message || 'requête échouée')); setLoading(false); }
+    );
   };
 
   useEffect(() => {
     if (!company?.id) return;
     load();
     createClient().from('vehicles').select('id,plate,brand').eq('company_id', company.id).order('plate')
-      .then(({ data }) => setVehicles(data || []))
-      .catch(err => console.error('Erreur chargement véhicules:', err));
+      .then(
+        ({ data }) => setVehicles(data || []),
+        (err: any) => console.error('Erreur chargement véhicules:', err)
+      );
   }, [company?.id, filterType, filterStatus, offset]);
 
   const handleSave = async () => {

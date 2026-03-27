@@ -47,15 +47,18 @@ export default function FinancesPage() {
         .eq('company_id', company.id)
         .order('transaction_date', { ascending: false })
         .limit(50),
-    ]).then(([{ data: a }, { data: t }]) => {
-      setAccounts((a || []) as any);
-      setTransactions((t || []) as any);
-      setLoading(false);
-    }).catch(err => {
-      console.error('Erreur chargement finances:', err);
-      toast.error('Erreur: ' + (err?.message || 'requête échouée'));
-      setLoading(false);
-    });
+    ]).then(
+      ([{ data: a }, { data: t }]) => {
+        setAccounts((a || []) as any);
+        setTransactions((t || []) as any);
+        setLoading(false);
+      },
+      (err: any) => {
+        console.error('Erreur finances:', err);
+        toast.error('Erreur: ' + (err?.message || 'requête échouée'));
+        setLoading(false);
+      }
+    );
   };
 
   useEffect(() => { load(); }, [company?.id]);

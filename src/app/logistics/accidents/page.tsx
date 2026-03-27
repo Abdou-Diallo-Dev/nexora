@@ -49,8 +49,10 @@ export default function AccidentsPage() {
       .eq('company_id', company.id)
       .order('accident_date', { ascending: false })
       .range(offset, offset + pageSize - 1)
-      .then(({ data, count }) => { setItems((data || []) as any); setTotal(count || 0); setLoading(false); })
-      .catch(err => { console.error('Erreur chargement accidents:', err); toast.error('Erreur: ' + (err?.message || 'requête échouée')); setLoading(false); });
+      .then(
+        ({ data, count }) => { setItems((data || []) as any); setTotal(count || 0); setLoading(false); },
+        (err: any) => { console.error('Erreur accidents:', err); toast.error('Erreur: ' + (err?.message || 'requête échouée')); setLoading(false); }
+      );
   };
 
   useEffect(() => {
@@ -58,11 +60,15 @@ export default function AccidentsPage() {
     load();
     const sb = createClient();
     sb.from('vehicles').select('id,plate').eq('company_id', company.id).order('plate')
-      .then(({ data }) => setVehicles(data || []))
-      .catch(err => console.error('Erreur chargement véhicules:', err));
+      .then(
+        ({ data }) => setVehicles(data || []),
+        (err: any) => console.error('Erreur chargement véhicules:', err)
+      );
     sb.from('drivers').select('id,first_name,last_name').eq('company_id', company.id).order('first_name')
-      .then(({ data }) => setDrivers(data || []))
-      .catch(err => console.error('Erreur chargement chauffeurs:', err));
+      .then(
+        ({ data }) => setDrivers(data || []),
+        (err: any) => console.error('Erreur chargement chauffeurs:', err)
+      );
   }, [company?.id, offset]);
 
   const handleSave = async () => {

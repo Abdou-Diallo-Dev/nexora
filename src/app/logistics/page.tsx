@@ -87,8 +87,9 @@ export default function LogisticsDashboard() {
       if (drivers.filter((d:any)=>d.status==='available').length === 0) alts.push({ type:'warning', message:'Aucun chauffeur disponible actuellement' });
       setAlerts(alts);
       setLoading(false);
-    }).catch(err => { 
-      console.error('Erreur chargement dashboard:', err); 
+    },
+    (err: any) => { 
+      console.error('Erreur dashboard:', err); 
       setAlerts([{type:'error', message:'Erreur chargement données: ' + (err?.message || 'requête échouée')}]);
       setLoading(false); 
     });

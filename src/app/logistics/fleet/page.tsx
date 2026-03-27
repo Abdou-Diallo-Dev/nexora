@@ -38,8 +38,10 @@ export default function FleetPage() {
       .order('created_at', { ascending:false })
       .range(offset, offset+pageSize-1);
     if (filterStatus) q = q.eq('status', filterStatus);
-    q.then(({ data, count }) => { setItems((data||[]) as Vehicle[]); setTotal(count||0); setLoading(false); })
-      .catch(err => { console.error('Erreur chargement flotte:', err); toast.error('Erreur: ' + (err?.message || 'requête échouée')); setLoading(false); });
+    q.then(
+      ({ data, count }) => { setItems((data||[]) as Vehicle[]); setTotal(count||0); setLoading(false); },
+      (err: any) => { console.error('Erreur flotte:', err); toast.error('Erreur: ' + (err?.message || 'requête échouée')); setLoading(false); }
+    );
   };
 
   useEffect(load, [company?.id, filterStatus, offset, pageSize]);

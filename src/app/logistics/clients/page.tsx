@@ -38,8 +38,10 @@ export default function LogisticsClientsPage() {
       .eq('company_id', company.id).order('created_at', { ascending:false }).range(offset, offset+pageSize-1);
     if (filterType) q = q.eq('type', filterType);
     if (debounced) q = q.ilike('name', `%${debounced}%`);
-    q.then(({ data, count }) => { setItems((data||[]) as Client[]); setTotal(count||0); setLoading(false); })
-      .catch(err => { console.error('Erreur chargement clients:', err); toast.error('Erreur: ' + (err?.message || 'requête échouée')); setLoading(false); });
+    q.then(
+      ({ data, count }) => { setItems((data||[]) as Client[]); setTotal(count||0); setLoading(false); },
+      (err: any) => { console.error('Erreur clients:', err); toast.error('Erreur: ' + (err?.message || 'requête échouée')); setLoading(false); }
+    );
   };
 
   useEffect(load, [company?.id, filterType, debounced, offset, pageSize]);
