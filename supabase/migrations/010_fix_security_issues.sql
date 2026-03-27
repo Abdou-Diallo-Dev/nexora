@@ -11,15 +11,11 @@ ALTER TABLE IF EXISTS public.users ENABLE ROW LEVEL SECURITY;
 -- 2. Create simple RLS policies for supplier_order_items - allow authenticated users
 DROP POLICY IF EXISTS "supplier_order_items_authenticated" ON public.supplier_order_items;
 CREATE POLICY "supplier_order_items_authenticated" ON public.supplier_order_items
-  FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (auth.role() = 'authenticated');
 
 -- 3. Create simple RLS policies for logistics_invoice_items - allow authenticated users
 DROP POLICY IF EXISTS "logistics_invoice_items_authenticated" ON public.logistics_invoice_items
-  FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (auth.role() = 'authenticated');
 
 -- 4. Fix SECURITY DEFINER views by recreating them without SECURITY DEFINER
 -- These views should not override permissions
