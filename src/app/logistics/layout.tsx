@@ -37,12 +37,26 @@ export default function LogisticsLayout({ children }: { children: React.ReactNod
         if (!data) { router.replace('/auth/login'); return; }
 
         setUser(data as any);
-        setCompany((data.companies || null) as any);
 
-        // Si l'utilisateur n'a pas de company_id → vraiment pas de société
-        if (!data.company_id) {
+        // company peut être null si le join échoue (RLS) → fallback direct
+        let comp = data.companies || null;
+        if (!comp && data.company_id) {
+          const { data: c } = await sb.from('companies').select('*').eq('id', data.company_id).maybeSingle();
+          comp = c || null;
+        }
+        // Dernier recours : company_id dans les métadonnées auth
+        const metaCompanyId = !data.company_id
+          ? (session.user.user_metadata?.company_id as string | undefined)
+          : null;
+
+        if (!data.company_id && !metaCompanyId) {
           setStatus('no-company');
         } else {
+          if (!comp && metaCompanyId) {
+            const { data: c } = await sb.from('companies').select('*').eq('id', metaCompanyId).maybeSingle();
+            comp = c || null;
+          }
+          setCompany(comp as any);
           setStatus('ready');
         }
       } catch {
