@@ -60,7 +60,8 @@ export async function POST(request: Request) {
 
     const company_id = actor.role === 'super_admin' ? requestedCompanyId : actor.company_id;
 
-    if (role !== 'super_admin' && !company_id) {
+    // Seul admin (non super_admin) a besoin d'une entreprise pour les rôles non-admin
+    if (role !== 'super_admin' && !company_id && actor.role !== 'super_admin') {
       return NextResponse.json({ error: 'Entreprise requise pour ce role' }, { status: 400 });
     }
 
