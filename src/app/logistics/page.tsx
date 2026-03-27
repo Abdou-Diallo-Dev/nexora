@@ -178,6 +178,48 @@ export default function LogisticsDashboard() {
         </div>
       </div>
 
+      {/* Specialized modules */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{delay:0.06}}>
+          <Link href="/logistics/stats" className={cardCls+' block p-5 hover:shadow-lg transition-shadow group'}>
+            <div className="flex items-start justify-between mb-3">
+              <div className="p-2.5 rounded-lg bg-gradient-to-br from-purple-100 to-purple-50 group-hover:from-purple-200 group-hover:to-purple-100 transition-colors">
+                <TrendingUp size={18} className="text-purple-600"/>
+              </div>
+              <ArrowRight size={16} className="text-muted-foreground group-hover:translate-x-1 transition-transform"/>
+            </div>
+            <h4 className="font-semibold text-foreground mb-1">Statistiques</h4>
+            <p className="text-xs text-muted-foreground">KPIs, graphiques et rapports d'activité</p>
+          </Link>
+        </motion.div>
+
+        <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{delay:0.12}}>
+          <Link href="/logistics/stock/maintenance" className={cardCls+' block p-5 hover:shadow-lg transition-shadow group'}>
+            <div className="flex items-start justify-between mb-3">
+              <div className="p-2.5 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 group-hover:from-blue-200 group-hover:to-blue-100 transition-colors">
+                <Wrench size={18} className="text-blue-600"/>
+              </div>
+              <ArrowRight size={16} className="text-muted-foreground group-hover:translate-x-1 transition-transform"/>
+            </div>
+            <h4 className="font-semibold text-foreground mb-1">Stock Maintenance</h4>
+            <p className="text-xs text-muted-foreground">Gestion pièces détachées et pneus</p>
+          </Link>
+        </motion.div>
+
+        <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{delay:0.18}}>
+          <Link href="/logistics/stock/vente" className={cardCls+' block p-5 hover:shadow-lg transition-shadow group'}>
+            <div className="flex items-start justify-between mb-3">
+              <div className="p-2.5 rounded-lg bg-gradient-to-br from-green-100 to-green-50 group-hover:from-green-200 group-hover:to-green-100 transition-colors">
+                <Package size={18} className="text-green-600"/>
+              </div>
+              <ArrowRight size={16} className="text-muted-foreground group-hover:translate-x-1 transition-transform"/>
+            </div>
+            <h4 className="font-semibold text-foreground mb-1">Stock Vente</h4>
+            <p className="text-xs text-muted-foreground">Services et articles commerciaux</p>
+          </Link>
+        </motion.div>
+      </div>
+
       {/* Recent deliveries */}
       <div className={cardCls}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
