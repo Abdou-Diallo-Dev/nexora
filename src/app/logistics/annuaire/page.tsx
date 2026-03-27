@@ -22,7 +22,7 @@ const TYPE_CONFIG: Record<string, { l: string; icon: React.ReactNode; v: BadgeVa
 export default function AnnuairePage() {
   const { company } = useAuthStore();
   const [items, setItems] = useState<Contact[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('');
 

@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { getBrandingColors, getCompanyDisplayName, getCompanyInitial } from '@/lib/branding';
 import { useAuthStore, UserRole } from '@/lib/store';
-import { getNavItems } from '@/lib/permissions';
+import { getNavItems, isLogisticsRole, isBetonRole } from '@/lib/permissions';
 
 type NavItem  = { href: string; label: string; icon: React.ReactNode; key: string };
 type NavGroup = { label: string; items: NavItem[]; adminOnly?: boolean };
@@ -250,8 +250,9 @@ function SidebarContent({ collapsed, onNav }: { collapsed: boolean; onNav?: () =
   const isBeton = pathname.startsWith('/beton');
   const isSA    = pathname.startsWith('/super-admin');
   const allowedKeys  = ['dashboard', ...getNavItems(role)];
-  const isAdmin      = role === 'admin' || role === 'manager';
-  const isSuperAdmin = role === 'super_admin';
+  const isAdmin        = role === 'admin' || role === 'manager';
+  const isSuperAdmin   = role === 'super_admin';
+  const isModuleRole   = isLogisticsRole(role) || isBetonRole(role);
   const hasRE    = isSuperAdmin ? true : (company?.modules?.includes('real_estate') ?? false);
   const hasLog   = isSuperAdmin ? true : (company?.modules?.includes('logistics') ?? false);
   const hasBeton = isSuperAdmin ? true : ((company?.modules as string[] | undefined)?.includes('beton') ?? false);
@@ -361,7 +362,7 @@ function SidebarContent({ collapsed, onNav }: { collapsed: boolean; onNav?: () =
               <Crown size={12}/> Super Admin
             </Link>
           )}
-          {(isRE || isLog || isBeton) && (
+          {(isRE || isLog || isBeton) && !isModuleRole && (
             <Link href="/dashboard" onClick={onNav}
               className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-colors hover:bg-[var(--sidebar-hover)]"
               style={{ color: 'var(--sidebar-muted)' }}>
