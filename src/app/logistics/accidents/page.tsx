@@ -208,7 +208,7 @@ export default function AccidentsPage() {
                 </tbody>
               </table>
               <div className="px-4 py-3 border-t border-border">
-                <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
+                <Pagination page={page} pageSize={pageSize} total={total} onChange={setPage} />
               </div>
             </div>
           )}
