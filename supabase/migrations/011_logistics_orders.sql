@@ -51,6 +51,7 @@ begin
 end;
 $$;
 
+drop trigger if exists trg_logistics_order_reference on public.logistics_orders;
 create trigger trg_logistics_order_reference
   before insert on public.logistics_orders
   for each row
@@ -63,6 +64,7 @@ returns trigger language plpgsql as $$
 begin new.updated_at := now(); return new; end;
 $$;
 
+drop trigger if exists trg_logistics_order_updated_at on public.logistics_orders;
 create trigger trg_logistics_order_updated_at
   before update on public.logistics_orders
   for each row execute function public.set_logistics_order_updated_at();
@@ -75,6 +77,7 @@ create index if not exists idx_logistics_orders_status  on public.logistics_orde
 -- RLS
 alter table public.logistics_orders enable row level security;
 
+drop policy if exists "logistics_orders_company_isolation" on public.logistics_orders;
 create policy "logistics_orders_company_isolation"
   on public.logistics_orders
   for all

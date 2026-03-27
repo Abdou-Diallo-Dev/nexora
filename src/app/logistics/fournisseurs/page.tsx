@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Plus, ShoppingCart, Truck, Trash2, CheckCircle } from 'lucide-react';
+import { Plus, ShoppingCart, Trash2, CheckCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store';
 import { PageHeader, LoadingSpinner, EmptyState, Pagination, cardCls, btnPrimary, inputCls, selectCls, Badge, BadgeVariant, ConfirmDialog } from '@/components/ui';
@@ -9,16 +9,16 @@ import { usePagination } from '@/lib/hooks';
 import { toast } from 'sonner';
 
 type Order = {
-  id: string; order_number: string; supplier_name: string;
+  id: string; reference: string; supplier_name: string;
   order_date: string; expected_date: string | null; received_date: string | null;
   status: string; total_amount: number | null; notes: string | null;
 };
-type OrderItem = { description: string; quantity: number; unit_price: number; total: number };
+type OrderItem = { name: string; quantity: number; unit_price: number; total_price: number };
 
 const STATUS_MAP: Record<string, { l: string; v: BadgeVariant }> = {
-  draft:     { l: 'Brouillon',  v: 'default' },
-  sent:      { l: 'Envoyée',    v: 'info'    },
+  pending:   { l: 'En attente', v: 'default' },
   confirmed: { l: 'Confirmée',  v: 'info'    },
+  partial:   { l: 'Partielle',  v: 'warning' },
   received:  { l: 'Reçue',      v: 'success' },
   cancelled: { l: 'Annulée',    v: 'default' },
 };
@@ -34,14 +34,14 @@ export default function FournisseursPage() {
   const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ supplier_name: '', order_date: new Date().toISOString().split('T')[0], expected_date: '', notes: '' });
-  const [lines, setLines] = useState<OrderItem[]>([{ description: '', quantity: 1, unit_price: 0, total: 0 }]);
+  const [lines, setLines] = useState<OrderItem[]>([{ name: '', quantity: 1, unit_price: 0, total_price: 0 }]);
   const { page, pageSize, offset, setPage } = usePagination(20);
 
   const load = () => {
     if (!company?.id) return;
     setLoading(true);
     let q = createClient().from('supplier_orders')
-      .select('id,order_number,supplier_name,order_date,expected_date,received_date,status,total_amount,notes', { count: 'exact' })
+      .select('id,reference,supplier_name,order_date,expected_date,received_date,status,total_amount,notes', { count: 'exact' })
       .eq('company_id', company.id)
       .order('order_date', { ascending: false })
       .range(offset, offset + pageSize - 1);
@@ -57,13 +57,13 @@ export default function FournisseursPage() {
   const updateLine = (i: number, field: keyof OrderItem, val: string | number) => {
     setLines(ls => ls.map((l, idx) => {
       if (idx !== i) return l;
-      const updated = { ...l, [field]: field === 'description' ? val : Number(val) };
-      updated.total = updated.quantity * updated.unit_price;
+      const updated = { ...l, [field]: field === 'name' ? val : Number(val) };
+      updated.total_price = updated.quantity * updated.unit_price;
       return updated;
     }));
   };
 
-  const orderTotal = lines.reduce((s, l) => s + l.total, 0);
+  const orderTotal = lines.reduce((s, l) => s + l.total_price, 0);
 
   const handleSave = async () => {
     if (!form.supplier_name) { toast.error('Fournisseur requis'); return; }
@@ -72,12 +72,12 @@ export default function FournisseursPage() {
     const { data: ord, error } = await sb.from('supplier_orders').insert({
       company_id: company!.id, supplier_name: form.supplier_name,
       order_date: form.order_date, expected_date: form.expected_date || null,
-      status: 'draft', total_amount: orderTotal, notes: form.notes || null,
+      status: 'pending', total_amount: orderTotal, notes: form.notes || null,
     }).select('id').single();
     if (!error && ord) {
       await sb.from('supplier_order_items').insert(lines.map(l => ({
-        order_id: ord.id, description: l.description, quantity: l.quantity,
-        unit_price: l.unit_price, total: l.total,
+        order_id: ord.id, name: l.name, quantity: l.quantity,
+        unit_price: l.unit_price,
       })));
     }
     setSaving(false);
@@ -85,7 +85,7 @@ export default function FournisseursPage() {
     toast.success('Commande créée');
     setShowForm(false);
     setForm({ supplier_name: '', order_date: new Date().toISOString().split('T')[0], expected_date: '', notes: '' });
-    setLines([{ description: '', quantity: 1, unit_price: 0, total: 0 }]);
+    setLines([{ name: '', quantity: 1, unit_price: 0, total_price: 0 }]);
     load();
   };
 
@@ -140,19 +140,19 @@ export default function FournisseursPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs font-medium text-muted-foreground">Articles commandés</label>
-                <button onClick={() => setLines(ls => [...ls, { description: '', quantity: 1, unit_price: 0, total: 0 }])}
+                <button onClick={() => setLines(ls => [...ls, { name: '', quantity: 1, unit_price: 0, total_price: 0 }])}
                   className="text-xs text-primary hover:underline">+ Ajouter</button>
               </div>
               <div className="space-y-2">
                 {lines.map((line, i) => (
                   <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                    <input type="text" value={line.description} onChange={e => updateLine(i, 'description', e.target.value)}
+                    <input type="text" value={line.name} onChange={e => updateLine(i, 'name', e.target.value)}
                       className={inputCls + ' col-span-5'} placeholder="Article / Description" />
                     <input type="number" value={line.quantity} onChange={e => updateLine(i, 'quantity', e.target.value)}
                       className={inputCls + ' col-span-2'} placeholder="Qté" min="1" />
                     <input type="number" value={line.unit_price} onChange={e => updateLine(i, 'unit_price', e.target.value)}
                       className={inputCls + ' col-span-3'} placeholder="Prix unit." min="0" />
-                    <p className="col-span-2 text-sm font-medium text-right text-foreground">{formatCurrency(line.total)}</p>
+                    <p className="col-span-2 text-sm font-medium text-right text-foreground">{formatCurrency(line.total_price)}</p>
                     {lines.length > 1 && (
                       <button onClick={() => setLines(ls => ls.filter((_, idx) => idx !== i))}
                         className="text-muted-foreground hover:text-red-600 transition-colors text-xs">✕</button>
@@ -199,7 +199,7 @@ export default function FournisseursPage() {
                     const sm = STATUS_MAP[ord.status] || { l: ord.status, v: 'default' as BadgeVariant };
                     return (
                       <tr key={ord.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{ord.order_number}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{ord.reference}</td>
                         <td className="px-4 py-3 font-medium text-foreground">{ord.supplier_name}</td>
                         <td className="px-4 py-3 text-muted-foreground">{formatDate(ord.order_date)}</td>
                         <td className="px-4 py-3 text-muted-foreground">{ord.expected_date ? formatDate(ord.expected_date) : '—'}</td>
