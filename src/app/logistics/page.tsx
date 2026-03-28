@@ -13,7 +13,7 @@ import { fr } from 'date-fns/locale';
 
 const STATUS_MAP: Record<string,{l:string;v:any;color:string}> = {
   pending:     { l:'En attente',  v:'warning', color:'#f59e0b' },
-  assigned:    { l:'Assigné',     v:'info',    color:'#3b82f6' },
+  assigned:    { l:'Assigné',     v:'info',    color:'#3d2674' },
   in_progress: { l:'En cours',    v:'info',    color:'#8b5cf6' },
   delivered:   { l:'Livré',       v:'success', color:'#22c55e' },
   failed:      { l:'Échec',       v:'error',   color:'#ef4444' },
@@ -125,7 +125,7 @@ export default function LogisticsDashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { title:'Total livraisons', value:stats.total, subtitle:`${stats.pending} en attente`, icon:<Package size={20}/>, color:'blue' as const, href:'/logistics/deliveries' },
+          { title:'Total livraisons', value:stats.total, subtitle:`${stats.pending} en attente`, icon:<Package size={20}/>, color:'purple' as const, href:'/logistics/deliveries' },
           { title:'En cours', value:stats.inProgress, subtitle:`${stats.pending} assignées`, icon:<Truck size={20}/>, color:'purple' as const, href:'/logistics/deliveries' },
           { title:'Chauffeurs dispo', value:`${stats.availableDrivers}/${stats.drivers}`, subtitle:'Disponibles maintenant', icon:<Users size={20}/>, color:'green' as const, href:'/logistics/drivers' },
           { title:'Véhicules dispo', value:`${stats.availableVehicles}/${stats.vehicles}`, subtitle:'En flotte', icon:<Truck size={20}/>, color:'orange' as const, href:'/logistics/fleet' },
@@ -140,7 +140,7 @@ export default function LogisticsDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label:"Revenus aujourd'hui", value:formatCurrency(stats.todayRevenue), color:'text-green-700', bg:'bg-green-50 dark:bg-green-900/20 border-green-100' },
-          { label:'Revenus du mois', value:formatCurrency(stats.monthRevenue), color:'text-blue-700', bg:'bg-blue-50 dark:bg-blue-900/20 border-blue-100' },
+          { label:'Revenus du mois', value:formatCurrency(stats.monthRevenue), color:'text-purple-700', bg:'bg-purple-50 dark:bg-purple-900/20 border-purple-100' },
           { label:'Taux de succès', value:`${successRate}%`, color:successRate>=80?'text-green-700':'text-amber-700', bg:successRate>=80?'bg-green-50 dark:bg-green-900/20 border-green-100':'bg-amber-50 dark:bg-amber-900/20 border-amber-100' },
           { label:'Échecs', value:String(stats.failed), color:stats.failed>0?'text-red-700':'text-green-700', bg:stats.failed>0?'bg-red-50 dark:bg-red-900/20 border-red-100':'bg-green-50 dark:bg-green-900/20 border-green-100' },
         ].map((k,i) => (
@@ -160,7 +160,7 @@ export default function LogisticsDashboard() {
               <XAxis dataKey="day" tick={{fontSize:11}} axisLine={false} tickLine={false}/>
               <YAxis tick={{fontSize:10}} axisLine={false} tickLine={false}/>
               <Tooltip/>
-              <Bar dataKey="livraisons" fill="#3b82f6" radius={[4,4,0,0]} name="Livraisons"/>
+              <Bar dataKey="livraisons" fill="#3d2674" radius={[4,4,0,0]} name="Livraisons"/>
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -170,7 +170,7 @@ export default function LogisticsDashboard() {
           <h3 className="font-semibold text-foreground mb-4">Actions rapides</h3>
           <div className="space-y-2">
             {[
-              { href:'/logistics/deliveries/new', label:'Nouvelle livraison', icon:<Plus size={15}/>, cls:'text-blue-700 bg-blue-50 border-blue-100' },
+              { href:'/logistics/deliveries/new', label:'Nouvelle livraison', icon:<Plus size={15}/>, cls:'text-purple-700 bg-purple-50 border-purple-100' },
               { href:'/logistics/drivers/new', label:'Ajouter chauffeur', icon:<Users size={15}/>, cls:'text-green-700 bg-green-50 border-green-100' },
               { href:'/logistics/fleet/new', label:'Ajouter véhicule', icon:<Truck size={15}/>, cls:'text-purple-700 bg-purple-50 border-purple-100' },
               { href:'/logistics/deliveries?status=pending', label:'Voir en attente', icon:<Clock size={15}/>, cls:'text-amber-700 bg-amber-50 border-amber-100' },
@@ -201,8 +201,8 @@ export default function LogisticsDashboard() {
         <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{delay:0.12}}>
           <Link href="/logistics/stock/maintenance" className={cardCls+' block p-5 hover:shadow-lg transition-shadow group'}>
             <div className="flex items-start justify-between mb-3">
-              <div className="p-2.5 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 group-hover:from-blue-200 group-hover:to-blue-100 transition-colors">
-                <Wrench size={18} className="text-blue-600"/>
+              <div className="p-2.5 rounded-lg bg-gradient-to-br from-purple-100 to-purple-50 group-hover:from-purple-200 group-hover:to-purple-100 transition-colors">
+                <Wrench size={18} className="text-purple-600"/>
               </div>
               <ArrowRight size={16} className="text-muted-foreground group-hover:translate-x-1 transition-transform"/>
             </div>

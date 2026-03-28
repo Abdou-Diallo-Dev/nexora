@@ -19,7 +19,7 @@ type Vehicle = {
 const STATUS_CONFIG: Record<string, { l: string; dot: string }> = {
   operational: { l: 'Opérationnel', dot: '#16a34a' },
   available:   { l: 'Disponible',   dot: '#16a34a' },
-  on_mission:  { l: 'En mission',   dot: '#2563eb' },
+  on_mission:  { l: 'En mission',   dot: '#3d2674' },
   maintenance: { l: 'Maintenance',  dot: '#ea580c' },
   panne:       { l: 'En panne',     dot: '#dc2626' },
   inactive:    { l: 'Inactif',      dot: '#9ca3af' },
@@ -123,8 +123,8 @@ export default function FleetPage() {
                   <div key={v.id} className={cardCls + ' p-4 hover:shadow-md transition-shadow'}>
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
-                          <Truck size={18} className="text-blue-600"/>
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Truck size={18} className="text-primary"/>
                         </div>
                         <div>
                           <p className="font-bold text-foreground">{v.plate}</p>
@@ -153,7 +153,7 @@ export default function FleetPage() {
                     <div className="flex items-center justify-between pt-2 border-t border-border">
                       <div className="flex gap-1">
                         <Link href={`/logistics/fleet/${v.id}/edit`}
-                          className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-blue-50 transition-colors" title="Modifier">
+                          className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Modifier">
                           <Edit size={14}/>
                         </Link>
                         <Link href={`/logistics/maintenance`}

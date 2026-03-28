@@ -17,7 +17,7 @@ type Driver = {
 
 const STATUS_CONFIG: Record<string, { l: string; dot: string; bg: string }> = {
   available:  { l: 'Disponible',  dot: '#16a34a', bg: 'bg-green-100 text-green-700'  },
-  on_mission: { l: 'En mission',  dot: '#2563eb', bg: 'bg-blue-100 text-blue-700'    },
+  on_mission: { l: 'En mission',  dot: '#3d2674', bg: 'bg-purple-100 text-purple-700' },
   off:        { l: 'En repos',    dot: '#ea580c', bg: 'bg-orange-100 text-orange-700' },
   inactive:   { l: 'Inactif',     dot: '#9ca3af', bg: 'bg-slate-100 text-slate-500'  },
 };
@@ -155,7 +155,7 @@ export default function DriversPage() {
                           className="p-1.5 rounded-lg text-muted-foreground hover:text-green-600 hover:bg-green-50 transition-colors" title="Creer compte portail">
                           <UserPlus size={14}/>
                         </button>
-                        <Link href={`/logistics/drivers/${d.id}/edit`} className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-blue-50 transition-colors">
+                        <Link href={`/logistics/drivers/${d.id}/edit`} className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
                           <Edit size={14}/>
                         </Link>
                         <button onClick={() => setDeleteId(d.id)} className="p-1.5 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors">
