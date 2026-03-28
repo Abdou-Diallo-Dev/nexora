@@ -19,13 +19,27 @@ export async function POST(request: Request) {
       }
     }
 
-    // 3. Supprimer les données liées
-    await adminClient.from('rent_payments').delete().eq('company_id', companyId);
-    await adminClient.from('maintenance_tickets').delete().eq('company_id', companyId);
-    await adminClient.from('leases').delete().eq('company_id', companyId);
-    await adminClient.from('tenants').delete().eq('company_id', companyId);
-    await adminClient.from('properties').delete().eq('company_id', companyId);
-    await adminClient.from('users').delete().eq('company_id', companyId);
+    // 3. Supprimer les donnees liees (ordre FK)
+    const del = (table: string) =>
+      adminClient.from(table as any).delete().eq('company_id', companyId);
+
+    // Tables optionnelles (peuvent ne pas exister selon le plan)
+    await del('subscriptions');
+    await del('logistics_invoice_items');
+    await del('logistics_invoices');
+    await del('supplier_order_items');
+    await del('supplier_orders');
+    await del('deliveries');
+    await del('logistics_clients');
+    await del('vehicles');
+    await del('drivers');
+    // Tables immobilier
+    await del('rent_payments');
+    await del('maintenance_tickets');
+    await del('leases');
+    await del('tenants');
+    await del('properties');
+    await del('users');
 
     // 4. Supprimer la company
     const { error } = await adminClient.from('companies').delete().eq('id', companyId);
