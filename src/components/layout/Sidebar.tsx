@@ -168,7 +168,7 @@ const FILIALES = [
   { module: 'logistics',   href: '/logistics',   icon: <Truck size={18} />,     name: 'SARPA Logistiques',  sub: 'Flotte & livraisons' },
 ];
 
-// ─── COULEURS SARPA GROUP (super admin) ───────────────────────
+// ─── COULEURS PAR MODULE ──────────────────────────────────────
 const SARPA_SIDEBAR_COLORS = {
   sidebarBg:          '#3d2674',
   sidebarText:        '#ffffff',
@@ -185,6 +185,7 @@ const SARPA_SIDEBAR_COLORS = {
   secondaryText:      '#1a0f3d',
   cardAccent:         'rgba(250,171,45,0.10)',
 };
+
 
 // ─── COMPOSANTS PARTAGÉS ──────────────────────────────────────
 function BrandLogo({ companyName, companyInitial, logoUrl }: { companyName: string; companyInitial: string; logoUrl?: string | null }) {
@@ -299,10 +300,10 @@ function SidebarContent({ collapsed, onNav }: { collapsed: boolean; onNav?: () =
     <>
       {!collapsed && moduleInfo && (
         <div className="mx-3 mt-3 mb-2 px-3 py-2.5 rounded-xl flex items-center gap-2"
-          style={{ background: 'rgba(250,171,45,0.15)', border: '1px solid rgba(250,171,45,0.2)' }}>
-          <span style={{ color: '#faab2d' }}>{moduleInfo.icon}</span>
+          style={{ background: 'var(--sidebar-hover)', border: '1px solid var(--sidebar-active)' }}>
+          <span style={{ color: 'var(--sidebar-active)' }}>{moduleInfo.icon}</span>
           <div className="min-w-0">
-            <p className="text-xs font-bold truncate" style={{ color: '#faab2d' }}>{moduleInfo.name}</p>
+            <p className="text-xs font-bold truncate" style={{ color: 'var(--sidebar-active)' }}>{moduleInfo.name}</p>
             <p className="text-[10px] truncate" style={{ color: 'var(--sidebar-muted)' }}>{moduleInfo.subtitle}</p>
           </div>
         </div>
@@ -312,7 +313,7 @@ function SidebarContent({ collapsed, onNav }: { collapsed: boolean; onNav?: () =
         <div className="mx-3 mb-2 px-3 py-2 rounded-lg flex items-center gap-2"
           style={{ background: 'var(--sidebar-hover)' }}>
           <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-            style={{ background: '#faab2d', color: '#1a1040' }}>
+            style={{ background: 'var(--sidebar-active)', color: 'var(--sidebar-active-text)' }}>
             {(user.full_name || user.email).charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0">
@@ -341,7 +342,7 @@ function SidebarContent({ collapsed, onNav }: { collapsed: boolean; onNav?: () =
               <Link key={f.module} href={f.href} onClick={onNav}
                 className="flex items-center gap-3 px-3 py-3.5 rounded-xl font-semibold transition-all border"
                 style={{ color: 'var(--sidebar-text)', backgroundColor: 'var(--sidebar-hover)', borderColor: 'var(--sidebar-border)' }}>
-                <span className="flex-shrink-0" style={{ color: '#faab2d' }}>{f.icon}</span>
+                <span className="flex-shrink-0" style={{ color: 'var(--sidebar-active)' }}>{f.icon}</span>
                 {!collapsed && (
                   <div>
                     <p className="font-bold text-sm">{f.name}</p>
@@ -354,7 +355,7 @@ function SidebarContent({ collapsed, onNav }: { collapsed: boolean; onNav?: () =
               <Link href="/super-admin/dashboard" onClick={onNav}
                 className="flex items-center gap-3 px-3 py-3.5 rounded-xl font-semibold transition-all border"
                 style={{ color: 'var(--sidebar-text)', backgroundColor: 'var(--sidebar-hover)', borderColor: 'var(--sidebar-border)' }}>
-                <Crown size={18} className="flex-shrink-0" style={{ color: '#faab2d' } as any}/>
+                <Crown size={18} className="flex-shrink-0" style={{ color: 'var(--sidebar-active)' } as any}/>
                 {!collapsed && (
                   <div>
                     <p className="font-bold text-sm">Super Admin</p>
@@ -393,11 +394,14 @@ function SidebarContent({ collapsed, onNav }: { collapsed: boolean; onNav?: () =
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { company, user } = useAuthStore();
+  const pathname = usePathname();
   const isSuperAdmin  = user?.role === 'super_admin';
+  const isLog   = pathname.startsWith('/logistics');
+  const isBeton = pathname.startsWith('/beton');
   const companyName   = isSuperAdmin ? 'SARPA GROUP' : getCompanyDisplayName(company);
   const companyInitial = isSuperAdmin ? 'SG' : getCompanyInitial(company);
-  // Super admin: couleurs SARPA hardcodées, jamais override par une company
-  const colors = isSuperAdmin ? SARPA_SIDEBAR_COLORS : getBrandingColors(company);
+  // Tous les modules SARPA utilisent la même charte : violet #3d2674 + or #faab2d
+  const colors = (isSuperAdmin || isLog || isBeton) ? SARPA_SIDEBAR_COLORS : getBrandingColors(company);
 
   return (
     <motion.aside
@@ -450,11 +454,14 @@ export default function Sidebar() {
 
 export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { company, user } = useAuthStore();
+  const pathname = usePathname();
   const isSuperAdmin   = user?.role === 'super_admin';
+  const isLog   = pathname.startsWith('/logistics');
+  const isBeton = pathname.startsWith('/beton');
   const companyName    = isSuperAdmin ? 'SARPA GROUP' : getCompanyDisplayName(company);
   const companyInitial = isSuperAdmin ? 'SG' : getCompanyInitial(company);
-  // Super admin: couleurs SARPA hardcodées, jamais override par une company
-  const colors = isSuperAdmin ? SARPA_SIDEBAR_COLORS : getBrandingColors(company);
+  // Tous les modules SARPA utilisent la même charte : violet #3d2674 + or #faab2d
+  const colors = (isSuperAdmin || isLog || isBeton) ? SARPA_SIDEBAR_COLORS : getBrandingColors(company);
 
   useEffect(() => {
     if (open) document.body.style.overflow = 'hidden';
