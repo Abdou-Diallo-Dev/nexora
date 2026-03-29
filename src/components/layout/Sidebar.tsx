@@ -11,7 +11,7 @@ import {
   Settings, ScrollText, ClipboardCheck, CalendarRange, PieChart,
   FileSignature, Calculator, Factory, Package, Hammer, AlertTriangle,
   Wallet, UserCog, Phone, FlaskConical, Gauge,
-  ShoppingCart, Banknote, MapPin,
+  ShoppingCart, Banknote, MapPin, Layers,
 } from 'lucide-react';
 import { getBrandingColors, getCompanyDisplayName, getCompanyInitial } from '@/lib/branding';
 import { useAuthStore, UserRole } from '@/lib/store';
@@ -154,7 +154,8 @@ const SA_NAV: NavGroup[] = [
     { key: 'companies',   href: '/super-admin/companies',   label: 'Filiales',            icon: <Building2 size={15} /> },
     { key: 'users',       href: '/super-admin/users',       label: 'Utilisateurs',        icon: <Users size={15} /> },
   ]},
-  { label: 'Securite', items: [
+  { label: 'Modules & Acces', items: [
+    { key: 'modules',     href: '/super-admin/modules',     label: 'Acces modules',       icon: <Layers size={15} /> },
     { key: 'roles',       href: '/super-admin/roles',       label: 'Roles',               icon: <Shield size={15} /> },
     { key: 'permissions', href: '/super-admin/permissions', label: 'Permissions',         icon: <Lock size={15} /> },
     { key: 'settings',    href: '/super-admin/settings',    label: 'Parametres globaux',  icon: <Settings size={15} /> },
@@ -281,7 +282,18 @@ function SidebarContent({ collapsed, onNav }: { collapsed: boolean; onNav?: () =
   const isLog   = pathname.startsWith('/logistics');
   const isBeton = pathname.startsWith('/beton');
   const isSA    = pathname.startsWith('/super-admin');
-  const allowedKeys  = ['dashboard', ...getNavItems(role)];
+  // Override keys from company settings (nav_access)
+  const navAccessOverrides = company?.settings?.nav_access;
+  const navOverrideKeys: string[] = [];
+  if (navAccessOverrides) {
+    const modKey = isRE ? 'real_estate' : isLog ? 'logistics' : isBeton ? 'beton' : null;
+    if (modKey && navAccessOverrides[modKey]) {
+      Object.entries(navAccessOverrides[modKey]).forEach(([key, roles]) => {
+        if (roles.includes(role)) navOverrideKeys.push(key);
+      });
+    }
+  }
+  const allowedKeys  = Array.from(new Set(['dashboard', ...getNavItems(role), ...navOverrideKeys]));
   const isAdmin        = role === 'admin' || role === 'manager';
   const isSuperAdmin   = role === 'super_admin';
   const hasRE    = isSuperAdmin ? true : (company?.modules?.includes('real_estate') ?? false);

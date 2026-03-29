@@ -59,6 +59,7 @@ export interface AppCompany {
   logo_url?: string | null;
   primary_color?: string | null;
   secondary_color?: string | null;
+  settings?: { nav_access?: Record<string, Record<string, string[]>> } | null;
   created_at: string;
 }
 
