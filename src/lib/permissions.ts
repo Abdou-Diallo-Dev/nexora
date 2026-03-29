@@ -384,7 +384,7 @@ export const getNavItems = (role: UserRole): string[] => {
     return ['properties','apartments','tenants','notices','leases','payments','onlinePayment','expenses',
       'accounting','disbursements','reports-terrain',
       'invoices','documents','contracts','maintenance','notifications',
-      'analytics','stats','messages','reports','inspections','terminations','discharge','convention','weeklyOutings','contractTemplate','employes','settings'];
+      'analytics','stats','messages','reports','inspections','terminations','discharge','convention','weeklyOutings','contractTemplate','employes','annuaire','settings'];
   }
   if (isExecutiveRole(role)) {
     return ['analytics', 'stats', 'reports'];
@@ -419,6 +419,7 @@ export const getNavItems = (role: UserRole): string[] => {
     terminations:  (role as string) === 'manager',
     discharge:     (role as string) === 'manager',
     convention:    (role as string) === 'manager',
+    annuaire:      true,
   };
   return Object.entries(map).filter(([,v]) => v).map(([k]) => k);
 };
