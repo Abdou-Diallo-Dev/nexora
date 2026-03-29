@@ -149,7 +149,7 @@ const BETON_NAV: NavGroup[] = [
 
 // ─── SUPER ADMIN ───────────────────────────────────────────────
 const SA_NAV: NavGroup[] = [
-  { label: 'SARPA GROUP', items: [
+  { label: 'Nexora', items: [
     { key: 'dashboard',   href: '/super-admin/dashboard',   label: 'Tableau de bord',     icon: <LayoutDashboard size={15} /> },
     { key: 'companies',   href: '/super-admin/companies',   label: 'Filiales',            icon: <Building2 size={15} /> },
     { key: 'users',       href: '/super-admin/users',       label: 'Utilisateurs',        icon: <Users size={15} /> },
@@ -169,6 +169,23 @@ const FILIALES = [
 ];
 
 // ─── COULEURS PAR MODULE ──────────────────────────────────────
+const NEXORA_SIDEBAR_COLORS = {
+  sidebarBg:          '#1e40af',
+  sidebarText:        '#ffffff',
+  sidebarMuted:       'rgba(255,255,255,0.62)',
+  sidebarBorder:      'rgba(255,255,255,0.10)',
+  sidebarHover:       'rgba(255,255,255,0.10)',
+  sidebarActive:      '#93c5fd',
+  sidebarActiveText:  '#1e3a8a',
+  primary:            '#1e40af',
+  primaryHsl:         '224 71% 40%',
+  secondary:          '#3b82f6',
+  secondaryHsl:       '217 91% 60%',
+  primaryText:        '#ffffff',
+  secondaryText:      '#1e3a8a',
+  cardAccent:         'rgba(59,130,246,0.10)',
+};
+
 const SARPA_SIDEBAR_COLORS = {
   sidebarBg:          '#3d2674',
   sidebarText:        '#ffffff',
@@ -192,12 +209,11 @@ function BrandLogo({ companyName, companyInitial, logoUrl }: { companyName: stri
   if (logoUrl) {
     return <img src={logoUrl} alt={companyName} className="w-8 h-8 rounded-lg object-cover bg-white/15 p-0.5 flex-shrink-0" />;
   }
-  if (companyInitial === 'SG') {
+  if (companyInitial === 'N') {
     return (
-      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 relative overflow-hidden"
-        style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
-        <span className="absolute text-base font-black leading-none" style={{ color: '#faab2d', left: '3px', top: '3px', fontFamily: 'Georgia, serif' }}>S</span>
-        <span className="absolute text-base font-black leading-none" style={{ color: 'rgba(255,255,255,0.90)', right: '3px', bottom: '3px', fontFamily: 'Georgia, serif' }}>G</span>
+      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+        style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.25)' }}>
+        <span className="text-lg font-black leading-none" style={{ color: '#ffffff', fontFamily: 'Georgia, serif' }}>N</span>
       </div>
     );
   }
@@ -293,7 +309,7 @@ function SidebarContent({ collapsed, onNav }: { collapsed: boolean; onNav?: () =
       : isBeton
         ? { name: 'SARPA Béton',     subtitle: 'Production & qualité',  icon: <Factory size={13}/> }
         : isSA
-          ? { name: 'Super Admin',   subtitle: 'SARPA GROUP',            icon: <Crown size={13}/> }
+          ? { name: 'Super Admin',   subtitle: 'Nexora Platform',         icon: <Crown size={13}/> }
           : null;
 
   return (
@@ -398,10 +414,9 @@ export default function Sidebar() {
   const isSuperAdmin  = user?.role === 'super_admin';
   const isLog   = pathname.startsWith('/logistics');
   const isBeton = pathname.startsWith('/beton');
-  const companyName   = isSuperAdmin ? 'SARPA GROUP' : getCompanyDisplayName(company);
-  const companyInitial = isSuperAdmin ? 'SG' : getCompanyInitial(company);
-  // Tous les modules SARPA utilisent la même charte : violet #3d2674 + or #faab2d
-  const colors = (isSuperAdmin || isLog || isBeton) ? SARPA_SIDEBAR_COLORS : getBrandingColors(company);
+  const companyName    = isSuperAdmin ? 'Nexora' : getCompanyDisplayName(company);
+  const companyInitial = isSuperAdmin ? 'N' : getCompanyInitial(company);
+  const colors = isSuperAdmin ? NEXORA_SIDEBAR_COLORS : (isLog || isBeton) ? SARPA_SIDEBAR_COLORS : getBrandingColors(company);
 
   return (
     <motion.aside
@@ -429,7 +444,7 @@ export default function Sidebar() {
               <div className="min-w-0">
                 <p className="font-bold text-xs truncate" style={{ color: colors.sidebarText }}>{companyName}</p>
                 {isSuperAdmin && (
-                  <p className="text-[9px] font-semibold tracking-widest uppercase" style={{ color: '#faab2d' }}>SENEGAL</p>
+                  <p className="text-[9px] font-semibold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.50)' }}>PLATFORM</p>
                 )}
               </div>
             </div>
@@ -458,10 +473,9 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
   const isSuperAdmin   = user?.role === 'super_admin';
   const isLog   = pathname.startsWith('/logistics');
   const isBeton = pathname.startsWith('/beton');
-  const companyName    = isSuperAdmin ? 'SARPA GROUP' : getCompanyDisplayName(company);
-  const companyInitial = isSuperAdmin ? 'SG' : getCompanyInitial(company);
-  // Tous les modules SARPA utilisent la même charte : violet #3d2674 + or #faab2d
-  const colors = (isSuperAdmin || isLog || isBeton) ? SARPA_SIDEBAR_COLORS : getBrandingColors(company);
+  const companyName    = isSuperAdmin ? 'Nexora' : getCompanyDisplayName(company);
+  const companyInitial = isSuperAdmin ? 'N' : getCompanyInitial(company);
+  const colors = isSuperAdmin ? NEXORA_SIDEBAR_COLORS : (isLog || isBeton) ? SARPA_SIDEBAR_COLORS : getBrandingColors(company);
 
   useEffect(() => {
     if (open) document.body.style.overflow = 'hidden';
