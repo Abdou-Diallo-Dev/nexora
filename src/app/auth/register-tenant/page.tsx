@@ -64,7 +64,7 @@ export default function TenantRegisterPage() {
             Votre compte est en attente de validation par votre gestionnaire. 
             Vous recevrez un email une fois votre compte active.
           </p>
-          <Link href="/auth/login" className="text-sm font-medium hover:underline" style={{ color: '#3d2674' }}>
+          <Link href="/auth/login" className="text-sm font-medium hover:underline" style={{ color: 'hsl(var(--primary))' }}>
             Retour a la connexion
           </Link>
         </div>
@@ -77,11 +77,11 @@ export default function TenantRegisterPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(135deg, #3d2674, #5b3ea8)' }}>
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(135deg, #1e40af, #2563eb)' }}>
             <Zap size={22} className="text-white"/>
           </div>
           <div>
-            <span className="text-2xl font-bold text-foreground">SARPA GROUP</span>
+            <span className="text-2xl font-bold text-foreground">Nexora</span>
             <p className="text-xs text-muted-foreground -mt-0.5">Espace Locataire</p>
           </div>
         </div>

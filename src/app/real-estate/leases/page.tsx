@@ -110,8 +110,8 @@ export default function LeasesPage() {
               return (
                 <div key={l.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group">
                   <Link href={'/real-estate/leases/' + l.id} className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center flex-shrink-0">
-                      <FileText size={16} className="text-purple-600"/>
+                    <div className="w-9 h-9 rounded-xl bg-primary/10 dark:bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <FileText size={16} className="text-primary"/>
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-foreground text-sm">

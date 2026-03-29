@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { Truck, Plus, X, Loader2, CheckCircle2, AlertTriangle, Wrench, Fuel } from 'lucide-react';
 import { cardCls, inputCls, selectCls, labelCls, btnPrimary, btnSecondary } from '@/components/ui';
 
-const SARPA_PURPLE = '#3d2d7d';
-const SARPA_YELLOW = '#faab2d';
+const SARPA_PURPLE = 'hsl(var(--primary))';
+const SARPA_YELLOW = 'hsl(var(--secondary))';
 
 type EtatCamion = 'disponible' | 'en_mission' | 'en_maintenance' | 'hors_service';
 type TypeCamion = 'malaxeur' | 'pompe' | 'camion_benne' | 'autre';

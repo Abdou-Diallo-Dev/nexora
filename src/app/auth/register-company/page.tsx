@@ -12,8 +12,8 @@ const MODULES = [
   {
     id: 'real_estate', label: 'Immobilier',
     desc: 'Gestion des biens immobiliers, locataires, loyers et maintenance',
-    icon: <Building2 size={28}/>, color: 'border-purple-400 bg-purple-50 text-purple-700',
-    active: 'border-purple-600 bg-purple-100 ring-2 ring-purple-400',
+    icon: <Building2 size={28}/>, color: 'border-primary/40 bg-primary/10 text-primary',
+    active: 'border-primary bg-primary/10 ring-2 ring-primary/40',
     emoji: '🏠',
   },
   {

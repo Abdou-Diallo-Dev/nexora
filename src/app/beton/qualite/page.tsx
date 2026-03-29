@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { FlaskConical, Plus, X, Loader2, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { cardCls, inputCls, selectCls, labelCls, btnPrimary, btnSecondary } from '@/components/ui';
 
-const SARPA_PURPLE = '#3d2d7d';
-const SARPA_YELLOW = '#faab2d';
+const SARPA_PURPLE = 'hsl(var(--primary))';
+const SARPA_YELLOW = 'hsl(var(--secondary))';
 
 type ResultatTest = 'conforme' | 'non_conforme' | 'en_attente';
 type TypeTest = 'compression_7j' | 'compression_28j' | 'affaissement' | 'air_entraine' | 'chlorures';

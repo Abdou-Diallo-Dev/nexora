@@ -289,7 +289,7 @@ export default function ReportsPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Kpi label="Revenus bailleur"      value={formatCurrency(data.currentMonthRevenue)}  sub={`vs ${formatCurrency(data.prevMonthRevenue)} mois préc.`}  color="text-green-700 bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800"   icon={<DollarSign size={15} className="text-green-600"/>}/>
           <Kpi label="Dépenses du mois"      value={formatCurrency(data.currentMonthExpenses)} sub={`vs ${formatCurrency(data.prevMonthExpenses)} mois préc.`} color="text-red-700 bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800"         icon={<TrendingDown size={15} className="text-red-600"/>}/>
-          <Kpi label="Net bailleur"          value={formatCurrency(data.currentMonthNetBailleur)}      color={data.currentMonthNetBailleur >= 0 ? "text-purple-700 bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800" : "text-red-700 bg-red-50 dark:bg-red-900/20 border-red-100"} icon={<TrendingUp size={15} className="text-purple-600"/>}/>
+          <Kpi label="Net bailleur"          value={formatCurrency(data.currentMonthNetBailleur)}      color={data.currentMonthNetBailleur >= 0 ? "text-primary bg-primary/10 dark:bg-primary/10 border-primary/20 dark:border-primary/25" : "text-red-700 bg-red-50 dark:bg-red-900/20 border-red-100"} icon={<TrendingUp size={15} className="text-primary"/>}/>
           <Kpi label="Net entreprise"        value={formatCurrency(data.currentMonthNetEntreprise)} color={data.currentMonthNetEntreprise >= 0 ? "text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800" : "text-red-700 bg-red-50 dark:bg-red-900/20 border-red-100"} icon={<TrendingUp size={15} className="text-emerald-600"/>}/>
           <Kpi label="Taux de recouvrement"  value={`${data.collectionRate}%`}                 sub={`${data.paidTenants} payés / ${data.activeTenants} locataires`} color={data.collectionRate >= 80 ? "text-green-700 bg-green-50 dark:bg-green-900/20 border-green-100" : "text-amber-700 bg-amber-50 dark:bg-amber-900/20 border-amber-100"} icon={<Percent size={15} className="text-green-600"/>}/>
         </div>
@@ -368,9 +368,9 @@ export default function ReportsPage() {
       {/* ═══ 4. RÉSULTAT NET ═══ */}
       <div>
         <h2 className="text-base font-bold text-foreground mb-3 flex items-center gap-2">
-          <span className="w-1 h-5 bg-purple-500 rounded-full inline-block"/>Résultat net
+          <span className="w-1 h-5 bg-primary/100 rounded-full inline-block"/>Résultat net
         </h2>
-        <div className={`border-2 rounded-2xl p-6 ${data.currentMonthNet >= 0 ? 'border-purple-200 bg-purple-50 dark:bg-purple-900/20' : 'border-red-200 bg-red-50 dark:bg-red-900/20'}`}>
+        <div className={`border-2 rounded-2xl p-6 ${data.currentMonthNet >= 0 ? 'border-primary/20 bg-primary/10 dark:bg-primary/10' : 'border-red-200 bg-red-50 dark:bg-red-900/20'}`}>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <p className="text-sm text-muted-foreground mb-1">Revenus − Commissions TTC − Dépenses</p>
@@ -386,7 +386,7 @@ export default function ReportsPage() {
             </div>
             <div className="text-right">
               <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Bénéfice net du mois</p>
-              <p className={`text-4xl font-bold ${data.currentMonthNet >= 0 ? 'text-purple-700' : 'text-red-700'}`}>{formatCurrency(data.currentMonthNet)}</p>
+              <p className={`text-4xl font-bold ${data.currentMonthNet >= 0 ? 'text-primary' : 'text-red-700'}`}>{formatCurrency(data.currentMonthNet)}</p>
             </div>
           </div>
         </div>
@@ -532,7 +532,7 @@ export default function ReportsPage() {
           ))}
           <div className={cardCls + ' p-4 text-center'}>
             <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Rentabilité nette</p>
-            <p className={`text-2xl font-bold mt-4 ${data.currentMonthNet >= 0 ? 'text-purple-700' : 'text-red-700'}`}>{formatCurrency(data.currentMonthNet)}</p>
+            <p className={`text-2xl font-bold mt-4 ${data.currentMonthNet >= 0 ? 'text-primary' : 'text-red-700'}`}>{formatCurrency(data.currentMonthNet)}</p>
             <p className="text-xs text-muted-foreground mt-1">ce mois</p>
           </div>
           <div className={cardCls + ' p-4 text-center'}>
@@ -581,9 +581,9 @@ export default function ReportsPage() {
             <p className="text-xs font-semibold text-orange-600 uppercase mb-1">Dépenses prévues</p>
             <p className="text-2xl font-bold text-orange-700">{formatCurrency(data.forecastExpenses)}</p>
           </div>
-          <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 rounded-2xl p-5">
-            <p className="text-xs font-semibold text-purple-600 uppercase mb-1">Bénéfice net prévu</p>
-            <p className="text-2xl font-bold text-purple-700">{formatCurrency(computeLandlordNet(data.forecastRevenue, data.forecastExpenses, { commission_rate: data.commissionRate, commission_mode: data.commissionMode, vat_rate: data.vatRate }))}</p>
+          <div className="bg-primary/10 dark:bg-primary/10 border border-primary/20 dark:border-primary/25 rounded-2xl p-5">
+            <p className="text-xs font-semibold text-primary uppercase mb-1">Bénéfice net prévu</p>
+            <p className="text-2xl font-bold text-primary">{formatCurrency(computeLandlordNet(data.forecastRevenue, data.forecastExpenses, { commission_rate: data.commissionRate, commission_mode: data.commissionMode, vat_rate: data.vatRate }))}</p>
           </div>
         </div>
       </div>

@@ -173,10 +173,10 @@ export default function DisbursementsPage() {
           <p className="text-xs font-semibold text-blue-700 uppercase mb-1 flex items-center gap-1"><Wallet size={11} />Total reverse</p>
           <p className="text-xl font-bold text-blue-700">{formatCurrency(summary.paidAmount)}</p>
         </div>
-        <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4">
-          <p className="text-xs font-semibold text-purple-700 uppercase mb-1 flex items-center gap-1"><TrendingDown size={11} />Commission</p>
-          <p className="text-xl font-bold text-purple-700">{commissionSettings.commissionMode === 'none' ? 'Off' : `${commissionSettings.commissionRate}%`}</p>
-          <p className="text-xs text-purple-600">{commissionLabel}</p>
+        <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4">
+          <p className="text-xs font-semibold text-primary uppercase mb-1 flex items-center gap-1"><TrendingDown size={11} />Commission</p>
+          <p className="text-xl font-bold text-primary">{commissionSettings.commissionMode === 'none' ? 'Off' : `${commissionSettings.commissionRate}%`}</p>
+          <p className="text-xs text-primary">{commissionLabel}</p>
         </div>
       </div>
 

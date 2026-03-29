@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { ShoppingCart, Plus, X, Loader2, CheckCircle2, Clock, Truck, Search } from 'lucide-react';
 import { cardCls, inputCls, selectCls, labelCls, btnPrimary, btnSecondary } from '@/components/ui';
 
-const SARPA_PURPLE = '#3d2d7d';
-const SARPA_YELLOW = '#faab2d';
+const SARPA_PURPLE = 'hsl(var(--primary))';
+const SARPA_YELLOW = 'hsl(var(--secondary))';
 
 type StatutCommande = 'en_attente' | 'confirmee' | 'en_production' | 'livree' | 'annulee';
 
@@ -33,7 +33,7 @@ const MOCK: Commande[] = [
 
 const STATUT_CONFIG: Record<StatutCommande, { label: string; bg: string; color: string; icon: React.ReactNode }> = {
   en_attente:   { label: 'En attente',    bg: '#f59e0b15', color: '#f59e0b', icon: <Clock size={11} /> },
-  confirmee:    { label: 'Confirmee',     bg: '#3d2d7d15', color: '#3d2d7d', icon: <CheckCircle2 size={11} /> },
+  confirmee:    { label: 'Confirmee',     bg: 'rgba(30,64,175,0.08)', color: 'hsl(var(--primary))', icon: <CheckCircle2 size={11} /> },
   en_production:{ label: 'En production', bg: '#0ea5e915', color: '#0ea5e9', icon: <ShoppingCart size={11} /> },
   livree:       { label: 'Livree',        bg: '#22c55e15', color: '#22c55e', icon: <CheckCircle2 size={11} /> },
   annulee:      { label: 'Annulee',       bg: '#ef444415', color: '#ef4444', icon: <X size={11} /> },

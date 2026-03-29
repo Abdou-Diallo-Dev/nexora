@@ -86,7 +86,7 @@ export default function RapportsPage() {
                 { label: 'Chiffre d\'affaires', value: formatCurrency(totalRevenue), icon: <DollarSign size={18} />, color: 'text-green-700 bg-green-50', trend: '+' },
                 { label: 'Coûts maintenance', value: formatCurrency(totalMaint), icon: <Truck size={18} />, color: 'text-red-700 bg-red-50', trend: '-' },
                 { label: 'Livraisons total', value: String(totalDeliveries), icon: <Package size={18} />, color: 'text-blue-700 bg-blue-50', trend: '' },
-                { label: 'Taux de succès', value: totalDeliveries > 0 ? `${Math.round((totalOk / totalDeliveries) * 100)}%` : 'N/A', icon: <TrendingUp size={18} />, color: 'text-purple-700 bg-purple-50', trend: '' },
+                { label: 'Taux de succès', value: totalDeliveries > 0 ? `${Math.round((totalOk / totalDeliveries) * 100)}%` : 'N/A', icon: <TrendingUp size={18} />, color: 'text-primary bg-primary/10', trend: '' },
               ].map((k, i) => (
                 <div key={i} className={cardCls + ' p-4'}>
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${k.color}`}>{k.icon}</div>

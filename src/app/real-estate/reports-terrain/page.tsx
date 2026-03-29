@@ -22,7 +22,7 @@ const TYPE_MAP: Record<string,{l:string;icon:string;color:string}> = {
   maintenance: { l:'Suivi travaux',     icon:'🔧', color:'bg-orange-100 text-orange-700' },
   damage:      { l:'Constat',           icon:'⚠️', color:'bg-red-100 text-red-700' },
   entry:       { l:'Etat des lieux E.', icon:'🔑', color:'bg-green-100 text-green-700' },
-  exit:        { l:'Etat des lieux S.', icon:'🚪', color:'bg-purple-100 text-purple-700' },
+  exit:        { l:'Etat des lieux S.', icon:'🚪', color:'bg-primary/10 text-primary' },
 };
 
 const STATUS_MAP: Record<string,{l:string;v:BadgeVariant}> = {

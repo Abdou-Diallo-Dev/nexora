@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { UserCircle2, Plus, X, Loader2, CheckCircle2, Phone, Search } from 'lucide-react';
 import { cardCls, inputCls, selectCls, labelCls, btnPrimary, btnSecondary } from '@/components/ui';
 
-const SARPA_PURPLE = '#3d2d7d';
+const SARPA_PURPLE = 'hsl(var(--primary))';
 
 type Poste = 'operateur_centrale' | 'chauffeur_toupie' | 'chauffeur_benne' | 'technicien_qualite' | 'mecanicien' | 'chef_equipe' | 'directeur_site' | 'commercial' | 'comptable' | 'autre';
 type Contrat = 'CDI' | 'CDD' | 'Temporaire' | 'Stage';
@@ -88,7 +88,7 @@ export default function EmployesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4 flex-wrap">
-        <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow" style={{ background: `linear-gradient(135deg, ${SARPA_PURPLE}, #5b3ea8)` }}>
+        <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow" style={{ background: `linear-gradient(135deg, ${SARPA_PURPLE}, #1d4ed8)` }}>
           <UserCircle2 size={20} className="text-white" />
         </div>
         <div>

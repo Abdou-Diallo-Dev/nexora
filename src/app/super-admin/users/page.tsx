@@ -45,7 +45,7 @@ const ROLE_MAP: Record<string,{l:string;v:BadgeVariant}> = {
 // Groupes de rôles pour le sélecteur
 const ROLE_GROUPS: { label: string; roles: { value: UserRole; label: string; desc: string }[] }[] = [
   {
-    label: 'Direction SARPA GROUP',
+    label: 'Direction Nexora',
     roles: [
       { value: 'pdg',                    label: 'PDG',                        desc: 'Vue executive lecture seule (toutes filiales)' },
       { value: 'directeur_operations',   label: 'Dir. Opérations & Logistique', desc: 'Accès complet toutes filiales' },
@@ -333,8 +333,8 @@ export default function SuperAdminUsersPage() {
 
       {/* Pending tenant approvals */}
       {items.filter(u=>u.role==='tenant'&&!u.is_active).length > 0 && (
-        <div className="mb-5 rounded-2xl p-4" style={{ background:'rgba(250,171,45,0.10)', border:'1px solid rgba(250,171,45,0.35)' }}>
-          <p className="text-sm font-bold mb-3" style={{ color:'#7c5200' }}>
+        <div className="mb-5 rounded-2xl p-4" style={{ background:'rgba(147,197,253,0.10)', border:'1px solid rgba(147,197,253,0.35)' }}>
+          <p className="text-sm font-bold mb-3" style={{ color:'#1e3a8a' }}>
             Demandes locataires en attente ({items.filter(u=>u.role==='tenant'&&!u.is_active).length})
           </p>
           <div className="space-y-2">
@@ -347,7 +347,7 @@ export default function SuperAdminUsersPage() {
                 <div className="flex gap-2">
                   <button onClick={()=>approveTenant(u)}
                     className="px-3 py-1.5 text-white text-xs font-bold rounded-lg transition-opacity hover:opacity-90"
-                    style={{ background:'#3d2674' }}>
+                    style={{ background:'#1e40af' }}>
                     Approuver
                   </button>
                   <button onClick={()=>setDeletingUser(u)}

@@ -84,7 +84,7 @@ export default function TenantDashboard() {
           { href:'/tenant-portal/payments',  label:'Mes paiements',  icon:<CreditCard size={20}/>, color:'bg-blue-50 border-blue-100 text-blue-700' },
           { href:'/tenant-portal/tickets',   label:'Signaler un probleme', icon:<Wrench size={20}/>, color:'bg-orange-50 border-orange-100 text-orange-700' },
           { href:'/tenant-portal/messages',  label:'Messagerie', icon:<FileText size={20}/>,    color:'bg-green-50 border-green-100 text-green-700', badge: data?.unreadMessages },
-          { href:'/tenant-portal/tickets',   label:'Mes tickets', icon:<CheckCircle size={20}/>, color:'bg-purple-50 border-purple-100 text-purple-700' },
+          { href:'/tenant-portal/tickets',   label:'Mes tickets', icon:<CheckCircle size={20}/>, color:'bg-primary/10 border-primary/20 text-primary' },
         ].map(item => (
           <Link key={item.href+item.label} href={item.href}
             className={'flex flex-col items-center gap-2 p-4 rounded-2xl border transition-colors relative '+item.color}>

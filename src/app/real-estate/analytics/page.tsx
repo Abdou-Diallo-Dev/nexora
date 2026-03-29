@@ -316,9 +316,9 @@ export default function AnalyticsPage() {
           <p className="text-2xl font-bold text-blue-700">{formatCurrency(totals.commissionHT)}</p>
           <p className="text-xs text-muted-foreground">TVA: {formatCurrency(totals.commissionTVA)} ({commissionSettings.vatRate}%)</p>
         </div>
-        <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 rounded-2xl p-4">
-          <div className="flex items-center gap-2 mb-1 text-purple-600"><Building2 size={14}/><p className="text-xs font-semibold uppercase">Net bailleur</p></div>
-          <p className="text-2xl font-bold text-purple-700">{formatCurrency(totals.netBailleur)}</p>
+        <div className="bg-primary/10 dark:bg-primary/10 border border-primary/20 dark:border-primary/25 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-1 text-primary"><Building2 size={14}/><p className="text-xs font-semibold uppercase">Net bailleur</p></div>
+          <p className="text-2xl font-bold text-primary">{formatCurrency(totals.netBailleur)}</p>
           <p className="text-xs text-muted-foreground">Revenus bailleur - commission appliquee - depenses bailleur</p>
         </div>
         <div className={`border rounded-2xl p-4 ${totals.netEntreprise >= 0 ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100' : 'bg-red-50 dark:bg-red-900/20 border-red-100'}`}>

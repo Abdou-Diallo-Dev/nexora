@@ -6,8 +6,8 @@ import { createClient } from '@/lib/supabase/client';
 import { LoadingSpinner, cardCls } from '@/components/ui';
 import Link from 'next/link';
 
-const SARPA_YELLOW = '#faab2d';
-const SARPA_PURPLE = '#3d2d7d';
+const SARPA_YELLOW = 'hsl(var(--secondary))';
+const SARPA_PURPLE = 'hsl(var(--primary))';
 
 type KPI = { label: string; value: string | number; sub?: string; icon: React.ReactNode; color: string; href?: string };
 
@@ -71,7 +71,7 @@ export default function BetonDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4 flex-wrap">
-        <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: `linear-gradient(135deg, ${SARPA_PURPLE}, #5b3ea8)` }}>
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: `linear-gradient(135deg, ${SARPA_PURPLE}, #1d4ed8)` }}>
           <Factory size={22} className="text-white"/>
         </div>
         <div>

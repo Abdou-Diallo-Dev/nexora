@@ -19,7 +19,7 @@ type Vehicle = {
 const STATUS_CONFIG: Record<string, { l: string; dot: string }> = {
   operational: { l: 'Opérationnel', dot: '#16a34a' },
   available:   { l: 'Disponible',   dot: '#16a34a' },
-  on_mission:  { l: 'En mission',   dot: '#3d2674' },
+  on_mission:  { l: 'En mission',   dot: 'hsl(var(--primary))' },
   maintenance: { l: 'Maintenance',  dot: '#ea580c' },
   panne:       { l: 'En panne',     dot: '#dc2626' },
   inactive:    { l: 'Inactif',      dot: '#9ca3af' },

@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { Truck, Plus, X, Loader2, CheckCircle2, Clock, MapPin, Search } from 'lucide-react';
 import { cardCls, inputCls, selectCls, labelCls, btnPrimary, btnSecondary } from '@/components/ui';
 
-const SARPA_PURPLE = '#3d2d7d';
-const SARPA_YELLOW = '#faab2d';
+const SARPA_PURPLE = 'hsl(var(--primary))';
+const SARPA_YELLOW = 'hsl(var(--secondary))';
 
 type StatutLivraison = 'planifiee' | 'en_cours' | 'livree' | 'annulee';
 
@@ -34,7 +34,7 @@ const MOCK: Livraison[] = [
 ];
 
 const STATUT_CONFIG: Record<StatutLivraison, { label: string; bg: string; color: string }> = {
-  planifiee: { label: 'Planifiee', bg: '#3d2d7d15', color: '#3d2d7d' },
+  planifiee: { label: 'Planifiee', bg: 'rgba(30,64,175,0.08)', color: 'hsl(var(--primary))' },
   en_cours:  { label: 'En cours',  bg: '#f59e0b15', color: '#f59e0b' },
   livree:    { label: 'Livree',    bg: '#22c55e15', color: '#22c55e' },
   annulee:   { label: 'Annulee',   bg: '#ef444415', color: '#ef4444' },

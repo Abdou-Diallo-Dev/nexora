@@ -173,7 +173,7 @@ export default function AccountingPage() {
     paiement: { label: 'Loyer percu', color: 'text-green-600 bg-green-50 dark:bg-green-900/20' },
     depense_bailleur: { label: 'Depense bailleur', color: 'text-orange-600 bg-orange-50 dark:bg-orange-900/20' },
     depense_entreprise: { label: 'Depense entreprise', color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' },
-    reversement: { label: 'Reversement', color: 'text-purple-600 bg-purple-50 dark:bg-purple-900/20' },
+    reversement: { label: 'Reversement', color: 'text-primary bg-primary/10 dark:bg-primary/10' },
   };
 
   return (
@@ -187,7 +187,7 @@ export default function AccountingPage() {
           { label: `TVA commission (${commissionSettings.vatRate}%)`, value: formatCurrency(summary.commTVA), icon: <Percent size={18} />, color: 'text-cyan-600', bg: 'bg-cyan-50 dark:bg-cyan-900/20 border-cyan-100 dark:border-cyan-800' },
           { label: 'Depenses bailleur', value: formatCurrency(summary.totalDepensesBailleur), icon: <Building2 size={18} />, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-800' },
           { label: 'Depenses entreprise', value: formatCurrency(summary.totalDepensesEntreprise), icon: <TrendingDown size={18} />, color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800' },
-          { label: 'Net bailleur', value: formatCurrency(summary.netBailleur), icon: <TrendingUp size={18} />, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800' },
+          { label: 'Net bailleur', value: formatCurrency(summary.netBailleur), icon: <TrendingUp size={18} />, color: 'text-primary', bg: 'bg-primary/10 dark:bg-primary/10 border-primary/20 dark:border-primary/25' },
           { label: 'Net entreprise', value: formatCurrency(summary.netEntreprise), icon: <TrendingUp size={18} />, color: summary.netEntreprise >= 0 ? 'text-emerald-600' : 'text-red-600', bg: summary.netEntreprise >= 0 ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800' },
           { label: 'Taux de recouvrement', value: `${summary.tauxRecouvrement}%`, icon: <CheckCircle size={18} />, color: summary.tauxRecouvrement >= 80 ? 'text-green-600' : 'text-amber-600', bg: summary.tauxRecouvrement >= 80 ? 'bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800' : 'bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800' },
         ].map((k, i) => (
@@ -208,7 +208,7 @@ export default function AccountingPage() {
             <span className="text-muted-foreground">-</span>
             <span className="bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300 px-3 py-1.5 rounded-lg">{formatCurrency(summary.totalDepensesBailleur)} (depenses bailleur)</span>
             <span className="text-muted-foreground">=</span>
-            <span className="bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 px-3 py-1.5 rounded-lg font-bold">{formatCurrency(summary.netBailleur)} net bailleur</span>
+            <span className="bg-primary/10 text-primary dark:bg-primary/10 dark:text-primary px-3 py-1.5 rounded-lg font-bold">{formatCurrency(summary.netBailleur)} net bailleur</span>
           </div>
         </div>
         <div className="bg-slate-50 dark:bg-slate-800/50 border border-border rounded-2xl p-5">

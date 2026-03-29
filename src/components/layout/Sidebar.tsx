@@ -191,22 +191,6 @@ const NEXORA_SIDEBAR_COLORS = {
   cardAccent:         'rgba(59,130,246,0.10)',
 };
 
-const SARPA_SIDEBAR_COLORS = {
-  sidebarBg:          '#3d2674',
-  sidebarText:        '#ffffff',
-  sidebarMuted:       'rgba(255,255,255,0.62)',
-  sidebarBorder:      'rgba(255,255,255,0.10)',
-  sidebarHover:       'rgba(255,255,255,0.10)',
-  sidebarActive:      '#faab2d',
-  sidebarActiveText:  '#1a0f3d',
-  primary:            '#3d2674',
-  primaryHsl:         '254 48% 30%',
-  secondary:          '#faab2d',
-  secondaryHsl:       '37 95% 58%',
-  primaryText:        '#ffffff',
-  secondaryText:      '#1a0f3d',
-  cardAccent:         'rgba(250,171,45,0.10)',
-};
 
 
 // ─── COMPOSANTS PARTAGÉS ──────────────────────────────────────
@@ -224,7 +208,7 @@ function BrandLogo({ companyName, companyInitial, logoUrl }: { companyName: stri
   }
   return (
     <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 font-black text-xs"
-      style={{ background: 'linear-gradient(135deg, #faab2d, #f59e0b)', color: '#1a1040' }}>
+      style={{ background: 'linear-gradient(135deg, #3b82f6, #1e40af)', color: '#ffffff' }}>
       {companyInitial}
     </div>
   );
@@ -518,7 +502,7 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
                 <div className="min-w-0">
                   <p className="font-bold text-xs truncate" style={{ color: colors.sidebarText }}>{companyName}</p>
                   {isSuperAdmin && (
-                    <p className="text-[9px] font-semibold tracking-widest uppercase" style={{ color: '#faab2d' }}>SENEGAL</p>
+                    <p className="text-[9px] font-semibold tracking-widest uppercase" style={{ color: '#93c5fd' }}>SENEGAL</p>
                   )}
                 </div>
               </div>
@@ -531,6 +515,7 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
             <SidebarContent collapsed={false} onNav={onClose}/>
           </motion.div>
         </>
+        
       )}
     </AnimatePresence>
   );

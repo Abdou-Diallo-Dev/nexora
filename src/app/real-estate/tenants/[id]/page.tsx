@@ -129,7 +129,7 @@ export default function TenantDetailPage() {
           { label:'Payés', value:paid.length, color:'text-green-700 bg-green-50 border-green-100' },
           { label:'En retard', value:late.length, color:late.length>0?'text-red-700 bg-red-50 border-red-100':'text-green-700 bg-green-50 border-green-100' },
           { label:'Total collecté', value:formatCurrency(totalPaid), color:'text-blue-700 bg-blue-50 border-blue-100' },
-          { label:'Taux paiement', value:payments.length>0?Math.round((paid.length/payments.length)*100)+'%':'—', color:'text-purple-700 bg-purple-50 border-purple-100' },
+          { label:'Taux paiement', value:payments.length>0?Math.round((paid.length/payments.length)*100)+'%':'—', color:'text-primary bg-primary/10 border-primary/20' },
         ].map((k,i) => (
           <div key={i} className={`border rounded-2xl p-4 ${k.color}`}>
             <p className="text-xs font-semibold uppercase tracking-wide mb-1 opacity-80">{k.label}</p>

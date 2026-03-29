@@ -16,7 +16,7 @@ export function BrandingSync() {
     const root = document.documentElement;
     const isSuperAdmin = user?.role === 'super_admin';
     const shouldUseCompanyBranding = COMPANY_BRANDING_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
-    // Super admin: toujours couleurs SARPA GROUP par défaut (#3d2674)
+    // Super admin: toujours couleurs Nexora par défaut (#1e40af)
     const colors = shouldUseCompanyBranding ? getBrandingColors(isSuperAdmin ? null : company) : DEFAULT_BRANDING;
 
     root.style.setProperty('--primary', colors.primaryHsl);

@@ -17,7 +17,7 @@ type Driver = {
 
 const STATUS_CONFIG: Record<string, { l: string; dot: string; bg: string }> = {
   available:  { l: 'Disponible',  dot: '#16a34a', bg: 'bg-green-100 text-green-700'  },
-  on_mission: { l: 'En mission',  dot: '#3d2674', bg: 'bg-purple-100 text-purple-700' },
+  on_mission: { l: 'En mission',  dot: 'hsl(var(--primary))', bg: 'bg-primary/10 text-primary' },
   off:        { l: 'En repos',    dot: '#ea580c', bg: 'bg-orange-100 text-orange-700' },
   inactive:   { l: 'Inactif',     dot: '#9ca3af', bg: 'bg-slate-100 text-slate-500'  },
 };

@@ -111,7 +111,7 @@ export default function DocumentsPage() {
         {[
           { href: '/logistics/stats',    label: 'Rapport statistiques', icon: <BarChart3 size={20}/>, color: 'text-blue-600 bg-blue-50 border-blue-100' },
           { href: '/logistics/rapports', label: 'Rapport financier',    icon: <FileText size={20}/>,  color: 'text-green-600 bg-green-50 border-green-100' },
-          { href: '/logistics/factures', label: 'Factures clients',     icon: <FileText size={20}/>,  color: 'text-purple-600 bg-purple-50 border-purple-100' },
+          { href: '/logistics/factures', label: 'Factures clients',     icon: <FileText size={20}/>,  color: 'text-primary bg-primary/10 border-primary/20' },
           { href: '/logistics/fleet',    label: 'Docs véhicules',       icon: <Car size={20}/>,       color: 'text-orange-600 bg-orange-50 border-orange-100' },
         ].map(s => (
           <Link key={s.href} href={s.href}

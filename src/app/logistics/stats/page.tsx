@@ -50,7 +50,7 @@ export default function LogisticsStatsPage() {
   const [vehicleStats, setVehicleStats] = useState<VehicleStats[]>([]);
   const [topClients, setTopClients] = useState<any[]>([]);
 
-  const COLORS = ['#3d2674', '#faab2d', '#22c55e', '#ef4444', '#94a3b8', '#8b5cf6'];
+  const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', '#22c55e', '#ef4444', '#94a3b8', '#8b5cf6'];
 
   const getPeriodDates = () => {
     const now = new Date();
@@ -219,7 +219,7 @@ export default function LogisticsStatsPage() {
                 ? 'bg-primary text-white'
                 : 'border border-border hover:bg-slate-50 dark:hover:bg-slate-800'
             }`}
-            style={period === p ? { background: '#3d2674' } : {}}
+            style={period === p ? { background: 'hsl(var(--primary))' } : {}}
           >
             {p === 'week' ? 'Cette semaine' : p === 'month' ? 'Ce mois' : 'Cette année'}
           </button>
@@ -231,7 +231,7 @@ export default function LogisticsStatsPage() {
         <div className={cardCls + ' p-6'}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-semibold text-muted-foreground">Livraisons</span>
-            <Truck size={18} style={{ color: '#3d2674' }} />
+            <Truck size={18} style={{ color: 'hsl(var(--primary))' }} />
           </div>
           <p className="text-3xl font-bold text-foreground">{totalDeliveries}</p>
           <p className="text-xs text-muted-foreground mt-1">Total période</p>
@@ -258,7 +258,7 @@ export default function LogisticsStatsPage() {
         <div className={cardCls + ' p-6'}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-semibold text-muted-foreground">Profit</span>
-            <DollarSign size={18} style={{ color: '#faab2d' }} />
+            <DollarSign size={18} style={{ color: 'hsl(var(--secondary))' }} />
           </div>
           <p className="text-3xl font-bold text-foreground">{formatCurrency(profit)}</p>
           <p className="text-xs mt-1" style={{ color: profit >= 0 ? '#22c55e' : '#ef4444' }}>
@@ -297,7 +297,7 @@ export default function LogisticsStatsPage() {
                 contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', borderRadius: '8px' }}
                 formatter={(value) => formatCurrency(Number(value))}
               />
-              <Line type="monotone" dataKey="revenue" stroke="#3d2674" strokeWidth={2} dot={{ fill: '#3d2674', r: 4 }} />
+              <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: 'hsl(var(--primary))', r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -311,7 +311,7 @@ export default function LogisticsStatsPage() {
               <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
               <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
               <Tooltip contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', borderRadius: '8px' }} />
-              <Bar dataKey="deliveries" fill="#faab2d" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="deliveries" fill="hsl(var(--secondary))" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -352,7 +352,7 @@ export default function LogisticsStatsPage() {
               {topClients.map((client, i) => (
                 <div key={i} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
                   <span className="font-medium text-sm text-foreground">{client.name}</span>
-                  <span className="font-bold text-sm" style={{ color: '#3d2674' }}>
+                  <span className="font-bold text-sm" style={{ color: 'hsl(var(--primary))' }}>
                     {formatCurrency(client.revenue)}
                   </span>
                 </div>
@@ -390,7 +390,7 @@ export default function LogisticsStatsPage() {
                       <div className="w-full h-2 bg-border rounded-full overflow-hidden inline-flex" style={{ width: '80px' }}>
                         <div
                           className="h-full"
-                          style={{ width: `${stat.usage_percent}%`, background: '#faab2d' }}
+                          style={{ width: `${stat.usage_percent}%`, background: 'hsl(var(--secondary))' }}
                         />
                       </div>
                       <span className="ml-2 text-xs font-medium text-foreground">{stat.usage_percent}%</span>

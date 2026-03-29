@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { Gauge, Plus, X, CheckCircle2, Clock, Loader2 } from 'lucide-react';
 import { cardCls, inputCls, selectCls, labelCls, btnPrimary, btnSecondary } from '@/components/ui';
 
-const SARPA_PURPLE = '#3d2d7d';
-const SARPA_YELLOW = '#faab2d';
+const SARPA_PURPLE = 'hsl(var(--primary))';
+const SARPA_YELLOW = 'hsl(var(--secondary))';
 
 type BetonType = 'B25' | 'B30' | 'B35' | 'B40' | 'Autre';
 type Shift = 'Matin' | 'Apres-midi' | 'Nuit';
@@ -81,7 +81,7 @@ export default function ProductionPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4 flex-wrap">
-        <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow" style={{ background: `linear-gradient(135deg, ${SARPA_PURPLE}, #5b3ea8)` }}>
+        <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow" style={{ background: `linear-gradient(135deg, ${SARPA_PURPLE}, #1d4ed8)` }}>
           <Gauge size={20} className="text-white" />
         </div>
         <div>

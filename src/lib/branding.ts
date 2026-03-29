@@ -1,8 +1,8 @@
 type RGB = { r: number; g: number; b: number };
 
-// SARPA GROUP — couleurs officielles
-const DEFAULT_PRIMARY = '#3d2674';
-const DEFAULT_SECONDARY = '#faab2d';
+// Nexora — couleurs officielles
+const DEFAULT_PRIMARY = '#1e40af';
+const DEFAULT_SECONDARY = '#93c5fd';
 
 function normalizeHex(color?: string | null, fallback = DEFAULT_PRIMARY) {
   if (!color) return fallback;

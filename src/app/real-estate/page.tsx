@@ -261,7 +261,7 @@ export default function REDashboard() {
           {[
             { title:'Commissions générées', value:formatCurrency(data.totalCommissions), color:'text-blue-700', bg:'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800' },
             { title:'Total dépenses', value:formatCurrency(data.totalDepenses), color:'text-red-700', bg:'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800' },
-            { title:'À reverser bailleurs', value:formatCurrency(data.totalRestitue), color:'text-purple-700', bg:'bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800' },
+            { title:'À reverser bailleurs', value:formatCurrency(data.totalRestitue), color:'text-primary', bg:'bg-primary/10 dark:bg-primary/10 border-primary/20 dark:border-primary/25' },
             { title:'Taux de recouvrement', value:data.tauxRecouvrement+'%', color:data.tauxRecouvrement>=80?'text-green-700':'text-amber-700', bg:data.tauxRecouvrement>=80?'bg-green-50 dark:bg-green-900/20 border-green-100':'bg-amber-50 dark:bg-amber-900/20 border-amber-100' },
           ].map((k,i) => (
             <Link key={i} href="/real-estate/accounting">
@@ -498,7 +498,7 @@ export default function REDashboard() {
             {[
               { href:'/real-estate/analytics', label:'Analyse financiere', icon:<CreditCard size={16}/>, cls:'text-blue-700 bg-blue-50 border-blue-100' },
               { href:'/real-estate/stats', label:'Statistiques', icon:<Home size={16}/>, cls:'text-emerald-700 bg-emerald-50 border-emerald-100' },
-              { href:'/real-estate/reports', label:'Rapports financiers', icon:<FileText size={16}/>, cls:'text-purple-700 bg-purple-50 border-purple-100' },
+              { href:'/real-estate/reports', label:'Rapports financiers', icon:<FileText size={16}/>, cls:'text-primary bg-primary/10 border-primary/20' },
             ].map(item=>(
               <Link key={item.href} href={item.href} className={'flex items-center gap-2.5 p-4 rounded-2xl border transition-colors '+item.cls}>
                 {item.icon}<span className="text-sm font-medium">{item.label}</span>
@@ -516,7 +516,7 @@ export default function REDashboard() {
             {[
               { href:'/real-estate/properties', label:'Biens',      icon:<Home size={16}/>,     cls:'text-blue-700 bg-blue-50 border-blue-100' },
               { href:'/real-estate/tenants',    label:'Locataires', icon:<Users size={16}/>,    cls:'text-green-700 bg-green-50 border-green-100' },
-              { href:'/real-estate/leases',     label:'Contrats',   icon:<FileText size={16}/>, cls:'text-purple-700 bg-purple-50 border-purple-100' },
+              { href:'/real-estate/leases',     label:'Contrats',   icon:<FileText size={16}/>, cls:'text-primary bg-primary/10 border-primary/20' },
               { href:'/real-estate/maintenance',label:'Maintenance', icon:<Wrench size={16}/>,  cls:'text-orange-700 bg-orange-50 border-orange-100' },
             ].map(item=>(
               <Link key={item.href} href={item.href} className={'flex items-center gap-2.5 p-4 rounded-2xl border transition-colors '+item.cls}>
@@ -533,7 +533,7 @@ export default function REDashboard() {
           {[
             { href:'/real-estate/properties/new', label:'Nouveau bien',      icon:<Home size={16}/>,       cls:'text-blue-600 bg-blue-50 hover:bg-blue-100 border-blue-100' },
             { href:'/real-estate/tenants/new',    label:'Nouveau locataire', icon:<Users size={16}/>,      cls:'text-green-600 bg-green-50 hover:bg-green-100 border-green-100' },
-            { href:'/real-estate/leases/new',     label:'Nouveau bail',      icon:<FileText size={16}/>,   cls:'text-purple-600 bg-purple-50 hover:bg-purple-100 border-purple-100' },
+            { href:'/real-estate/leases/new',     label:'Nouveau bail',      icon:<FileText size={16}/>,   cls:'text-primary bg-primary/10 hover:bg-primary/20 border-primary/20' },
             { href:'/real-estate/payments/new',   label:'Paiement',          icon:<CreditCard size={16}/>, cls:'text-amber-600 bg-amber-50 hover:bg-amber-100 border-amber-100' },
           ].map(item=>(
             <Link key={item.href} href={item.href} className={'flex items-center gap-2.5 p-4 rounded-2xl border transition-all '+item.cls}>

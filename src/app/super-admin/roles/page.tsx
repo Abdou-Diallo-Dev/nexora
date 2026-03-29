@@ -9,8 +9,9 @@ import {
   Globe, Users,
 } from 'lucide-react';
 
-const SARPA_PURPLE = '#3d2674';
-const SARPA_YELLOW = '#faab2d';
+const NX_BLUE   = '#1e40af';
+const NX_LIGHT  = '#3b82f6';
+const NX_ACCENT = '#93c5fd';
 
 type AccessLevel = 'full' | 'partial' | 'readonly';
 type Module = 'global' | 'real_estate' | 'logistics' | 'beton';
@@ -32,13 +33,13 @@ type RoleDef = {
 // ─── CONFIG VISUELLE ──────────────────────────────────────────
 const ACCESS_BADGE: Record<AccessLevel, { label: string; bg: string; color: string }> = {
   full:     { label: 'Accès complet', bg: 'rgba(34,197,94,0.12)',    color: '#15803d' },
-  partial:  { label: 'Accès partiel', bg: 'rgba(61,38,116,0.10)',    color: SARPA_PURPLE },
-  readonly: { label: 'Lecture seule', bg: 'rgba(250,171,45,0.15)',   color: '#7c5200' },
+  partial:  { label: 'Accès partiel', bg: 'rgba(30,64,175,0.10)',    color: NX_BLUE },
+  readonly: { label: 'Lecture seule', bg: 'rgba(147,197,253,0.15)',   color: '#1e3a8a' },
 };
 
 const MODULE_BADGE: Record<Module, { label: string; bg: string; color: string }> = {
-  global:      { label: 'Groupe',      bg: 'rgba(250,171,45,0.18)', color: '#7c5200' },
-  real_estate: { label: 'Immobilier',  bg: 'rgba(61,38,116,0.10)',  color: SARPA_PURPLE },
+  global:      { label: 'Groupe',      bg: 'rgba(147,197,253,0.18)', color: '#1e3a8a' },
+  real_estate: { label: 'Immobilier',  bg: 'rgba(30,64,175,0.10)',  color: NX_BLUE },
   logistics:   { label: 'Logistique',  bg: 'rgba(20,184,166,0.12)', color: '#0f766e' },
   beton:       { label: 'Béton',       bg: 'rgba(249,115,22,0.12)', color: '#c2410c' },
 };
@@ -50,8 +51,8 @@ const ROLES: RoleDef[] = [
     id: 'super_admin', label: 'Super Administrateur', module: 'global', accessLevel: 'full',
     description: 'Contrôle total de la plateforme. Crée, modifie et supprime utilisateurs, rôles, filiales et modules. Accède aux logs système et paramètres globaux.',
     icon: <Crown size={20}/>,
-    iconBg: 'rgba(250,171,45,0.20)', iconColor: '#7c5200',
-    cardBg: 'rgba(250,171,45,0.06)', cardBorder: 'rgba(250,171,45,0.35)',
+    iconBg: 'rgba(147,197,253,0.20)', iconColor: '#1e3a8a',
+    cardBg: 'rgba(147,197,253,0.06)', cardBorder: 'rgba(147,197,253,0.35)',
     permissions: ['Toutes les filiales', 'Gestion utilisateurs', 'Gestion rôles', 'Gestion modules', 'Logs système', 'Paramètres globaux', 'Toutes les données'],
   },
   // ── DIRECTION SARPA GROUP ─────────────────────────────────────
@@ -59,40 +60,40 @@ const ROLES: RoleDef[] = [
     id: 'pdg', label: 'PDG', module: 'global', accessLevel: 'readonly',
     description: 'Président Directeur Général. Vue executive consolidée sur toutes les filiales : tableau de bord, statistiques et rapports financiers.',
     icon: <Briefcase size={20}/>,
-    iconBg: 'rgba(250,171,45,0.18)', iconColor: '#7c5200',
-    cardBg: 'rgba(250,171,45,0.05)', cardBorder: 'rgba(250,171,45,0.25)',
+    iconBg: 'rgba(147,197,253,0.18)', iconColor: '#1e3a8a',
+    cardBg: 'rgba(147,197,253,0.05)', cardBorder: 'rgba(147,197,253,0.25)',
     permissions: ['Toutes filiales (lecture)', 'Tableau de bord consolidé', 'Statistiques globales', 'Rapports financiers', 'Analytics groupe'],
   },
   {
     id: 'directeur_operations', label: 'Directeur des Opérations & Logistique', module: 'global', accessLevel: 'full',
     description: 'Accès complet à toutes les filiales. Supervise les opérations logistique, béton et immobilier. Peut gérer les utilisateurs.',
     icon: <LineChart size={20}/>,
-    iconBg: 'rgba(61,38,116,0.15)', iconColor: SARPA_PURPLE,
-    cardBg: 'rgba(61,38,116,0.05)', cardBorder: 'rgba(61,38,116,0.20)',
+    iconBg: 'rgba(30,64,175,0.15)', iconColor: NX_BLUE,
+    cardBg: 'rgba(30,64,175,0.05)', cardBorder: 'rgba(30,64,175,0.20)',
     permissions: ['Toutes filiales', 'Gestion utilisateurs', 'Opérations complètes', 'Finance & rapports', 'Analytics global'],
   },
   {
     id: 'directeur_financier', label: 'Directeur Administratif & Financier', module: 'global', accessLevel: 'partial',
     description: 'Accès complet aux finances, paiements, dépenses et factures de toutes les filiales. Lecture seule sur les autres données.',
     icon: <Calculator size={20}/>,
-    iconBg: 'rgba(61,38,116,0.15)', iconColor: SARPA_PURPLE,
-    cardBg: 'rgba(61,38,116,0.05)', cardBorder: 'rgba(61,38,116,0.18)',
+    iconBg: 'rgba(30,64,175,0.15)', iconColor: NX_BLUE,
+    cardBg: 'rgba(30,64,175,0.05)', cardBorder: 'rgba(30,64,175,0.18)',
     permissions: ['Toutes filiales (lecture)', 'Paiements (écriture)', 'Dépenses (écriture)', 'Factures (écriture)', 'Rapports financiers', 'Analytics global'],
   },
   {
     id: 'directeur_juridique', label: 'Directeur Juridique & RH', module: 'global', accessLevel: 'partial',
     description: 'Gestion des contrats, baux, ressources humaines et conformité. Accès complet aux contrats et locataires. Lecture sur les finances.',
     icon: <Shield size={20}/>,
-    iconBg: 'rgba(61,38,116,0.15)', iconColor: SARPA_PURPLE,
-    cardBg: 'rgba(61,38,116,0.05)', cardBorder: 'rgba(61,38,116,0.18)',
+    iconBg: 'rgba(30,64,175,0.15)', iconColor: NX_BLUE,
+    cardBg: 'rgba(30,64,175,0.05)', cardBorder: 'rgba(30,64,175,0.18)',
     permissions: ['Toutes filiales (lecture)', 'Contrats & baux (écriture)', 'Locataires (écriture)', 'Gestion utilisateurs', 'Modèles de contrat', 'Rapports'],
   },
   {
     id: 'coordinatrice', label: 'Coordinatrice Générale', module: 'global', accessLevel: 'partial',
     description: 'Coordination transversale de toutes les filiales. Accès opérationnel large : locataires, paiements, contrats, tickets et messagerie.',
     icon: <Globe size={20}/>,
-    iconBg: 'rgba(61,38,116,0.12)', iconColor: SARPA_PURPLE,
-    cardBg: 'rgba(61,38,116,0.04)', cardBorder: 'rgba(61,38,116,0.15)',
+    iconBg: 'rgba(30,64,175,0.12)', iconColor: NX_BLUE,
+    cardBg: 'rgba(30,64,175,0.04)', cardBorder: 'rgba(30,64,175,0.15)',
     permissions: ['Toutes filiales (lecture)', 'Locataires (écriture)', 'Paiements (écriture)', 'Contrats (écriture)', 'Tickets maintenance', 'Messagerie locataires'],
   },
   // ── MODULE IMMOBILIER ─────────────────────────────────────────
@@ -100,40 +101,40 @@ const ROLES: RoleDef[] = [
     id: 'admin', label: 'Administrateur', module: 'real_estate', accessLevel: 'full',
     description: 'Accès complet au sein de sa filiale. Gère utilisateurs, biens, locataires, contrats, paiements et finances.',
     icon: <Shield size={20}/>,
-    iconBg: 'rgba(61,38,116,0.14)', iconColor: SARPA_PURPLE,
-    cardBg: 'rgba(61,38,116,0.05)', cardBorder: 'rgba(61,38,116,0.20)',
+    iconBg: 'rgba(30,64,175,0.14)', iconColor: NX_BLUE,
+    cardBg: 'rgba(30,64,175,0.05)', cardBorder: 'rgba(30,64,175,0.20)',
     permissions: ['Biens (écriture)', 'Locataires (écriture)', 'Contrats (écriture)', 'Paiements (écriture)', 'Finance complète', 'Gestion utilisateurs', 'Paramètres filiale'],
   },
   {
     id: 'manager', label: 'Manager', module: 'real_estate', accessLevel: 'partial',
     description: 'Gestion opérationnelle quotidienne. Crée et modifie biens, locataires, contrats et paiements. Accès aux analyses et statistiques.',
     icon: <Star size={20}/>,
-    iconBg: 'rgba(61,38,116,0.12)', iconColor: SARPA_PURPLE,
-    cardBg: 'rgba(61,38,116,0.04)', cardBorder: 'rgba(61,38,116,0.15)',
+    iconBg: 'rgba(30,64,175,0.12)', iconColor: NX_BLUE,
+    cardBg: 'rgba(30,64,175,0.04)', cardBorder: 'rgba(30,64,175,0.15)',
     permissions: ['Biens (écriture)', 'Locataires (écriture)', 'Contrats (écriture)', 'Paiements (écriture)', 'Dépenses (lecture)', 'Statistiques', 'Messagerie'],
   },
   {
     id: 'comptable', label: 'Comptable', module: 'real_estate', accessLevel: 'partial',
     description: 'Finance, factures, dépenses et rapports. Accès complet aux données financières. Aucune gestion des biens ni des locataires.',
     icon: <Calculator size={20}/>,
-    iconBg: 'rgba(61,38,116,0.12)', iconColor: SARPA_PURPLE,
-    cardBg: 'rgba(61,38,116,0.04)', cardBorder: 'rgba(61,38,116,0.15)',
+    iconBg: 'rgba(30,64,175,0.12)', iconColor: NX_BLUE,
+    cardBg: 'rgba(30,64,175,0.04)', cardBorder: 'rgba(30,64,175,0.15)',
     permissions: ['Paiements (écriture)', 'Dépenses (écriture)', 'Factures (écriture)', 'Rapports financiers', 'Analytics', 'Paiement en ligne'],
   },
   {
     id: 'agent', label: 'Agent Terrain', module: 'real_estate', accessLevel: 'partial',
     description: 'Accès opérationnel limité. Enregistre des paiements, crée des tickets de maintenance, consulte les données.',
     icon: <Zap size={20}/>,
-    iconBg: 'rgba(250,171,45,0.15)', iconColor: '#7c5200',
-    cardBg: 'rgba(250,171,45,0.04)', cardBorder: 'rgba(250,171,45,0.20)',
+    iconBg: 'rgba(147,197,253,0.15)', iconColor: '#1e3a8a',
+    cardBg: 'rgba(147,197,253,0.04)', cardBorder: 'rgba(147,197,253,0.20)',
     permissions: ['Paiements (créer)', 'Tickets maintenance', 'Biens (lecture)', 'Locataires (lecture)', 'Messagerie'],
   },
   {
     id: 'responsable_operations', label: 'Resp. Opérations', module: 'real_estate', accessLevel: 'readonly',
     description: 'Suivi opérationnel en lecture seule. Consulte les indicateurs, analyses et rapports. Aucune modification.',
     icon: <LineChart size={20}/>,
-    iconBg: 'rgba(61,38,116,0.10)', iconColor: SARPA_PURPLE,
-    cardBg: 'rgba(61,38,116,0.03)', cardBorder: 'rgba(61,38,116,0.12)',
+    iconBg: 'rgba(30,64,175,0.10)', iconColor: NX_BLUE,
+    cardBg: 'rgba(30,64,175,0.03)', cardBorder: 'rgba(30,64,175,0.12)',
     permissions: ['Rapports (lecture)', 'Analytics (lecture)', 'Statistiques (lecture)'],
   },
   {
@@ -230,14 +231,14 @@ const TABS = [
 
 const SECTION_HEADERS: Partial<Record<Module | 'super_admin', { label: string; color: string; borderColor: string }>> = {
   global: {
-    label: 'Direction SARPA GROUP',
-    color: SARPA_YELLOW,
-    borderColor: 'rgba(250,171,45,0.30)',
+    label: 'Direction Nexora',
+    color: NX_ACCENT,
+    borderColor: 'rgba(147,197,253,0.30)',
   },
   real_estate: {
     label: 'Module Immobilier',
-    color: SARPA_PURPLE,
-    borderColor: 'rgba(61,38,116,0.25)',
+    color: NX_BLUE,
+    borderColor: 'rgba(30,64,175,0.25)',
   },
   logistics: {
     label: 'Module Logistique',
@@ -327,15 +328,15 @@ export default function RolesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Rôles & Permissions"
-        subtitle="Système de rôles complet SARPA GROUP — Direction, Immobilier, Logistique & Béton"
+        subtitle="Systeme de roles — Direction, Immobilier, Logistique & Beton"
       />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: 'Total rôles',   value: ROLES.length,                                      bg: 'rgba(61,38,116,0.08)',  color: SARPA_PURPLE },
-          { label: 'Direction',     value: ROLES.filter(r => r.module === 'global').length,    bg: 'rgba(250,171,45,0.10)', color: '#7c5200' },
-          { label: 'Opérationnels', value: ROLES.filter(r => r.module !== 'global').length,   bg: 'rgba(61,38,116,0.06)',  color: SARPA_PURPLE },
+          { label: 'Total rôles',   value: ROLES.length,                                      bg: 'rgba(30,64,175,0.08)',  color: NX_BLUE },
+          { label: 'Direction',     value: ROLES.filter(r => r.module === 'global').length,    bg: 'rgba(147,197,253,0.10)', color: '#1e3a8a' },
+          { label: 'Opérationnels', value: ROLES.filter(r => r.module !== 'global').length,   bg: 'rgba(30,64,175,0.06)',  color: NX_BLUE },
           { label: 'Accès complet', value: ROLES.filter(r => r.accessLevel === 'full').length, bg: 'rgba(34,197,94,0.08)',  color: '#15803d' },
         ].map(s => (
           <div key={s.label} className={cardCls + ' px-4 py-3'} style={{ background: s.bg }}>
@@ -353,14 +354,14 @@ export default function RolesPage() {
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all"
               style={active
-                ? { background: SARPA_PURPLE, color: '#fff' }
+                ? { background: NX_BLUE, color: '#fff' }
                 : { background: 'var(--card)', color: 'var(--muted-foreground)', border: '1px solid var(--border)' }
               }>
               {tab.label}
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
                 style={active
                   ? { background: 'rgba(255,255,255,0.20)', color: '#fff' }
-                  : { background: 'rgba(61,38,116,0.08)', color: SARPA_PURPLE }
+                  : { background: 'rgba(30,64,175,0.08)', color: NX_BLUE }
                 }>
                 {tab.count}
               </span>
@@ -374,7 +375,7 @@ export default function RolesPage() {
         const roles = grouped[groupKey];
         if (!roles || roles.length === 0) return null;
         const section = groupKey === 'super_admin'
-          ? { label: 'Super Administration', color: SARPA_YELLOW, borderColor: 'rgba(250,171,45,0.40)' }
+          ? { label: 'Super Administration', color: NX_ACCENT, borderColor: 'rgba(147,197,253,0.40)' }
           : SECTION_HEADERS[groupKey as Module];
 
         return (

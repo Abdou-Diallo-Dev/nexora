@@ -4,37 +4,37 @@
 
 @layer base {
   :root {
-    /* ── SARPA GROUP — Design System ────────────────────────── */
-    --background: 250 25% 97%;
-    --foreground: 254 45% 10%;
-    --border: 254 18% 87%;
-    --muted-foreground: 254 14% 46%;
+    /* ── Nexora — Design System ─────────────────────────────── */
+    --background: 214 30% 97%;
+    --foreground: 220 45% 10%;
+    --border: 214 18% 87%;
+    --muted-foreground: 214 14% 46%;
 
-    /* Violet SARPA  #3d2674 → hsl(254, 48%, 30%) */
-    --primary: 254 48% 30%;
+    /* Nexora Blue  #1e40af → hsl(226, 71%, 40%) */
+    --primary: 226 71% 40%;
     --primary-foreground: 0 0% 100%;
 
-    /* Jaune SARPA  #faab2d → hsl(37, 95%, 58%) */
-    --secondary: 37 95% 58%;
-    --secondary-foreground: 254 48% 12%;
+    /* Nexora Accent  #93c5fd → hsl(214, 95%, 78%) */
+    --secondary: 214 95% 78%;
+    --secondary-foreground: 226 71% 15%;
 
     /* Sidebar */
-    --sidebar-bg:          #3d2674;
+    --sidebar-bg:          #1e40af;
     --sidebar-text:        #ffffff;
     --sidebar-muted:       rgba(255, 255, 255, 0.62);
     --sidebar-border:      rgba(255, 255, 255, 0.10);
     --sidebar-hover:       rgba(255, 255, 255, 0.10);
-    --sidebar-active:      #faab2d;
-    --sidebar-active-text: #1a0f3d;
+    --sidebar-active:      #93c5fd;
+    --sidebar-active-text: #1e3a8a;
 
     /* Topbar */
-    --topbar-bg:           #3d2674;
+    --topbar-bg:           #1e40af;
     --topbar-text:         #ffffff;
     --topbar-muted:        rgba(255, 255, 255, 0.60);
     --topbar-hover:        rgba(255, 255, 255, 0.10);
 
     /* Cards / accents */
-    --card-accent:         rgba(250, 171, 45, 0.10);
+    --card-accent:         rgba(30, 64, 175, 0.08);
   }
 
   .dark {
@@ -42,10 +42,10 @@
     --foreground:       250 28% 95%;
     --border:           254 22% 16%;
     --muted-foreground: 254 14% 60%;
-    --primary:          254 55% 68%;
-    --primary-foreground: 254 48% 10%;
-    --secondary:        37 95% 58%;
-    --secondary-foreground: 254 48% 10%;
+    --primary:          214 80% 66%;
+    --primary-foreground: 226 71% 10%;
+    --secondary:        214 95% 78%;
+    --secondary-foreground: 226 71% 10%;
   }
 
   * { border-color: hsl(var(--border)); }
@@ -70,21 +70,21 @@
 
 /* ── Helpers globaux ─────────────────────────────────────────── */
 @layer components {
-  /* Bouton principal SARPA violet */
+  /* Bouton principal Nexora */
   .btn-sarpa-primary {
     @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all;
-    background: #3d2674;
-    box-shadow: 0 4px 14px rgba(61, 38, 116, 0.30);
+    background: #1e40af;
+    box-shadow: 0 4px 14px rgba(30, 64, 175, 0.30);
   }
   .btn-sarpa-primary:hover { opacity: 0.90; }
   .btn-sarpa-primary:disabled { opacity: 0.50; cursor: not-allowed; }
 
-  /* Bouton accent SARPA jaune */
+  /* Bouton accent Nexora */
   .btn-sarpa-accent {
     @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all;
-    background: #faab2d;
-    color: #1a0f3d;
-    box-shadow: 0 4px 14px rgba(250, 171, 45, 0.28);
+    background: #93c5fd;
+    color: #1e3a8a;
+    box-shadow: 0 4px 14px rgba(147, 197, 253, 0.28);
   }
   .btn-sarpa-accent:hover { opacity: 0.90; }
 
@@ -96,6 +96,6 @@
   /* Card standard */
   .card-sarpa {
     @apply bg-white dark:bg-slate-800 rounded-2xl border border-border;
-    box-shadow: 0 1px 3px rgba(61,38,116,0.06), inset 0 1px 0 var(--card-accent);
+    box-shadow: 0 1px 3px rgba(30,64,175,0.06), inset 0 1px 0 var(--card-accent);
   }
 }

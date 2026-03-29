@@ -27,7 +27,7 @@ type Contact = {
 
 const SOURCE_META: Record<Source, { label: string; color: string; icon: React.ReactNode }> = {
   tenant:      { label: 'Locataire',  color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',     icon: <Home size={10} /> },
-  employee:    { label: 'Employe',    color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300', icon: <UserCog size={10} /> },
+  employee:    { label: 'Employe',    color: 'bg-primary/10 text-primary dark:bg-primary/10 dark:text-primary', icon: <UserCog size={10} /> },
   owner:       { label: 'Proprietaire', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300', icon: <Building2 size={10} /> },
   contact_int: { label: 'Interne',    color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',  icon: <Users size={10} /> },
   contact_ext: { label: 'Externe',    color: 'bg-slate-100 text-slate-700 dark:bg-slate-700/30 dark:text-slate-300',  icon: <BookOpen size={10} /> },

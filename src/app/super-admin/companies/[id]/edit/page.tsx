@@ -10,7 +10,7 @@ import { ImageUpload } from '@/components/ui/ImageUpload';
 import { toast } from 'sonner';
 
 const PRESET_COLORS = [
-  '#3d2674', '#1e40af', '#7c3aed', '#0d9488',
+  '#1e40af', '#1e40af', '#7c3aed', '#0d9488',
   '#16a34a', '#dc2626', '#ea580c', '#db2777',
 ];
 
@@ -41,8 +41,8 @@ export default function EditCompanyPage() {
     plan: 'starter',
     modules: [] as string[],
     is_active: true,
-    primary_color: '#3d2674',
-    secondary_color: '#faab2d',
+    primary_color: '#1e40af',
+    secondary_color: '#93c5fd',
     commission_rate: 10,
     commission_mode: 'ttc' as CommissionMode,
     vat_rate: 18,
@@ -64,8 +64,8 @@ export default function EditCompanyPage() {
             plan: data.plan || 'starter',
             modules: data.modules || [],
             is_active: data.is_active ?? true,
-            primary_color: data.primary_color || '#3d2674',
-            secondary_color: data.secondary_color || '#faab2d',
+            primary_color: data.primary_color || '#1e40af',
+            secondary_color: data.secondary_color || '#93c5fd',
             commission_rate: data.commission_rate ?? 10,
             commission_mode: data.commission_mode ?? 'ttc',
             vat_rate: data.vat_rate ?? 18,

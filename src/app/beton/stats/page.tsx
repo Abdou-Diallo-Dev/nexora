@@ -2,8 +2,8 @@
 import { BarChart3, TrendingUp, TrendingDown, Gauge, Truck, FlaskConical, Banknote } from 'lucide-react';
 import { cardCls } from '@/components/ui';
 
-const SARPA_PURPLE = '#3d2d7d';
-const SARPA_YELLOW = '#faab2d';
+const SARPA_PURPLE = 'hsl(var(--primary))';
+const SARPA_YELLOW = 'hsl(var(--secondary))';
 
 const MONTHLY_PROD = [
   { mois: 'Oct', m3: 820 },
@@ -38,7 +38,7 @@ export default function StatsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow" style={{ background: `linear-gradient(135deg, ${SARPA_PURPLE}, #5b3ea8)` }}>
+        <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow" style={{ background: `linear-gradient(135deg, ${SARPA_PURPLE}, #1d4ed8)` }}>
           <BarChart3 size={20} className="text-white" />
         </div>
         <div>
@@ -78,7 +78,7 @@ export default function StatsPage() {
           {MONTHLY_PROD.map(m => (
             <div key={m.mois} className="flex-1 flex flex-col items-center gap-1.5">
               <span className="text-xs font-bold text-foreground">{m.m3}</span>
-              <div className="w-full rounded-t-lg transition-all" style={{ height: `${(m.m3 / maxProd) * 120}px`, background: `linear-gradient(180deg, ${SARPA_PURPLE}, #5b3ea8)` }} />
+              <div className="w-full rounded-t-lg transition-all" style={{ height: `${(m.m3 / maxProd) * 120}px`, background: `linear-gradient(180deg, ${SARPA_PURPLE}, #1d4ed8)` }} />
               <span className="text-xs text-muted-foreground">{m.mois}</span>
             </div>
           ))}

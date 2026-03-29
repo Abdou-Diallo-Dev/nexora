@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { Banknote, Plus, X, Loader2, CheckCircle2, TrendingUp, TrendingDown, Search } from 'lucide-react';
 import { cardCls, inputCls, selectCls, labelCls, btnPrimary, btnSecondary } from '@/components/ui';
 
-const SARPA_PURPLE = '#3d2d7d';
-const SARPA_YELLOW = '#faab2d';
+const SARPA_PURPLE = 'hsl(var(--primary))';
+const SARPA_YELLOW = 'hsl(var(--secondary))';
 
 type TypeTx = 'recette' | 'depense';
 type CategorieTx =

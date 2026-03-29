@@ -5,16 +5,16 @@ import { Save, Loader2, Shield, Bell, Database, Globe, AlertTriangle } from 'luc
 import { toast } from 'sonner';
 import { cardCls, inputCls, labelCls, btnPrimary } from '@/components/ui';
 
-const SARPA_PURPLE = '#3d2674';
-const SARPA_YELLOW = '#faab2d';
+const NX_BLUE   = '#1e40af';
+const NX_ACCENT = '#93c5fd';
 
 export default function SuperAdminSettings() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
 
   const [generalSettings, setGeneralSettings] = useState({
-    platform_name: 'SARPA GROUP',
-    support_email: 'support@sarpagroup.sn',
+    platform_name: 'Nexora',
+    support_email: 'support@nexora.sn',
     max_companies: 1000,
     max_users_per_company: 50,
     allow_registration: true,
@@ -25,7 +25,7 @@ export default function SuperAdminSettings() {
     notify_new_registration: true,
     notify_payment_failed: true,
     notify_company_inactive: false,
-    admin_email: 'admin@sarpagroup.sn',
+    admin_email: 'admin@nexora.sn',
   });
 
   const handleSave = async () => {
@@ -46,7 +46,7 @@ export default function SuperAdminSettings() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-black text-foreground">Paramètres plateforme</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Configuration globale du système SARPA GROUP</p>
+        <p className="text-sm text-muted-foreground mt-0.5">Configuration globale du système Nexora</p>
       </div>
 
       <div className="flex gap-6 flex-col md:flex-row">
@@ -61,7 +61,7 @@ export default function SuperAdminSettings() {
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                   className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap"
                   style={active
-                    ? { background: `rgba(61,38,116,0.10)`, color: SARPA_PURPLE, borderLeft: `3px solid ${SARPA_PURPLE}` }
+                    ? { background: `rgba(30,64,175,0.10)`, color: NX_BLUE, borderLeft: `3px solid ${NX_BLUE}` }
                     : { color: 'var(--muted-foreground)', borderLeft: '3px solid transparent' }
                   }>
                   <Icon size={15}/>
@@ -124,10 +124,8 @@ export default function SuperAdminSettings() {
                         checked={generalSettings[key as keyof typeof generalSettings] as boolean}
                         onChange={e => setGeneralSettings(s => ({ ...s, [key]: e.target.checked }))}
                         className="sr-only peer"/>
-                      <div className="w-10 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"
-                        style={{ ['--tw-peer-checked-bg' as any]: SARPA_PURPLE }}
+                      <div className="w-10 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"
                         data-active={generalSettings[key as keyof typeof generalSettings]}/>
-                      <style>{`.peer:checked ~ div { background: ${SARPA_PURPLE}; }`}</style>
                     </label>
                   </div>
                 ))}
@@ -193,9 +191,9 @@ export default function SuperAdminSettings() {
                     <p className="text-xs text-muted-foreground mt-0.5">Obliger la 2FA pour tous les super admins</p>
                   </div>
                   <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                    style={{ background: 'rgba(250,171,45,0.18)', color: '#7c5200' }}>Recommandé</span>
+                    style={{ background: 'rgba(30,64,175,0.12)', color: '#1e3a8a' }}>Recommandé</span>
                 </div>
-                <button className="text-sm font-semibold hover:underline" style={{ color: SARPA_PURPLE }}>Configurer</button>
+                <button className="text-sm font-semibold hover:underline" style={{ color: NX_BLUE }}>Configurer</button>
               </div>
               <div className="p-4 rounded-xl border border-border">
                 <p className="font-semibold text-foreground text-sm mb-1">Sessions actives</p>
@@ -205,7 +203,7 @@ export default function SuperAdminSettings() {
               <div className="p-4 rounded-xl border border-border">
                 <p className="font-semibold text-foreground text-sm mb-1">Journaux d'audit</p>
                 <p className="text-xs text-muted-foreground mb-3">Historique complet des actions admin</p>
-                <button className="text-sm font-semibold hover:underline" style={{ color: SARPA_PURPLE }}>Voir les journaux</button>
+                <button className="text-sm font-semibold hover:underline" style={{ color: NX_BLUE }}>Voir les journaux</button>
               </div>
             </motion.div>
           )}
@@ -215,15 +213,15 @@ export default function SuperAdminSettings() {
               className={cardCls+' p-6 space-y-4'}>
               <h2 className="font-bold text-foreground text-base">Maintenance</h2>
               <div className="p-4 rounded-2xl flex items-start gap-3"
-                style={{ background: 'rgba(250,171,45,0.08)', border: '1px solid rgba(250,171,45,0.30)' }}>
-                <AlertTriangle size={18} style={{ color: SARPA_YELLOW }} className="flex-shrink-0 mt-0.5"/>
-                <p className="text-sm" style={{ color: '#7c5200' }}>
+                style={{ background: 'rgba(30,64,175,0.06)', border: '1px solid rgba(30,64,175,0.20)' }}>
+                <AlertTriangle size={18} style={{ color: NX_ACCENT }} className="flex-shrink-0 mt-0.5"/>
+                <p className="text-sm" style={{ color: '#1e3a8a' }}>
                   Ces opérations affectent toutes les filiales. Procédez avec précaution.
                 </p>
               </div>
               {[
-                { label: 'Vider le cache',             desc: 'Supprimer les données mises en cache',          btn: 'Vider',      style: { background: 'rgba(61,38,116,0.10)', color: SARPA_PURPLE } },
-                { label: 'Recalculer les statistiques', desc: 'Forcer la mise à jour de toutes les métriques', btn: 'Recalculer', style: { background: SARPA_PURPLE, color: '#fff' } },
+                { label: 'Vider le cache',             desc: 'Supprimer les données mises en cache',          btn: 'Vider',      style: { background: 'rgba(30,64,175,0.10)', color: NX_BLUE } },
+                { label: 'Recalculer les statistiques', desc: 'Forcer la mise à jour de toutes les métriques', btn: 'Recalculer', style: { background: NX_BLUE, color: '#fff' } },
                 { label: 'Exporter les données',        desc: 'Exporter toutes les données en CSV',            btn: 'Exporter',   style: { background: 'rgba(34,197,94,0.12)', color: '#15803d' } },
                 { label: 'Purger les logs anciens',     desc: 'Supprimer les logs de plus de 90 jours',        btn: 'Purger',     style: { background: 'rgba(239,68,68,0.10)', color: '#dc2626' } },
               ].map(({ label, desc, btn, style }) => (

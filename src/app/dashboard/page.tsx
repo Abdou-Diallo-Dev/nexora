@@ -31,7 +31,7 @@ export default function DashboardPage() {
       desc: 'Gérer les accès et les rôles',
       icon: <Users size={28} />,
       colorCls:
-        'text-purple-600 bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30',
+        'text-primary bg-primary/10 dark:bg-primary/10 border-primary/20 dark:border-primary/25 hover:bg-primary/20 dark:hover:bg-primary/20',
       show:
         user?.role === 'admin' || user?.role === 'super_admin',
     },

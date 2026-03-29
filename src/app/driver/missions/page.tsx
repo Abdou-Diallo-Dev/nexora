@@ -20,7 +20,7 @@ type Mission = {
 
 const STATUS_CFG: Record<string,{l:string;color:string;bg:string}> = {
   assigned:    { l:'Assignée',  color:'text-blue-400',   bg:'bg-blue-900/30 border-blue-700' },
-  in_progress: { l:'En cours',  color:'text-purple-400', bg:'bg-purple-900/30 border-purple-700' },
+  in_progress: { l:'En cours',  color:'text-primary', bg:'bg-primary/10 border-primary/25' },
   delivered:   { l:'Livrée',    color:'text-green-400',  bg:'bg-green-900/30 border-green-700' },
   failed:      { l:'Échec',     color:'text-red-400',    bg:'bg-red-900/30 border-red-700' },
 };
@@ -134,7 +134,7 @@ export default function DriverMissionsPage() {
       {/* Stats bar */}
       <div className="grid grid-cols-3 gap-px bg-slate-700 border-b border-slate-700">
         {[
-          { label:'En cours', value: activeMissions.filter(m=>m.status==='in_progress').length, color:'text-purple-400' },
+          { label:'En cours', value: activeMissions.filter(m=>m.status==='in_progress').length, color:'text-primary' },
           { label:'Assignées', value: activeMissions.filter(m=>m.status==='assigned').length, color:'text-blue-400' },
           { label:'Livrées', value: doneMissions.filter(m=>m.status==='delivered').length, color:'text-green-400' },
         ].map((s,i) => (

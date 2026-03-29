@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { CalendarDays, Plus, X, Loader2, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cardCls, inputCls, selectCls, labelCls, btnPrimary, btnSecondary } from '@/components/ui';
 
-const SARPA_PURPLE = '#3d2d7d';
-const SARPA_YELLOW = '#faab2d';
+const SARPA_PURPLE = 'hsl(var(--primary))';
+const SARPA_YELLOW = 'hsl(var(--secondary))';
 
 type Shift = 'Matin' | 'Après-midi' | 'Nuit';
 type StatutPlanning = 'planifie' | 'en_cours' | 'termine' | 'annule';
@@ -96,7 +96,7 @@ export default function PlanningPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4 flex-wrap">
-        <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow" style={{ background: `linear-gradient(135deg, ${SARPA_PURPLE}, #5b3ea8)` }}>
+        <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow" style={{ background: `linear-gradient(135deg, ${SARPA_PURPLE}, #1d4ed8)` }}>
           <CalendarDays size={20} className="text-white" />
         </div>
         <div>

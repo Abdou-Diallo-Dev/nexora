@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Wrench, Plus, X, Loader2, CheckCircle2, AlertTriangle, Clock } from 'lucide-react';
 import { cardCls, inputCls, selectCls, labelCls, btnPrimary, btnSecondary } from '@/components/ui';
 
-const SARPA_PURPLE = '#3d2d7d';
+const SARPA_PURPLE = 'hsl(var(--primary))';
 
 type TypeMaint = 'preventive' | 'corrective' | 'revision';
 type StatutMaint = 'planifiee' | 'en_cours' | 'terminee' | 'annulee';

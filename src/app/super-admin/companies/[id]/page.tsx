@@ -14,7 +14,7 @@ type CompanyUser = { id: string; full_name: string; email: string; role: string;
 const PLAN_CFG: Record<string,{label:string;color:string;icon:React.ReactNode}> = {
   free:       { label:'Free',       color:'bg-slate-100 text-slate-600',   icon:<Shield size={13}/> },
   starter:    { label:'Starter',    color:'bg-blue-100 text-blue-700',     icon:<Zap size={13}/> },
-  pro:        { label:'Pro',        color:'bg-purple-100 text-purple-700', icon:<Star size={13}/> },
+  pro:        { label:'Pro',        color:'bg-blue-100 text-blue-700', icon:<Star size={13}/> },
   enterprise: { label:'Enterprise', color:'bg-amber-100 text-amber-700',   icon:<Crown size={13}/> },
 };
 

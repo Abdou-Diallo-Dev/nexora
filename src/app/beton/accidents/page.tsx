@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ShieldAlert, Plus, X, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { cardCls, inputCls, selectCls, labelCls, btnPrimary, btnSecondary } from '@/components/ui';
 
-const SARPA_PURPLE = '#3d2d7d';
+const SARPA_PURPLE = 'hsl(var(--primary))';
 
 type TypeIncident = 'accident_vehicule' | 'accident_travail' | 'incident_qualite' | 'incident_securite' | 'autre';
 type Gravite = 'mineur' | 'modere' | 'grave' | 'critique';

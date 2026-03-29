@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { Package, Plus, X, AlertTriangle, CheckCircle2, Loader2, TrendingDown, TrendingUp } from 'lucide-react';
 import { cardCls, inputCls, selectCls, labelCls, btnPrimary, btnSecondary } from '@/components/ui';
 
-const SARPA_PURPLE = '#3d2d7d';
-const SARPA_YELLOW = '#faab2d';
+const SARPA_PURPLE = 'hsl(var(--primary))';
+const SARPA_YELLOW = 'hsl(var(--secondary))';
 
 type Unite = 'Tonne' | 'M3' | 'Sac' | 'Litre';
 type MouvType = 'entree' | 'sortie';

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Boxes, Plus, X, Loader2, CheckCircle2, AlertTriangle, TrendingDown, TrendingUp } from 'lucide-react';
 import { cardCls, inputCls, selectCls, labelCls, btnPrimary, btnSecondary } from '@/components/ui';
 
-const SARPA_PURPLE = '#3d2d7d';
+const SARPA_PURPLE = 'hsl(var(--primary))';
 
 type Unite = 'M3' | 'Tonne' | 'Palette' | 'Unité';
 type MouvType = 'entree' | 'sortie';

@@ -7,8 +7,9 @@ import { LoadingSpinner, cardCls } from '@/components/ui';
 import { formatDate } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
-const SARPA_PURPLE = '#3d2674';
-const SARPA_YELLOW = '#faab2d';
+const NX_BLUE   = '#1e40af';
+const NX_LIGHT  = '#3b82f6';
+const NX_ACCENT = '#93c5fd';
 
 type Stats = {
   totalCompanies: number;
@@ -22,10 +23,10 @@ type Stats = {
 };
 
 const PLAN_CFG: Record<string,{label:string;bg:string;color:string}> = {
-  free:       { label:'Free',       bg:'rgba(61,38,116,0.08)',  color: SARPA_PURPLE },
-  starter:    { label:'Starter',    bg:'rgba(61,38,116,0.14)',  color: SARPA_PURPLE },
-  pro:        { label:'Pro',        bg:'rgba(61,38,116,0.22)',  color: SARPA_PURPLE },
-  enterprise: { label:'Enterprise', bg:'rgba(250,171,45,0.22)', color:'#7c5200' },
+  free:       { label:'Free',       bg:'rgba(30,64,175,0.08)',  color: NX_BLUE },
+  starter:    { label:'Starter',    bg:'rgba(30,64,175,0.14)',  color: NX_BLUE },
+  pro:        { label:'Pro',        bg:'rgba(30,64,175,0.22)',  color: NX_BLUE },
+  enterprise: { label:'Enterprise', bg:'rgba(147,197,253,0.22)', color:'#1e3a8a' },
 };
 
 const MODULE_LABELS: Record<string,string> = {
@@ -83,8 +84,8 @@ export default function SuperAdminDashboard() {
       value: stats.totalCompanies,
       sub: `${stats.activeCompanies} actives`,
       icon: <Building2 size={20}/>,
-      iconBg: `rgba(61,38,116,0.12)`,
-      iconColor: SARPA_PURPLE,
+      iconBg: `rgba(30,64,175,0.12)`,
+      iconColor: NX_BLUE,
       href: '/super-admin/companies',
     },
     {
@@ -92,8 +93,8 @@ export default function SuperAdminDashboard() {
       value: stats.pendingCompanies,
       sub: 'à valider',
       icon: <Clock size={20}/>,
-      iconBg: stats.pendingCompanies > 0 ? 'rgba(239,68,68,0.10)' : 'rgba(61,38,116,0.08)',
-      iconColor: stats.pendingCompanies > 0 ? '#ef4444' : SARPA_PURPLE,
+      iconBg: stats.pendingCompanies > 0 ? 'rgba(239,68,68,0.10)' : 'rgba(30,64,175,0.08)',
+      iconColor: stats.pendingCompanies > 0 ? '#ef4444' : NX_BLUE,
       href: '/super-admin/companies?filter=pending',
     },
     {
@@ -101,8 +102,8 @@ export default function SuperAdminDashboard() {
       value: stats.totalUsers,
       sub: `${stats.activeUsers} actifs`,
       icon: <Users size={20}/>,
-      iconBg: `rgba(250,171,45,0.15)`,
-      iconColor: '#7c5200',
+      iconBg: `rgba(147,197,253,0.15)`,
+      iconColor: '#1e3a8a',
       href: '/super-admin/users',
     },
     {
@@ -110,8 +111,8 @@ export default function SuperAdminDashboard() {
       value: `${activationRate}%`,
       sub: 'des filiales',
       icon: <TrendingUp size={20}/>,
-      iconBg: `rgba(61,38,116,0.12)`,
-      iconColor: SARPA_PURPLE,
+      iconBg: `rgba(30,64,175,0.12)`,
+      iconColor: NX_BLUE,
       href: '/super-admin/companies',
     },
   ];
@@ -123,11 +124,11 @@ export default function SuperAdminDashboard() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-sm"
-            style={{ background: `rgba(250,171,45,0.18)`, border: `1px solid rgba(250,171,45,0.30)` }}>
-            <Crown size={22} style={{ color: SARPA_YELLOW }}/>
+            style={{ background: `rgba(147,197,253,0.18)`, border: `1px solid rgba(147,197,253,0.30)` }}>
+            <Crown size={22} style={{ color: NX_ACCENT }}/>
           </div>
           <div>
-            <h1 className="text-xl font-black text-foreground">Administration SARPA GROUP</h1>
+            <h1 className="text-xl font-black text-foreground">Administration Nexora</h1>
             <p className="text-sm text-muted-foreground">Vue globale de la plateforme</p>
           </div>
         </div>
@@ -161,11 +162,11 @@ export default function SuperAdminDashboard() {
       {/* ── Alerte en attente ── */}
       {stats.pendingCompanies > 0 && (
         <div className="rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
-          style={{ background: 'rgba(250,171,45,0.10)', border: '1px solid rgba(250,171,45,0.35)' }}>
+          style={{ background: 'rgba(147,197,253,0.10)', border: '1px solid rgba(147,197,253,0.35)' }}>
           <div className="flex items-center gap-3">
-            <Clock size={18} style={{ color: SARPA_YELLOW }} className="flex-shrink-0"/>
+            <Clock size={18} style={{ color: NX_ACCENT }} className="flex-shrink-0"/>
             <div>
-              <p className="font-bold text-sm" style={{ color: '#7c5200' }}>
+              <p className="font-bold text-sm" style={{ color: '#1e3a8a' }}>
                 {stats.pendingCompanies} filiale(s) en attente de validation
               </p>
               <p className="text-xs" style={{ color: '#92400e' }}>
@@ -175,7 +176,7 @@ export default function SuperAdminDashboard() {
           </div>
           <Link href="/super-admin/companies"
             className="px-4 py-2 rounded-xl text-sm font-bold transition-opacity hover:opacity-90 flex-shrink-0"
-            style={{ background: SARPA_YELLOW, color: '#1a0f3d' }}>
+            style={{ background: NX_ACCENT, color: '#1a0f3d' }}>
             Valider →
           </Link>
         </div>
@@ -188,7 +189,7 @@ export default function SuperAdminDashboard() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-foreground">Dernières inscriptions</h3>
             <Link href="/super-admin/companies"
-              className="text-xs font-semibold hover:underline" style={{ color: SARPA_PURPLE }}>
+              className="text-xs font-semibold hover:underline" style={{ color: NX_BLUE }}>
               Voir tout →
             </Link>
           </div>
@@ -199,7 +200,7 @@ export default function SuperAdminDashboard() {
                 <Link key={c.id} href={`/super-admin/companies/${c.id}`}
                   className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs flex-shrink-0"
-                    style={{ background: `rgba(61,38,116,0.12)`, color: SARPA_PURPLE }}>
+                    style={{ background: `rgba(30,64,175,0.12)`, color: NX_BLUE }}>
                     {c.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -213,7 +214,7 @@ export default function SuperAdminDashboard() {
                     </span>
                     {c.is_active
                       ? <CheckCircle size={14} style={{ color: '#22c55e' }}/>
-                      : <XCircle size={14} style={{ color: SARPA_YELLOW }}/>
+                      : <XCircle size={14} style={{ color: NX_ACCENT }}/>
                     }
                   </div>
                 </Link>
@@ -231,7 +232,7 @@ export default function SuperAdminDashboard() {
           {/* Modules */}
           <div className={cardCls+' p-5'}>
             <div className="flex items-center gap-2 mb-4">
-              <Globe size={16} style={{ color: SARPA_PURPLE }}/>
+              <Globe size={16} style={{ color: NX_BLUE }}/>
               <h3 className="font-bold text-foreground">Modules actifs</h3>
             </div>
             {stats.moduleStats.length === 0 ? (
@@ -246,7 +247,7 @@ export default function SuperAdminDashboard() {
                   <div className="h-full rounded-full transition-all"
                     style={{
                       width: `${Math.min(100, (m.count / Math.max(stats.totalCompanies, 1)) * 100)}%`,
-                      background: `linear-gradient(90deg, ${SARPA_PURPLE}, rgba(61,38,116,0.6))`,
+                      background: `linear-gradient(90deg, ${NX_BLUE}, rgba(30,64,175,0.6))`,
                     }}/>
                 </div>
               </div>
@@ -256,7 +257,7 @@ export default function SuperAdminDashboard() {
           {/* Plans */}
           <div className={cardCls+' p-5'}>
             <div className="flex items-center gap-2 mb-4">
-              <Zap size={16} style={{ color: SARPA_YELLOW }}/>
+              <Zap size={16} style={{ color: NX_ACCENT }}/>
               <h3 className="font-bold text-foreground">Plans des filiales</h3>
             </div>
             {stats.planStats.length === 0 ? (
@@ -282,7 +283,7 @@ export default function SuperAdminDashboard() {
       {/* ── Actions rapides ── */}
       <div className={cardCls+' p-5'}>
         <div className="flex items-center gap-2 mb-4">
-          <Activity size={16} style={{ color: SARPA_PURPLE }}/>
+          <Activity size={16} style={{ color: NX_BLUE }}/>
           <h3 className="font-bold text-foreground">Actions rapides</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
@@ -296,10 +297,10 @@ export default function SuperAdminDashboard() {
               className="flex items-center gap-3 p-3 sm:p-4 rounded-xl border transition-all hover:shadow-sm"
               style={
                 a.accent
-                  ? { background: `rgba(250,171,45,0.12)`, borderColor: `rgba(250,171,45,0.35)`, color: '#7c5200' }
+                  ? { background: `rgba(147,197,253,0.12)`, borderColor: `rgba(147,197,253,0.35)`, color: '#1e3a8a' }
                   : a.primary
-                    ? { background: `rgba(61,38,116,0.07)`, borderColor: `rgba(61,38,116,0.18)`, color: SARPA_PURPLE }
-                    : { background: `rgba(61,38,116,0.04)`, borderColor: `rgba(61,38,116,0.12)`, color: SARPA_PURPLE }
+                    ? { background: `rgba(30,64,175,0.07)`, borderColor: `rgba(30,64,175,0.18)`, color: NX_BLUE }
+                    : { background: `rgba(30,64,175,0.04)`, borderColor: `rgba(30,64,175,0.12)`, color: NX_BLUE }
               }>
               <div className="flex-shrink-0">{a.icon}</div>
               <span className="text-sm font-semibold leading-tight">{a.label}</span>

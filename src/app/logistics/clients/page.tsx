@@ -16,7 +16,7 @@ const TYPE_MAP: Record<string,{l:string;color:string}> = {
   entreprise:  { l:'Entreprise',   color:'bg-blue-100 text-blue-700' },
   btp:         { l:'BTP',          color:'bg-orange-100 text-orange-700' },
   commerce:    { l:'Commerce',     color:'bg-green-100 text-green-700' },
-  industrie:   { l:'Industrie',    color:'bg-purple-100 text-purple-700' },
+  industrie:   { l:'Industrie',    color:'bg-primary/10 text-primary' },
 };
 
 export default function LogisticsClientsPage() {

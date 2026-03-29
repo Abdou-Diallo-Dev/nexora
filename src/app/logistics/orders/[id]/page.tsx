@@ -24,7 +24,7 @@ type Order = {
 const STATUS_FLOW = [
   { key: 'draft',       label: 'Brouillon',  icon: <Clock size={15} />,          color: 'text-slate-500',   bg: 'bg-slate-50 border-slate-200'   },
   { key: 'confirmed',   label: 'Confirmée',  icon: <CheckCircle size={15} />,    color: 'text-blue-600',    bg: 'bg-blue-50 border-blue-200'     },
-  { key: 'in_progress', label: 'En cours',   icon: <RefreshCw size={15} />,      color: 'text-purple-600',  bg: 'bg-purple-50 border-purple-200' },
+  { key: 'in_progress', label: 'En cours',   icon: <RefreshCw size={15} />,      color: 'text-primary',  bg: 'bg-primary/10 border-primary/20' },
   { key: 'completed',   label: 'Terminée',   icon: <CheckCircle size={15} />,    color: 'text-green-600',   bg: 'bg-green-50 border-green-200'   },
   { key: 'cancelled',   label: 'Annulée',    icon: <XCircle size={15} />,        color: 'text-red-600',     bg: 'bg-red-50 border-red-200'       },
 ];

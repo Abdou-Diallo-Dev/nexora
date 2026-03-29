@@ -11,7 +11,7 @@ import { ImageUpload } from '@/components/ui/ImageUpload';
 import { toast } from 'sonner';
 
 const PRESET_COLORS = [
-  '#3d2674', '#1e40af', '#7c3aed', '#0d9488',
+  '#1e40af', '#1e40af', '#7c3aed', '#0d9488',
   '#16a34a', '#dc2626', '#ea580c', '#db2777',
 ];
 
@@ -41,8 +41,8 @@ export default function NewCompanyPage() {
     plan: 'starter',
     modules: ['real_estate', 'logistics'] as string[],
     is_active: true,
-    primary_color: '#3d2674',
-    secondary_color: '#faab2d',
+    primary_color: '#1e40af',
+    secondary_color: '#93c5fd',
     commission_rate: 10,
     commission_mode: 'ttc' as CommissionMode,
     vat_rate: 18,
@@ -132,7 +132,7 @@ export default function NewCompanyPage() {
               <div className="flex items-center gap-2 mt-1">
                 <input type="color" value={form.primary_color} onChange={e => set('primary_color', e.target.value)}
                   className="w-10 h-10 rounded-lg border border-border cursor-pointer"/>
-                <input value={form.primary_color} onChange={e => set('primary_color', e.target.value)} className={inputCls + ' flex-1 font-mono text-sm'} placeholder="#3d2674"/>
+                <input value={form.primary_color} onChange={e => set('primary_color', e.target.value)} className={inputCls + ' flex-1 font-mono text-sm'} placeholder="#1e40af"/>
               </div>
               <div className="flex gap-1.5 mt-2 flex-wrap">
                 {PRESET_COLORS.map(c => (
@@ -147,7 +147,7 @@ export default function NewCompanyPage() {
               <div className="flex items-center gap-2 mt-1">
                 <input type="color" value={form.secondary_color} onChange={e => set('secondary_color', e.target.value)}
                   className="w-10 h-10 rounded-lg border border-border cursor-pointer"/>
-                <input value={form.secondary_color} onChange={e => set('secondary_color', e.target.value)} className={inputCls + ' flex-1 font-mono text-sm'} placeholder="#faab2d"/>
+                <input value={form.secondary_color} onChange={e => set('secondary_color', e.target.value)} className={inputCls + ' flex-1 font-mono text-sm'} placeholder="#93c5fd"/>
               </div>
             </div>
           </div>

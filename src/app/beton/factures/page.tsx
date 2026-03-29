@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { FileText, Plus, X, Loader2, CheckCircle2, Clock, AlertTriangle, Search, Download } from 'lucide-react';
 import { cardCls, inputCls, selectCls, labelCls, btnPrimary, btnSecondary } from '@/components/ui';
 
-const SARPA_PURPLE = '#3d2d7d';
-const SARPA_YELLOW = '#faab2d';
+const SARPA_PURPLE = 'hsl(var(--primary))';
+const SARPA_YELLOW = 'hsl(var(--secondary))';
 
 type StatutFacture = 'brouillon' | 'envoyee' | 'payee' | 'en_retard' | 'annulee';
 

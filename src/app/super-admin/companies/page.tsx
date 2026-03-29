@@ -11,14 +11,15 @@ import { toast } from 'sonner';
 
 type Company = { id:string; name:string; email:string|null; phone:string|null; plan:string; is_active:boolean; created_at:string; modules:string[] };
 
-const SARPA_PURPLE = '#3d2674';
-const SARPA_YELLOW = '#faab2d';
+const NX_BLUE   = '#1e40af';
+const NX_LIGHT  = '#3b82f6';
+const NX_ACCENT = '#93c5fd';
 
 const PLAN_CFG: Record<string,{label:string;bg:string;color:string}> = {
-  free:       { label:'Free',       bg:'rgba(61,38,116,0.08)',  color: SARPA_PURPLE },
-  starter:    { label:'Starter',    bg:'rgba(61,38,116,0.14)',  color: SARPA_PURPLE },
-  pro:        { label:'Pro',        bg:'rgba(61,38,116,0.22)',  color: SARPA_PURPLE },
-  enterprise: { label:'Enterprise', bg:'rgba(250,171,45,0.22)', color:'#7c5200' },
+  free:       { label:'Free',       bg:'rgba(30,64,175,0.08)',  color: NX_BLUE },
+  starter:    { label:'Starter',    bg:'rgba(30,64,175,0.14)',  color: NX_BLUE },
+  pro:        { label:'Pro',        bg:'rgba(30,64,175,0.22)',  color: NX_BLUE },
+  enterprise: { label:'Enterprise', bg:'rgba(59,130,246,0.22)', color:'#1e3a8a' },
 };
 
 export default function SuperAdminCompanies() {
@@ -116,8 +117,8 @@ export default function SuperAdminCompanies() {
 
       {/* Pending company approvals */}
       {pendingItems.length > 0 && (
-        <div className="mb-5 rounded-2xl p-4" style={{ background:'rgba(250,171,45,0.10)', border:'1px solid rgba(250,171,45,0.35)' }}>
-          <p className="text-sm font-bold mb-3" style={{ color:'#7c5200' }}>
+        <div className="mb-5 rounded-2xl p-4" style={{ background:'rgba(59,130,246,0.10)', border:'1px solid rgba(59,130,246,0.35)' }}>
+          <p className="text-sm font-bold mb-3" style={{ color:'#1e3a8a' }}>
             Nouvelles filiales en attente ({pendingItems.length})
           </p>
           <div className="space-y-2">
@@ -129,7 +130,7 @@ export default function SuperAdminCompanies() {
                   <div className="flex gap-1 mt-1">
                     {(c.modules||[]).map(m=>(
                       <span key={m} className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
-                        style={{ background:'rgba(61,38,116,0.10)', color: SARPA_PURPLE }}>
+                        style={{ background:'rgba(30,64,175,0.10)', color: NX_BLUE }}>
                         {m==='real_estate'?'Immo':m==='beton'?'Béton':m==='logistics'?'Logistique':m}
                       </span>
                     ))}
@@ -138,7 +139,7 @@ export default function SuperAdminCompanies() {
                 <div className="flex gap-2 flex-shrink-0">
                   <button onClick={()=>approveCompany(c)}
                     className="px-3 py-1.5 text-white text-xs font-bold rounded-lg transition-opacity hover:opacity-90"
-                    style={{ background: SARPA_PURPLE }}>
+                    style={{ background: NX_BLUE }}>
                     Approuver
                   </button>
                   <button onClick={()=>rejectCompany(c)}
@@ -198,7 +199,7 @@ export default function SuperAdminCompanies() {
                       <div className="flex flex-wrap gap-1">
                         {(c.modules||[]).slice(0,2).map(m=>(
                           <span key={m} className="text-[10px] px-1.5 py-0.5 rounded font-medium"
-                            style={{ background:'rgba(61,38,116,0.08)', color: SARPA_PURPLE }}>
+                            style={{ background:'rgba(30,64,175,0.08)', color: NX_BLUE }}>
                             {m==='real_estate'?'Immo':m==='beton'?'Béton':m==='logistics'?'Logi':m}
                           </span>
                         ))}
@@ -208,13 +209,13 @@ export default function SuperAdminCompanies() {
                         {/* Voir */}
                         <Link href={'/super-admin/companies/'+c.id}
                           className="p-1.5 rounded-lg text-muted-foreground transition-colors"
-                          style={{}} onMouseEnter={e=>{e.currentTarget.style.background='rgba(61,38,116,0.08)';e.currentTarget.style.color=SARPA_PURPLE;}} onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.color='';}} title="Voir">
+                          style={{}} onMouseEnter={e=>{e.currentTarget.style.background='rgba(30,64,175,0.08)';e.currentTarget.style.color=NX_BLUE;}} onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.color='';}} title="Voir">
                           <Eye size={15}/>
                         </Link>
                         {/* Modifier */}
                         <Link href={'/super-admin/companies/'+c.id+'/edit'}
                           className="p-1.5 rounded-lg text-muted-foreground transition-colors"
-                          onMouseEnter={e=>{e.currentTarget.style.background='rgba(61,38,116,0.08)';e.currentTarget.style.color=SARPA_PURPLE;}} onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.color='';}} title="Modifier">
+                          onMouseEnter={e=>{e.currentTarget.style.background='rgba(30,64,175,0.08)';e.currentTarget.style.color=NX_BLUE;}} onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.color='';}} title="Modifier">
                           <Edit size={15}/>
                         </Link>
                         {/* Suspendre / Activer */}

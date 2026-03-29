@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { FolderOpen, Plus, X, Upload, Loader2, CheckCircle2, Download, Eye, Search, FileText, FileImage } from 'lucide-react';
 import { cardCls, inputCls, selectCls, labelCls, btnPrimary, btnSecondary } from '@/components/ui';
 
-const SARPA_PURPLE = '#3d2d7d';
-const SARPA_YELLOW = '#faab2d';
+const SARPA_PURPLE = 'hsl(var(--primary))';
+const SARPA_YELLOW = 'hsl(var(--secondary))';
 
 type CategorieDoc = 'bon_livraison' | 'facture' | 'certificat_qualite' | 'fiche_securite' | 'contrat' | 'document_vehicule' | 'autre';
 type StatutDoc = 'valide' | 'expire' | 'archive';
