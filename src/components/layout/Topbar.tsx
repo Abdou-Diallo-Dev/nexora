@@ -3,13 +3,19 @@ import { useState, useEffect, useRef } from 'react';
 import { Bell, Sun, Moon, LogOut, Settings, Menu, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
-import { getBrandingColors, getCompanyDisplayName, getCompanyInitial } from '@/lib/branding';
+import { getBrandingColors, getCompanyDisplayName } from '@/lib/branding';
 import { useAuthStore } from '@/lib/store';
 import { useRouter, usePathname } from 'next/navigation';
 import { formatDateRelative, getInitials } from '@/lib/utils';
 import Link from 'next/link';
 import { MobileDrawer } from './Sidebar';
 
+// ── Nexora (super admin) ──────────────────────────────────────
+const NX_BG    = '#1e40af';
+const NX_ACCENT = '#93c5fd';
+const NX_DARK   = '#1e3a8a';
+
+// ── SARPA GROUP (modules) ─────────────────────────────────────
 const SARPA_PURPLE = '#3d2674';
 const SARPA_YELLOW = '#faab2d';
 
@@ -20,10 +26,10 @@ type Notif = {
 
 const MODULE_LABELS: Record<string, string> = {
   '/real-estate': 'SARPA Immobilier',
-  '/beton':       'SARPA Béton',
+  '/beton':       'SARPA Beton',
   '/logistics':   'SARPA Logistiques',
   '/super-admin': 'Administration',
-  '/admin':       'Paramètres',
+  '/admin':       'Parametres',
   '/dashboard':   'Tableau de bord',
 };
 
@@ -31,7 +37,7 @@ function getModuleLabel(pathname: string) {
   for (const [prefix, label] of Object.entries(MODULE_LABELS)) {
     if (pathname.startsWith(prefix)) return label;
   }
-  return 'SARPA GROUP';
+  return '';
 }
 
 export function Topbar() {
@@ -46,6 +52,19 @@ export function Topbar() {
   const pathname = usePathname();
   const nRef = useRef<HTMLDivElement>(null);
   const uRef = useRef<HTMLDivElement>(null);
+
+  const isSuperAdmin = user?.role === 'super_admin';
+  const isLog   = pathname.startsWith('/logistics');
+  const isBeton = pathname.startsWith('/beton');
+
+  // Couleurs dynamiques selon contexte
+  const useSarpa = !isSuperAdmin;
+  const barBg     = isSuperAdmin ? `linear-gradient(90deg, ${NX_DARK} 0%, ${NX_BG} 100%)`
+                                 : `linear-gradient(90deg, #2e1a5e 0%, ${SARPA_PURPLE} 100%)`;
+  const accent    = isSuperAdmin ? NX_ACCENT   : SARPA_YELLOW;
+  const accentDark = isSuperAdmin ? NX_DARK    : '#1a0f3d';
+  const brandName  = isSuperAdmin ? 'Nexora'   : 'SARPA GROUP';
+  const brandInit  = isSuperAdmin ? 'N'        : 'SG';
 
   useEffect(() => { setDark(document.documentElement.classList.contains('dark')); }, []);
 
@@ -83,17 +102,13 @@ export function Topbar() {
 
   const initials     = getInitials(user?.full_name || user?.email || '?');
   const displayName  = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Utilisateur';
-  const isSuperAdmin = user?.role === 'super_admin';
   const moduleLabel  = getModuleLabel(pathname);
 
   return (
     <>
       <header
         className="h-14 md:h-16 flex items-center px-3 md:px-5 gap-2 md:gap-3 flex-shrink-0"
-        style={{
-          background: `linear-gradient(90deg, #2e1a5e 0%, ${SARPA_PURPLE} 100%)`,
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
-        }}
+        style={{ background: barBg, borderBottom: '1px solid rgba(255,255,255,0.08)' }}
       >
         {/* Burger mobile */}
         <button onClick={() => setDrawerOpen(true)}
@@ -107,19 +122,19 @@ export function Topbar() {
         {/* Logo mobile */}
         <div className="flex items-center gap-2 md:hidden">
           <div className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs flex-shrink-0"
-            style={{ background: SARPA_YELLOW, color: '#1a0f3d' }}>
-            SG
+            style={{ background: accent, color: accentDark }}>
+            {brandInit}
           </div>
-          <span className="font-bold text-white text-sm truncate max-w-[120px]">SARPA GROUP</span>
+          <span className="font-bold text-white text-sm truncate max-w-[120px]">{brandName}</span>
         </div>
 
-        {/* Fil d'Ariane module — desktop */}
+        {/* Fil d'Ariane — desktop */}
         <div className="hidden md:flex items-center gap-2">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.08)' }}>
             <div className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-black flex-shrink-0"
-              style={{ background: SARPA_YELLOW, color: '#1a0f3d' }}>SG</div>
-            <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.55)' }}>SARPA GROUP</span>
-            {moduleLabel !== 'SARPA GROUP' && (
+              style={{ background: accent, color: accentDark }}>{brandInit}</div>
+            <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.55)' }}>{brandName}</span>
+            {moduleLabel && (
               <>
                 <span style={{ color: 'rgba(255,255,255,0.25)' }}>/</span>
                 <span className="text-xs font-bold text-white">{moduleLabel}</span>
@@ -151,7 +166,7 @@ export function Topbar() {
               <Bell size={17}/>
               {unread > 0 && (
                 <span className="absolute top-1 right-1 w-4 h-4 text-[10px] font-black rounded-full flex items-center justify-center"
-                  style={{ background: SARPA_YELLOW, color: '#1a0f3d' }}>
+                  style={{ background: accent, color: accentDark }}>
                   {unread > 9 ? '9+' : unread}
                 </span>
               )}
@@ -164,7 +179,8 @@ export function Topbar() {
                   <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                     <h4 className="font-bold text-sm text-foreground">Notifications</h4>
                     {unread > 0 && (
-                      <button onClick={markRead} className="text-xs font-semibold hover:underline" style={{ color: SARPA_PURPLE }}>
+                      <button onClick={markRead} className="text-xs font-semibold hover:underline"
+                        style={{ color: isSuperAdmin ? NX_BG : SARPA_PURPLE }}>
                         Tout marquer lu
                       </button>
                     )}
@@ -173,7 +189,7 @@ export function Topbar() {
                     {notifs.length === 0 ? (
                       <p className="text-sm text-muted-foreground text-center py-8">Aucune notification</p>
                     ) : notifs.map(n => (
-                      <div key={n.id} className={'px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors' + (!n.is_read ? ' bg-purple-50/40 dark:bg-purple-900/10' : '')}>
+                      <div key={n.id} className={'px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors' + (!n.is_read ? (isSuperAdmin ? ' bg-blue-50/40' : ' bg-purple-50/40') : '')}>
                         <p className="text-xs font-semibold text-foreground">{n.title}</p>
                         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>
                         <p className="text-[10px] text-muted-foreground mt-1">{formatDateRelative(n.created_at)}</p>
@@ -192,9 +208,8 @@ export function Topbar() {
               style={{ background: 'rgba(255,255,255,0.10)' }}
               onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.16)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.10)')}>
-              {/* Avatar */}
               <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0"
-                style={{ background: SARPA_YELLOW, color: '#1a0f3d' }}>
+                style={{ background: accent, color: accentDark }}>
                 {initials}
               </div>
               <div className="text-left hidden sm:block">
@@ -211,11 +226,11 @@ export function Topbar() {
                 <motion.div
                   initial={{opacity:0,y:8,scale:0.95}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:8,scale:0.95}}
                   className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-800 border border-border rounded-2xl shadow-2xl overflow-hidden z-50">
-                  {/* En-tête utilisateur */}
-                  <div className="px-4 py-3 border-b border-border" style={{ background: SARPA_PURPLE + '08' }}>
+                  <div className="px-4 py-3 border-b border-border"
+                    style={{ background: isSuperAdmin ? `${NX_BG}10` : `${SARPA_PURPLE}08` }}>
                     <div className="flex items-center gap-2.5">
                       <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0"
-                        style={{ background: SARPA_YELLOW, color: '#1a0f3d' }}>
+                        style={{ background: accent, color: accentDark }}>
                         {initials}
                       </div>
                       <div className="min-w-0">
@@ -225,22 +240,22 @@ export function Topbar() {
                     </div>
                     {isSuperAdmin && (
                       <div className="mt-2 px-2 py-1 rounded-lg text-center text-[10px] font-bold tracking-wide"
-                        style={{ background: SARPA_YELLOW + '20', color: SARPA_PURPLE }}>
-                        SUPER ADMIN
+                        style={{ background: `${NX_BG}20`, color: NX_BG }}>
+                        SUPER ADMIN — NEXORA
                       </div>
                     )}
                   </div>
                   <div className="p-1.5">
                     <Link href="/admin/settings" onClick={() => setShowU(false)}
                       className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-foreground hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-colors">
-                      <Settings size={14} className="text-muted-foreground"/> Paramètres
+                      <Settings size={14} className="text-muted-foreground"/> Parametres
                     </Link>
                     <button onClick={logout}
                       className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors"
                       style={{ color: '#ef4444' }}
                       onMouseEnter={e => (e.currentTarget.style.background = '#fef2f2')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                      <LogOut size={14}/> Déconnexion
+                      <LogOut size={14}/> Deconnexion
                     </button>
                   </div>
                 </motion.div>
