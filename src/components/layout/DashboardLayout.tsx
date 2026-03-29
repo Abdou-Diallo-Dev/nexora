@@ -1,11 +1,22 @@
 'use client';
 import Sidebar from './Sidebar';
 import { Topbar } from './Topbar';
+import { useAuthStore } from '@/lib/store';
+import { usePathname } from 'next/navigation';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { user } = useAuthStore();
+  const pathname = usePathname();
+  const isSuperAdmin = user?.role === 'super_admin' || pathname.startsWith('/super-admin');
+
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      {/* Sidebar — cachée sur mobile, visible desktop */}
+    <div
+      className="flex h-screen overflow-hidden bg-background"
+      style={isSuperAdmin ? {
+        ['--primary' as any]:            '224 71% 40%',
+        ['--primary-foreground' as any]: '0 0% 100%',
+      } : undefined}
+    >
       <Sidebar/>
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <Topbar/>
