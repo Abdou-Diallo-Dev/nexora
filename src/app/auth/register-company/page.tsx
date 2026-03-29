@@ -163,23 +163,27 @@ export default function RegisterCompanyPage() {
   // ── Succès ───────────────────────────────────────────────────
   if (done) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200 dark:from-slate-900 dark:to-slate-800 px-4">
-        <div className="w-full max-w-md text-center">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <ShieldCheck size={36} className="text-green-600"/>
+      <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-4" style={{ background: 'linear-gradient(160deg, #0f172a 0%, #1e40af 50%, #1e3a8a 100%)' }}>
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-[-100px] right-[-100px] w-[440px] h-[440px] rounded-full opacity-[0.08]" style={{ background: '#3b82f6' }}/>
+          <div className="absolute bottom-[-80px] left-[-80px] w-[340px] h-[340px] rounded-full opacity-[0.06]" style={{ background: '#3b82f6' }}/>
+        </div>
+        <div className="relative z-10 w-full max-w-md text-center">
+          <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-white/30">
+            <ShieldCheck size={36} className="text-white"/>
           </div>
-          <h2 className="text-2xl font-bold text-foreground mb-3">Demande envoyée !</h2>
-          <p className="text-muted-foreground text-sm mb-2">
-            Votre entreprise <span className="font-semibold text-foreground">{form.company_name}</span> est en attente de validation.
+          <h2 className="text-2xl font-bold text-white mb-3">Demande envoyee !</h2>
+          <p className="text-white/60 text-sm mb-2">
+            Votre entreprise <span className="font-semibold text-white">{form.company_name}</span> est en attente de validation.
           </p>
-          <div className="rounded-2xl p-4 mt-4 mb-6 text-left space-y-2" style={{ background: 'rgba(30, 64, 175, 0.07)', border: '1px solid rgba(30, 64, 175, 0.2)' }}>
-            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#1e40af' }}>Prochaines etapes</p>
+          <div className="rounded-2xl p-4 mt-4 mb-6 text-left space-y-2" style={{ background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.15)' }}>
+            <p className="text-xs font-semibold uppercase tracking-wider text-white/50">Prochaines etapes</p>
             {[
               'Notre equipe examine votre demande (sous 24h)',
               `Vous recevrez un email de confirmation a ${form.email}`,
               'Connectez-vous avec vos identifiants',
             ].map((txt, i) => (
-              <div key={i} className="flex items-start gap-2 text-sm" style={{ color: '#1e40af' }}>
+              <div key={i} className="flex items-start gap-2 text-sm text-white/80">
                 <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style={{ background: '#3b82f6', color: '#fff' }}>{i + 1}</span>
                 <span>{txt}</span>
               </div>
@@ -189,14 +193,14 @@ export default function RegisterCompanyPage() {
             {form.modules.map(m => {
               const mod = MODULES.find(x => x.id === m);
               return (
-                <span key={m} className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
+                <span key={m} className="px-3 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>
                   {mod ? `${mod.emoji} ${mod.label}` : m}
                 </span>
               );
             })}
           </div>
-          <Link href="/auth/login" className="inline-flex items-center gap-2 hover:underline text-sm font-medium" style={{ color: '#3d2674' }}>
-            Retour à la connexion →
+          <Link href="/auth/login" className="inline-flex items-center gap-2 hover:opacity-80 transition-opacity text-sm font-medium" style={{ color: '#93c5fd' }}>
+            Retour a la connexion →
           </Link>
         </div>
       </div>
@@ -206,8 +210,13 @@ export default function RegisterCompanyPage() {
   const totalSteps = 4;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200 dark:from-slate-900 dark:to-slate-800 px-4 py-8">
-      <div className="w-full max-w-lg">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 py-8" style={{ background: 'linear-gradient(160deg, #0f172a 0%, #1e40af 50%, #1e3a8a 100%)' }}>
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-[-100px] right-[-100px] w-[440px] h-[440px] rounded-full opacity-[0.08]" style={{ background: '#3b82f6' }}/>
+        <div className="absolute bottom-[-80px] left-[-80px] w-[340px] h-[340px] rounded-full opacity-[0.06]" style={{ background: '#3b82f6' }}/>
+        <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)', backgroundSize: '56px 56px' }}/>
+      </div>
+      <div className="relative z-10 w-full max-w-lg">
 
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-6">
@@ -225,19 +234,19 @@ export default function RegisterCompanyPage() {
           {Array.from({ length: totalSteps }, (_, i) => i + 1).map(s => (
             <div key={s} className="flex items-center gap-2">
               <div className={'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ' + (
-                step > s ? 'bg-green-500 text-white' : step === s ? 'text-white' : 'bg-slate-200 text-slate-500'
-              )} style={step === s ? { background: '#3d2674' } : {}}>
+                step > s ? 'bg-green-400 text-white' : step === s ? 'text-white' : 'text-white/40'
+              )} style={step === s ? { background: '#3b82f6' } : step > s ? {} : { background: 'rgba(255,255,255,0.15)' }}>
                 {step > s ? <Check size={12}/> : s}
               </div>
-              {s < totalSteps && <div className={'w-8 h-0.5 ' + (step > s ? 'bg-green-400' : 'bg-slate-200')}/>}
+              {s < totalSteps && <div className={'w-8 h-0.5 ' + (step > s ? 'bg-green-400' : 'bg-white/20')}/>}
             </div>
           ))}
         </div>
-        <p className="text-center text-xs text-muted-foreground mb-5">
-          {step === 1 ? 'Choisissez vos modules' : step === 2 ? 'Informations entreprise' : step === 3 ? 'Vérification email' : 'Votre compte administrateur'}
+        <p className="text-center text-xs text-white/50 mb-5">
+          {step === 1 ? 'Choisissez vos modules' : step === 2 ? 'Informations entreprise' : step === 3 ? 'Verification email' : 'Votre compte administrateur'}
         </p>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-border p-8 shadow-xl">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 shadow-2xl">
 
           {/* ── STEP 1 : Modules ─────────────────────────────── */}
           {step === 1 && (
@@ -455,9 +464,9 @@ export default function RegisterCompanyPage() {
           )}
         </div>
 
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          Déjà un compte ?{' '}
-          <Link href="/auth/login" className="text-primary hover:underline font-medium">Se connecter</Link>
+        <p className="text-center text-sm mt-6" style={{ color: 'rgba(255,255,255,0.55)' }}>
+          Deja un compte ?{' '}
+          <Link href="/auth/login" className="font-semibold hover:opacity-80 transition-opacity" style={{ color: '#93c5fd' }}>Se connecter</Link>
         </p>
       </div>
     </div>

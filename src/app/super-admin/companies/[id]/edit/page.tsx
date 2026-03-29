@@ -16,7 +16,8 @@ const PRESET_COLORS = [
 
 const MODULES = [
   { id: 'real_estate', label: 'Immobilier' },
-  { id: 'logistics', label: 'Logistique' },
+  { id: 'logistics',   label: 'Logistique' },
+  { id: 'beton',       label: 'Beton' },
 ];
 
 const PLANS = [
