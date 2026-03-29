@@ -69,11 +69,13 @@ export function generateReference(prefix: string): string {
 export function getPropertyTypeLabel(type: string): string {
   const m: Record<string, string> = {
     apartment: 'Appartement',
-    house: 'Maison',
+    studio: 'Studio',
+    villa: 'Villa',
+    house: 'Villa',
     commercial: 'Local commercial',
     office: 'Bureau',
     warehouse: 'Entrepôt',
-    land: 'Terrain',
+    land: 'Terrain / Lotissement',
   };
   return m[type] || type;
 }

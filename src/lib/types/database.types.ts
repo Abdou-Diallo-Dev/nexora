@@ -56,7 +56,7 @@ export type Database = {
           city: string | null;
           zip_code: string | null;
           country: string;
-          type: 'apartment' | 'house' | 'commercial' | 'office' | 'warehouse' | 'land';
+          type: 'apartment' | 'studio' | 'villa' | 'house' | 'commercial' | 'office' | 'warehouse' | 'land';
           status: 'available' | 'rented' | 'maintenance' | 'sold';
           owner_name: string | null;
           owner_email: string | null;

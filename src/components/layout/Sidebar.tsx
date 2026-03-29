@@ -46,6 +46,7 @@ const ALL_RE_ITEMS: NavItem[] = [
   { key: 'documents',        href: '/real-estate/documents',         label: 'Documents PDF',           icon: <FileCheck size={15} /> },
   { key: 'contractTemplate', href: '/admin/contract-template',       label: 'Modeles de contrat',      icon: <ScrollText size={15} /> },
   { key: 'messages',         href: '/real-estate/messages',          label: 'Messagerie',              icon: <MessageSquare size={15} /> },
+  { key: 'employes',         href: '/real-estate/employes',          label: 'Employes',                icon: <Users size={15} /> },
   { key: 'settings',         href: '/admin/settings',                label: 'Parametres',              icon: <Settings size={15} /> },
 ];
 
@@ -57,6 +58,7 @@ const RE_GROUP_MAP: { label: string; keys: string[]; adminOnly?: boolean }[] = [
   { label: 'Activites',   keys: ['weeklyOutings'] },
   { label: 'Analyse',     keys: ['analytics','stats','reports','reports-terrain'] },
   { label: 'Documents',   keys: ['documents','contractTemplate'], adminOnly: true },
+  { label: 'Employes',    keys: ['employes'], adminOnly: true },
   { label: 'Parametres',  keys: ['settings'], adminOnly: true },
 ];
 
