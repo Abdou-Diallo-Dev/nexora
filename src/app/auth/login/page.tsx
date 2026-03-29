@@ -254,7 +254,14 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-[11px] mt-6" style={{ color: 'rgba(255,255,255,0.28)' }}>
+        <p className="text-center text-sm mt-5" style={{ color: 'rgba(255,255,255,0.50)' }}>
+          Pas encore de compte ?{' '}
+          <Link href="/auth/register-company" className="font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity" style={{ color: NX_LIGHT }}>
+            Creer une entreprise
+          </Link>
+        </p>
+
+        <p className="text-center text-[11px] mt-4" style={{ color: 'rgba(255,255,255,0.28)' }}>
           © {new Date().getFullYear()} Nexora — Tous droits reserves
         </p>
       </div>
