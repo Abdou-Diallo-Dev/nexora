@@ -4,18 +4,18 @@ import { BrandingSync } from '@/components/branding/BrandingSync';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'SARPA GROUP SÉNÉGAL — ERP',
-  description: 'Plateforme ERP centralisée du Groupe SARPA — Immobilier, Béton, Logistiques',
+  title: 'Nexora — Plateforme de gestion',
+  description: 'Nexora — Plateforme SaaS de gestion : Immobilier, Logistique, Beton',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'SARPA GROUP',
+    title: 'Nexora',
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#3d2674',
+  themeColor: '#1e40af',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,

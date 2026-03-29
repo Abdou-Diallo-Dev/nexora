@@ -1,22 +1,31 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { Zap, Eye, EyeOff, Building2, Truck, Check, Mail, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Zap, Eye, EyeOff, Building2, Truck, Factory, Check, Mail, RefreshCw, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { LoadingSpinner, inputCls, labelCls, btnPrimary } from '@/components/ui';
 
 const MODULES = [
   {
-    id: 'real_estate', label: 'SARPA Immobilier',
+    id: 'real_estate', label: 'Immobilier',
     desc: 'Gestion des biens immobiliers, locataires, loyers et maintenance',
     icon: <Building2 size={28}/>, color: 'border-purple-400 bg-purple-50 text-purple-700',
     active: 'border-purple-600 bg-purple-100 ring-2 ring-purple-400',
+    emoji: '🏠',
   },
   {
-    id: 'logistics', label: 'SARPA Logistiques',
+    id: 'logistics', label: 'Logistique',
     desc: 'Gestion de la flotte, commandes, livraisons et entrepot',
     icon: <Truck size={28}/>, color: 'border-amber-400 bg-amber-50 text-amber-700',
     active: 'border-amber-600 bg-amber-100 ring-2 ring-amber-400',
+    emoji: '🚚',
+  },
+  {
+    id: 'beton', label: 'Beton',
+    desc: 'Production de beton, gestion des commandes et stock de materiaux',
+    icon: <Factory size={28}/>, color: 'border-slate-400 bg-slate-50 text-slate-700',
+    active: 'border-slate-600 bg-slate-100 ring-2 ring-slate-400',
+    emoji: '🏗️',
   },
 ];
 
@@ -163,27 +172,28 @@ export default function RegisterCompanyPage() {
           <p className="text-muted-foreground text-sm mb-2">
             Votre entreprise <span className="font-semibold text-foreground">{form.company_name}</span> est en attente de validation.
           </p>
-          <div className="rounded-2xl p-4 mt-4 mb-6 text-left space-y-2" style={{ background: 'rgba(61, 38, 116, 0.08)', border: '1px solid rgba(61, 38, 116, 0.2)' }}>
-            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#3d2674' }}>Prochaines étapes</p>
-            <div className="flex items-start gap-2 text-sm" style={{ color: '#3d2674' }}>
-              <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style={{ background: '#faab2d', color: '#1a1040' }}>1</span>
-              <span>Notre équipe examine votre demande (sous 24h)</span>
-            </div>
-            <div className="flex items-start gap-2 text-sm" style={{ color: '#3d2674' }}>
-              <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style={{ background: '#faab2d', color: '#1a1040' }}>2</span>
-              <span>Vous recevrez un email de confirmation à <strong>{form.email}</strong></span>
-            </div>
-            <div className="flex items-start gap-2 text-sm" style={{ color: '#3d2674' }}>
-              <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style={{ background: '#faab2d', color: '#1a1040' }}>3</span>
-              <span>Connectez-vous avec vos identifiants</span>
-            </div>
-          </div>
-          <div className="flex gap-2 justify-center mb-6">
-            {form.modules.map(m => (
-              <span key={m} className={'px-3 py-1 rounded-full text-xs font-semibold'} style={{ background: m === 'real_estate' ? 'rgba(61, 38, 116, 0.1)' : 'rgba(250, 171, 45, 0.1)', color: m === 'real_estate' ? '#3d2674' : '#faab2d' }}>
-                {m === 'real_estate' ? '🏠 SARPA Immobilier' : '🚚 SARPA Logistiques'}
-              </span>
+          <div className="rounded-2xl p-4 mt-4 mb-6 text-left space-y-2" style={{ background: 'rgba(30, 64, 175, 0.07)', border: '1px solid rgba(30, 64, 175, 0.2)' }}>
+            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#1e40af' }}>Prochaines etapes</p>
+            {[
+              'Notre equipe examine votre demande (sous 24h)',
+              `Vous recevrez un email de confirmation a ${form.email}`,
+              'Connectez-vous avec vos identifiants',
+            ].map((txt, i) => (
+              <div key={i} className="flex items-start gap-2 text-sm" style={{ color: '#1e40af' }}>
+                <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style={{ background: '#3b82f6', color: '#fff' }}>{i + 1}</span>
+                <span>{txt}</span>
+              </div>
             ))}
+          </div>
+          <div className="flex gap-2 justify-center flex-wrap mb-6">
+            {form.modules.map(m => {
+              const mod = MODULES.find(x => x.id === m);
+              return (
+                <span key={m} className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
+                  {mod ? `${mod.emoji} ${mod.label}` : m}
+                </span>
+              );
+            })}
           </div>
           <Link href="/auth/login" className="inline-flex items-center gap-2 hover:underline text-sm font-medium" style={{ color: '#3d2674' }}>
             Retour à la connexion →
@@ -201,12 +211,12 @@ export default function RegisterCompanyPage() {
 
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-6">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(135deg, #3d2674, #5b3ea8)' }}>
-            <Zap size={22} className="text-white"/>
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(135deg, #1e40af, #3b82f6)' }}>
+            <span className="text-xl font-black text-white" style={{ fontFamily: 'Georgia, serif' }}>N</span>
           </div>
           <div>
-            <span className="text-2xl font-bold text-foreground">SARPA GROUP</span>
-            <p className="text-xs text-muted-foreground -mt-0.5">Plateforme ERP Intégrée</p>
+            <span className="text-2xl font-bold text-foreground">Nexora</span>
+            <p className="text-xs text-muted-foreground -mt-0.5">Plateforme de gestion</p>
           </div>
         </div>
 
@@ -423,11 +433,14 @@ export default function RegisterCompanyPage() {
                   {form.company_name && <p className="text-xs text-foreground">🏢 {form.company_name}</p>}
                   <p className="text-xs text-foreground">📧 {form.email}</p>
                   <div className="flex gap-2 flex-wrap">
-                    {form.modules.map(m => (
-                      <span key={m} className={'text-[10px] px-2 py-0.5 rounded-full font-semibold ' + (m === 'real_estate' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700')}>
-                        {m === 'real_estate' ? '🏠 Immo' : '🚚 Logistique'}
-                      </span>
-                    ))}
+                    {form.modules.map(m => {
+                      const mod = MODULES.find(x => x.id === m);
+                      return (
+                        <span key={m} className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-blue-100 text-blue-700">
+                          {mod ? `${mod.emoji} ${mod.label}` : m}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
