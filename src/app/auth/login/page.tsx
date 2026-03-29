@@ -2,12 +2,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Eye, EyeOff, Loader2, ShieldAlert, Building2, Truck, Factory } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ShieldAlert } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store';
 
-const SARPA_PURPLE = '#3d2674';
-const SARPA_YELLOW = '#faab2d';
+const NX_BLUE  = '#1e40af';
+const NX_LIGHT = '#3b82f6';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -139,91 +139,42 @@ export default function LoginPage() {
   return (
     <div
       className="min-h-screen flex items-center justify-center relative overflow-hidden"
-      style={{ background: `linear-gradient(160deg, #1a0f3d 0%, ${SARPA_PURPLE} 45%, #2e1a5e 100%)` }}
+      style={{ background: `linear-gradient(160deg, #0f172a 0%, ${NX_BLUE} 50%, #1e3a8a 100%)` }}
     >
-      {/* Éléments décoratifs de fond */}
+      {/* Decoration */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[-120px] right-[-120px] w-[480px] h-[480px] rounded-full opacity-[0.07]" style={{ background: SARPA_YELLOW }} />
-        <div className="absolute bottom-[-80px] left-[-80px] w-[360px] h-[360px] rounded-full opacity-[0.06]" style={{ background: SARPA_YELLOW }} />
-        <div className="absolute top-1/3 left-[-60px] w-[200px] h-[200px] rounded-full opacity-[0.04]" style={{ background: '#ffffff' }} />
-        <div className="absolute bottom-1/3 right-[-40px] w-[160px] h-[160px] rounded-full opacity-[0.04]" style={{ background: '#ffffff' }} />
-        {/* Grille subtile */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)`,
-          backgroundSize: '64px 64px',
+        <div className="absolute top-[-100px] right-[-100px] w-[440px] h-[440px] rounded-full opacity-[0.08]" style={{ background: NX_LIGHT }} />
+        <div className="absolute bottom-[-80px] left-[-80px] w-[340px] h-[340px] rounded-full opacity-[0.06]" style={{ background: NX_LIGHT }} />
+        <div className="absolute inset-0 opacity-[0.025]" style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)`,
+          backgroundSize: '56px 56px',
         }} />
       </div>
 
-      {/* Contenu principal */}
       <div className="relative z-10 w-full max-w-md mx-auto px-6 py-10">
 
-        {/* ── Logo SARPA GROUP ── */}
+        {/* Logo Nexora */}
         <div className="flex flex-col items-center mb-10">
-          {/* Icône SG — fidèle au logo */}
           <div className="relative mb-5">
             <div
-              className="w-20 h-20 rounded-full flex items-center justify-center shadow-2xl"
+              className="w-20 h-20 rounded-2xl flex items-center justify-center shadow-2xl"
               style={{ background: 'rgba(255,255,255,0.12)', border: '2px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)' }}
             >
-              {/* S jaune + G blanc superposés */}
-              <div className="relative w-12 h-12 flex items-center justify-center">
-                <span
-                  className="absolute text-4xl font-black leading-none"
-                  style={{ color: SARPA_YELLOW, fontFamily: 'Georgia, serif', left: '0px', top: '-2px', letterSpacing: '-2px' }}
-                >S</span>
-                <span
-                  className="absolute text-4xl font-black leading-none"
-                  style={{ color: 'rgba(255,255,255,0.85)', fontFamily: 'Georgia, serif', right: '0px', bottom: '-2px', letterSpacing: '-2px' }}
-                >G</span>
-              </div>
+              <span
+                className="text-4xl font-black"
+                style={{ color: '#ffffff', fontFamily: 'Georgia, serif', letterSpacing: '-2px' }}
+              >N</span>
             </div>
-            {/* Halo jaune */}
-            <div className="absolute inset-0 rounded-full opacity-20 blur-xl" style={{ background: SARPA_YELLOW }} />
+            <div className="absolute inset-0 rounded-2xl opacity-25 blur-xl" style={{ background: NX_LIGHT }} />
           </div>
 
-          {/* SARPA GROUP SENEGAL */}
           <div className="text-center">
-            <div className="flex items-baseline justify-center gap-2">
-              <span className="text-3xl font-black text-white tracking-tight">SARPA</span>
-              <span className="text-3xl font-black tracking-tight" style={{ color: SARPA_YELLOW }}>GROUP</span>
-            </div>
-            <div className="flex items-center justify-center gap-2 mt-1">
-              <span className="text-xs font-bold tracking-[0.25em] text-white/70 uppercase">SÉNÉGAL</span>
-              {/* Drapeau sénégalais */}
-              <div className="flex gap-0.5">
-                <div className="w-3 h-2 rounded-sm" style={{ background: '#00853F' }} />
-                <div className="w-3 h-2 rounded-sm" style={{ background: '#FDEF42' }} />
-                <div className="w-3 h-2 rounded-sm" style={{ background: '#E31B23' }} />
-              </div>
-            </div>
+            <span className="text-3xl font-black text-white tracking-tight">Nexora</span>
+            <p className="text-xs font-medium tracking-[0.2em] text-white/50 uppercase mt-1">Plateforme de gestion</p>
           </div>
         </div>
 
-        {/* ── Filiales ── */}
-        <div className="grid grid-cols-3 gap-3 mb-8">
-          {[
-            { icon: <Building2 size={18} />, name: 'Immobilier', desc: 'Biens & locataires' },
-            { icon: <Factory size={18} />,   name: 'Béton',       desc: 'Production & stock' },
-            { icon: <Truck size={18} />,     name: 'Logistiques', desc: 'Flotte & livraisons' },
-          ].map(f => (
-            <div
-              key={f.name}
-              className="rounded-2xl p-3 text-center"
-              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)' }}
-            >
-              <div
-                className="w-8 h-8 rounded-xl flex items-center justify-center mx-auto mb-2"
-                style={{ background: `rgba(250,171,45,0.18)` }}
-              >
-                <span style={{ color: SARPA_YELLOW }}>{f.icon}</span>
-              </div>
-              <p className="text-white font-bold text-xs">{f.name}</p>
-              <p className="text-white/45 text-[10px] mt-0.5">{f.desc}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* ── Formulaire de connexion ── */}
+        {/* Formulaire */}
         <div
           className="rounded-3xl p-7"
           style={{ background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(16px)' }}
@@ -231,7 +182,7 @@ export default function LoginPage() {
           <div className="mb-6">
             <h2 className="text-xl font-black text-white">Connexion</h2>
             <p className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.55)' }}>
-              Accédez à votre espace SARPA GROUP
+              Accedez a votre espace
             </p>
           </div>
 
@@ -250,14 +201,9 @@ export default function LoginPage() {
               <input
                 type="email" value={email} onChange={e => setEmail(e.target.value)} required
                 className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
-                style={{
-                  background: 'rgba(255,255,255,0.10)',
-                  border: '1px solid rgba(255,255,255,0.20)',
-                  color: '#ffffff',
-                  caretColor: SARPA_YELLOW,
-                }}
-                placeholder="votre@sarpagroup.sn"
-                onFocus={e => { e.target.style.borderColor = SARPA_YELLOW; e.target.style.boxShadow = `0 0 0 3px rgba(250,171,45,0.15)`; }}
+                style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.20)', color: '#ffffff', caretColor: NX_LIGHT }}
+                placeholder="votre@email.com"
+                onFocus={e => { e.target.style.borderColor = NX_LIGHT; e.target.style.boxShadow = `0 0 0 3px rgba(59,130,246,0.20)`; }}
                 onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.20)'; e.target.style.boxShadow = 'none'; }}
               />
             </div>
@@ -270,18 +216,13 @@ export default function LoginPage() {
                 <input
                   type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required
                   className="w-full px-4 py-3 pr-12 rounded-xl text-sm outline-none transition-all"
-                  style={{
-                    background: 'rgba(255,255,255,0.10)',
-                    border: '1px solid rgba(255,255,255,0.20)',
-                    color: '#ffffff',
-                    caretColor: SARPA_YELLOW,
-                  }}
+                  style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.20)', color: '#ffffff', caretColor: NX_LIGHT }}
                   placeholder="••••••••"
-                  onFocus={e => { e.target.style.borderColor = SARPA_YELLOW; e.target.style.boxShadow = `0 0 0 3px rgba(250,171,45,0.15)`; }}
+                  onFocus={e => { e.target.style.borderColor = NX_LIGHT; e.target.style.boxShadow = `0 0 0 3px rgba(59,130,246,0.20)`; }}
                   onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.20)'; e.target.style.boxShadow = 'none'; }}
                 />
                 <button type="button" onClick={() => setShowPw(v => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1"
                   style={{ color: 'rgba(255,255,255,0.45)' }}>
                   {showPw ? <EyeOff size={16}/> : <Eye size={16}/>}
                 </button>
@@ -290,20 +231,19 @@ export default function LoginPage() {
 
             <div className="flex justify-end">
               <Link href="/auth/forgot-password"
-                className="text-xs font-medium transition-opacity hover:opacity-80"
-                style={{ color: SARPA_YELLOW }}>
-                Mot de passe oublié ?
+                className="text-xs font-medium hover:opacity-80 transition-opacity"
+                style={{ color: NX_LIGHT }}>
+                Mot de passe oublie ?
               </Link>
             </div>
 
             <button
-              type="submit"
-              disabled={loading}
+              type="submit" disabled={loading}
               className="w-full py-3.5 rounded-xl font-black text-sm transition-all disabled:opacity-60 flex items-center justify-center gap-2 mt-1"
               style={{
-                background: loading ? `${SARPA_YELLOW}cc` : SARPA_YELLOW,
-                color: '#1a0f3d',
-                boxShadow: `0 8px 28px rgba(250,171,45,0.35)`,
+                background: `linear-gradient(135deg, ${NX_LIGHT}, ${NX_BLUE})`,
+                color: '#ffffff',
+                boxShadow: `0 8px 28px rgba(59,130,246,0.40)`,
                 letterSpacing: '0.03em',
               }}
             >
@@ -314,9 +254,8 @@ export default function LoginPage() {
           </form>
         </div>
 
-        {/* Footer */}
         <p className="text-center text-[11px] mt-6" style={{ color: 'rgba(255,255,255,0.28)' }}>
-          © {new Date().getFullYear()} SARPA GROUP SÉNÉGAL — Tous droits réservés
+          © {new Date().getFullYear()} Nexora — Tous droits reserves
         </p>
       </div>
     </div>
