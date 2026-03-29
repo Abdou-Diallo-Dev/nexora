@@ -3,7 +3,10 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { Zap, Eye, EyeOff, Building2, Truck, Factory, Check, Mail, RefreshCw, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { LoadingSpinner, inputCls, labelCls, btnPrimary } from '@/components/ui';
+import { LoadingSpinner, inputCls, labelCls } from '@/components/ui';
+
+const btnNexora = 'flex items-center gap-2 px-4 py-2.5 text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed' +
+  ' bg-[#1e40af] hover:bg-[#1e3a8a]';
 
 const MODULES = [
   {
@@ -224,7 +227,7 @@ export default function RegisterCompanyPage() {
             <span className="text-xl font-black text-white" style={{ fontFamily: 'Georgia, serif' }}>N</span>
           </div>
           <div>
-            <span className="text-2xl font-bold text-foreground">Nexora</span>
+            <span className="text-2xl font-bold text-white">Nexora</span>
             <p className="text-xs text-muted-foreground -mt-0.5">Plateforme de gestion</p>
           </div>
         </div>
@@ -270,7 +273,7 @@ export default function RegisterCompanyPage() {
                 })}
               </div>
               <button onClick={() => { if (form.modules.length === 0) { toast.error('Sélectionnez au moins un module'); return; } setStep(2); }}
-                className={btnPrimary + ' w-full justify-center'}>Continuer</button>
+                className={btnNexora + ' w-full justify-center'}>Continuer</button>
             </div>
           )}
 
@@ -296,7 +299,7 @@ export default function RegisterCompanyPage() {
               <div className="flex gap-3 mt-6">
                 <button onClick={() => setStep(1)} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:bg-slate-50 transition-colors">Retour</button>
                 <button onClick={() => { if (!form.company_name.trim()) { toast.error('Nom entreprise requis'); return; } setStep(3); }}
-                  className={btnPrimary + ' flex-1 justify-center'}>Continuer</button>
+                  className={btnNexora + ' flex-1 justify-center'}>Continuer</button>
               </div>
             </div>
           )}
@@ -319,7 +322,7 @@ export default function RegisterCompanyPage() {
 
                   {!otpSent ? (
                     <button onClick={sendOTP} disabled={otpLoading || !form.email}
-                      className={btnPrimary + ' w-full justify-center'}>
+                      className={btnNexora + ' w-full justify-center'}>
                       {otpLoading ? <LoadingSpinner size={16}/> : <><Mail size={15}/> Recevoir le code</>}
                     </button>
                   ) : (
@@ -385,7 +388,7 @@ export default function RegisterCompanyPage() {
                   className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:bg-slate-50 transition-colors">Retour</button>
                 <button onClick={() => { if (!otpVerified) { toast.error('Vérifiez votre email'); return; } setStep(4); }}
                   disabled={!otpVerified}
-                  className={btnPrimary + ' flex-1 justify-center disabled:opacity-50'}>Continuer</button>
+                  className={btnNexora + ' flex-1 justify-center disabled:opacity-50'}>Continuer</button>
               </div>
             </div>
           )}
@@ -456,7 +459,7 @@ export default function RegisterCompanyPage() {
 
               <div className="flex gap-3 mt-6">
                 <button type="button" onClick={() => setStep(3)} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:bg-slate-50 transition-colors">Retour</button>
-                <button type="submit" disabled={loading} className={btnPrimary + ' flex-1 justify-center'}>
+                <button type="submit" disabled={loading} className={btnNexora + ' flex-1 justify-center'}>
                   {loading ? <LoadingSpinner size={16}/> : 'Envoyer la demande'}
                 </button>
               </div>
