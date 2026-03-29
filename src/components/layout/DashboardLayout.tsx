@@ -2,20 +2,25 @@
 import Sidebar from './Sidebar';
 import { Topbar } from './Topbar';
 import { useAuthStore } from '@/lib/store';
-import { usePathname } from 'next/navigation';
+import { getBrandingColors } from '@/lib/branding';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user } = useAuthStore();
-  const pathname = usePathname();
-  const isSuperAdmin = user?.role === 'super_admin' || pathname.startsWith('/super-admin');
+  const { user, company } = useAuthStore();
+  const isSuperAdmin = user?.role === 'super_admin';
+
+  // Calcule --primary selon le contexte :
+  // super admin → Nexora bleu | autres → couleur primaire de l'entreprise
+  const primaryHsl = isSuperAdmin
+    ? '224 71% 40%'
+    : getBrandingColors(company).primaryHsl;
 
   return (
     <div
       className="flex h-screen overflow-hidden bg-background"
-      style={isSuperAdmin ? {
-        ['--primary' as any]:            '224 71% 40%',
+      style={{
+        ['--primary' as any]:            primaryHsl,
         ['--primary-foreground' as any]: '0 0% 100%',
-      } : undefined}
+      }}
     >
       <Sidebar/>
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">

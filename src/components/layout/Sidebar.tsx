@@ -284,7 +284,6 @@ function SidebarContent({ collapsed, onNav }: { collapsed: boolean; onNav?: () =
   const allowedKeys  = ['dashboard', ...getNavItems(role)];
   const isAdmin        = role === 'admin' || role === 'manager';
   const isSuperAdmin   = role === 'super_admin';
-  const isModuleRole   = isLogisticsRole(role) || isBetonRole(role);
   const hasRE    = isSuperAdmin ? true : (company?.modules?.includes('real_estate') ?? false);
   const hasLog   = isSuperAdmin ? true : (company?.modules?.includes('logistics') ?? false);
   const hasBeton = isSuperAdmin ? true : ((company?.modules as string[] | undefined)?.includes('beton') ?? false);
@@ -384,23 +383,14 @@ function SidebarContent({ collapsed, onNav }: { collapsed: boolean; onNav?: () =
         )}
       </nav>
 
-      {/* Liens inter-modules en bas */}
-      {!collapsed && nav && (
+      {/* Lien retour super admin (super admin seulement) */}
+      {!collapsed && nav && isSuperAdmin && !isSA && (
         <div className="px-3 py-3 border-t flex flex-col gap-1" style={{ borderColor: 'var(--sidebar-border)' }}>
-          {isSuperAdmin && !isSA && (
-            <Link href="/super-admin/dashboard" onClick={onNav}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-colors hover:bg-[var(--sidebar-hover)]"
-              style={{ color: 'var(--sidebar-muted)' }}>
-              <Crown size={12}/> Super Admin
-            </Link>
-          )}
-          {(isRE || isLog || isBeton) && !isModuleRole && (
-            <Link href="/dashboard" onClick={onNav}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-colors hover:bg-[var(--sidebar-hover)]"
-              style={{ color: 'var(--sidebar-muted)' }}>
-              <LayoutDashboard size={12}/> Changer de filiale
-            </Link>
-          )}
+          <Link href="/super-admin/dashboard" onClick={onNav}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-colors hover:bg-[var(--sidebar-hover)]"
+            style={{ color: 'var(--sidebar-muted)' }}>
+            <Crown size={12}/> Super Admin
+          </Link>
         </div>
       )}
     </>
@@ -416,7 +406,7 @@ export default function Sidebar() {
   const isBeton = pathname.startsWith('/beton');
   const companyName    = isSuperAdmin ? 'Nexora' : getCompanyDisplayName(company);
   const companyInitial = isSuperAdmin ? 'N' : getCompanyInitial(company);
-  const colors = isSuperAdmin ? NEXORA_SIDEBAR_COLORS : (isLog || isBeton) ? SARPA_SIDEBAR_COLORS : getBrandingColors(company);
+  const colors = isSuperAdmin ? NEXORA_SIDEBAR_COLORS : getBrandingColors(company);
 
   return (
     <motion.aside
@@ -475,7 +465,7 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
   const isBeton = pathname.startsWith('/beton');
   const companyName    = isSuperAdmin ? 'Nexora' : getCompanyDisplayName(company);
   const companyInitial = isSuperAdmin ? 'N' : getCompanyInitial(company);
-  const colors = isSuperAdmin ? NEXORA_SIDEBAR_COLORS : (isLog || isBeton) ? SARPA_SIDEBAR_COLORS : getBrandingColors(company);
+  const colors = isSuperAdmin ? NEXORA_SIDEBAR_COLORS : getBrandingColors(company);
 
   useEffect(() => {
     if (open) document.body.style.overflow = 'hidden';

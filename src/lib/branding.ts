@@ -95,7 +95,7 @@ export function getBrandingColors(company?: {
 }
 
 export function getCompanyDisplayName(company?: { name?: string | null } | null) {
-  return company?.name?.trim() || 'SARPA GROUP';
+  return company?.name?.trim() || 'Mon entreprise';
 }
 
 export function getCompanyInitial(company?: { name?: string | null } | null) {
